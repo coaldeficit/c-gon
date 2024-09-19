@@ -11,7 +11,7 @@ const level = {
     playableLevels: ["labs", "rooftops", "skyscrapers", "warehouse", "highrise", "office", "aerie", "satellite", "sewers", "testChamber", "pavilion"],
     cgonLevels: ["descent"],
     // playableLevels: ["pavilion", "pavilion", "pavilion", "pavilion", "pavilion", "pavilion", "pavilion", "pavilion", "pavilion", "pavilion", "pavilion"],
-    communityLevels: ["stronghold", "basement", "crossfire", "vats", /*"run" bad*/, "n-gon", "house", "perplex", "coliseum", "tunnel", "islands"],
+    communityLevels: ["stronghold", "basement", "crossfire", "vats", /*"run" bad, */"n-gon", "house", "perplex", "coliseum", "tunnel", "islands"],
     trainingLevels: ["walk", "crouch", "jump", "hold", "throw", "throwAt", "deflect", "heal", "fire", "nailGun", "shotGun", "superBall", "matterWave", "missile", "stack", "mine", "grenades", "harpoon"],
     levels: [],
     start() {
