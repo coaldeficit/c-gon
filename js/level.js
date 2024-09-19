@@ -262,7 +262,7 @@ const level = {
                 level.levels = level.levels.concat(level.communityLevels)
                 level.levels = level.levels.concat(level.cgonLevels)
                 level.levels = shuffle(level.levels); //shuffles order of maps
-                level.levels.splice(0, (level.communityLevels.length-2)+level.cgonLevels.length); //remove some random levels to make up for adding the community levels
+                level.levels.splice(0, (level.communityLevels.length-3)+level.cgonLevels.length); //remove some random levels to make up for adding the community levels
                 simulation.isHorizontalFlipped = false;
             } else {
                 level.levels = level.levels.concat(level.cgonLevels)
