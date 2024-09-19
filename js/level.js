@@ -234,7 +234,7 @@ const level = {
             } else {
                 if (level.onLevel > level.levels.length - 1) level.onLevel = 0;
                 level.difficultyIncrease(simulation.difficultyMode)
-				if (simulation.specialMode) simulation.difficultyMode += 1.05
+				if (simulation.specialMode) simulation.difficultyMode += 1.15
             }
 
             //reset lost tech display
