@@ -3723,23 +3723,23 @@ const tech = {
         },
         {
             name: "looting",
-            description: `mobs drop slightly more power ups on death<br>mobs can drop <strong class='color-r'>research</strong>`,
-            maxCount: 3,
+            description: `mobs drop ${powerUps.orb.ammo(1)} and ${powerUps.orb.heal(1)} slightly more often<br>mobs can rarely drop ${powerUps.orb.research(1)}`,
+            maxCount: 1,
             count: 0,
-            frequency: 2,
-            frequencyDefault: 2,
+            frequency: 1,
+            frequencyDefault: 1,
             allowed() {
                 return true
             },
             requires: "",
             effect: () => {
-                tech.isLooting++
+                tech.isLooting = 1
             },
             remove() {
                 tech.isLooting = 0
             }
         },
-        {
+        /*{ // TODO: rework
             name: "treasure",
             description: `mobs can drop <strong class='color-dup'>duplicate</strong> power ups based on your <strong class='color-dup'>duplication</strong> chance<br>mobs spawn with more <strong>health</strong> based on your <strong class='color-dup'>duplication</strong> chance<br>adds <strong>35%</strong> <strong class='color-dup'>duplication</strong> chance<br><strong>+35%</strong> <strong class='color-j'>JUNK</strong> to the potential <strong class='color-m'>tech</strong> pool`,
             maxCount: 1,
@@ -3760,10 +3760,10 @@ const tech = {
 		powerUps.setDupChance();
 		tech.removeJunkTechFromPool(0.35)
             }
-        },
+        },*/
         {
             name: "exotic particles",
-            description: `mobs drop less power ups on death<br>mobs can drop <strong class='color-h'>exotic</strong> <strong class='color-f'>power ups</strong>`,
+            description: `mobs drop <strong>30%</strong> less power ups on death<br>mobs can drop <strong class='color-h'>exotic</strong> <strong class='color-f'>power ups</strong>`,
             maxCount: 1,
             count: 0,
             frequency: 1,
@@ -3771,7 +3771,7 @@ const tech = {
             allowed() {
                 return tech.isLooting && !tech.isTreasure && !tech.isEnergyHealth && !tech.isOverHeal
             },
-            requires: "looting, not treasure, mass-energy equivalence, quenching",
+            requires: "looting, not mass-energy equivalence, quenching",
             effect: () => {
                 tech.isExoticParts = 1
             },
