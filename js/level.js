@@ -9818,6 +9818,78 @@ const level = {
 	  bossRoomSlime.query();
 	};
     },
+	split() {
+      level.custom = () => {
+        level.exit.drawAndCheck();
+
+        level.enter.draw();
+      };
+      level.customTopLayer = () => {};
+      level.setPosToSpawn(0, -50); //normal spawn
+      level.exit.x = 1500;
+      level.exit.y = -18750;
+      spawn.mapRect(level.enter.x, level.enter.y + 20, 100, 20);
+      level.defaultZoom = 1800
+      simulation.zoomTransition(level.defaultZoom)
+      document.body.style.backgroundColor = "#d8dadf";
+      // powerUps.spawnStartingPowerUps(1475, -1175);
+      // spawn.debris(750, -2200, 3700, 16); //16 debris per level
+
+      spawn.mapRect(-100, 0, 200, 200);
+	  spawn.mapRect(-400, 75, 800, 275);
+	  spawn.mapRect(-1050, 175, 2125, 400);
+	  spawn.mapRect(1075, -1375, 425, 1950);
+	  spawn.mapRect(-1475, -1375, 425, 1950);
+	  spawn.mapRect(100, -450, 500, 125);
+	  spawn.bodyRect(850, 50, 225, 125);
+	  spawn.bodyRect(-1050, 50, 225, 125);
+	  spawn.bodyRect(950, -100, 125, 150);
+	  spawn.bodyRect(-1050, -100, 125, 150);
+	  spawn.mapRect(-100, -1375, 200, 1050);
+	  spawn.mapRect(-625, -450, 525, 125);
+	  spawn.mapRect(600, -1375, 475, 250);
+	  spawn.mapRect(1000, -1650, 175, 275);
+	  spawn.mapRect(-100, -2100, 200, 725);
+	  spawn.mapRect(1175, -1600, 550, 525);
+	  spawn.mapRect(1725, -1425, 625, 350);
+	  spawn.mapRect(2350, -1750, 425, 675);
+	  spawn.mapRect(3475, -3175, 475, 3050);
+	  spawn.mapRect(1975, -250, 1500, 375);
+	  spawn.mapRect(3475, -125, 475, 250);
+	  spawn.mapRect(2375, -1075, 150, 300);
+	  spawn.mapRect(2075, -1075, 150, 400);
+	  spawn.mapRect(2575, -375, 500, 125);
+	  spawn.mapRect(2100, -300, 475, 50);
+	  spawn.mapRect(3075, -525, 400, 275);
+	  spawn.mapRect(-1475, 1650, 1375, 600);
+	  spawn.mapRect(100, 1650, 1400, 600);
+	  spawn.mapRect(-100, 1850, 200, 400);
+	  spawn.mapRect(1500, 425, 300, 150);
+	  spawn.mapRect(2300, 125, 525, 2125);
+	  spawn.mapRect(1875, 1025, 425, 1225);
+	  spawn.mapRect(1825, 1050, 50, 1200);
+	  spawn.mapRect(1775, 1075, 50, 1175);
+	  spawn.mapRect(1725, 1100, 50, 1150);
+	  spawn.mapRect(1675, 1125, 50, 1125);
+	  spawn.mapRect(1625, 1150, 50, 1100);
+	  spawn.mapRect(1575, 1175, 50, 1075);
+	  spawn.mapRect(1525, 1200, 50, 1050);
+	  spawn.mapRect(1500, 1225, 25, 1025);
+	  spawn.mapRect(1850, 1037.5, 25, 12.5);
+	  spawn.mapRect(1800, 1062.5, 25, 12.5);
+	  spawn.mapRect(1750, 1087.5, 25, 12.5);
+	  spawn.mapRect(1700, 1112.5, 25, 12.5);
+	  spawn.mapRect(1650, 1137.5, 25, 12.5);
+	  spawn.mapRect(1600, 1162.5, 25, 12.5);
+	  spawn.mapRect(1550, 1187.5, 25, 12.5);
+	  spawn.mapRect(1500, 1212.5, 25, 12.5);
+      // spawn.bodyRect(1540, -1110, 300, 25, 0.9); 
+      // spawn.randomSmallMob(1300, -70);
+      // spawn.randomMob(2650, -975, 0.8);
+      // spawn.randomGroup(1700, -900, 0.4);
+      // if (simulation.difficulty > 1) spawn.randomLevelBoss(2200, -1300);
+      //powerUps.addResearchToLevel() //needs to run after mobs are spawned
+	},
     // ********************************************************************************************************
     // ********************************************************************************************************
     // ***************************************** training levels **********************************************

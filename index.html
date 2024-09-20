@@ -18,7 +18,7 @@
     <link rel='shortcut icon' href='favicon.ico' type='image/x-icon' />
 	<script>
 	  setTimeout(()=>{
-	  if (location.protocol !== 'https:') {
+	  if (location.protocol !== 'https:' && location.protocol !== 'file:') {
         location.replace(`https:${location.href.substring(location.protocol.length)}`);
       }
 	  },1000)
