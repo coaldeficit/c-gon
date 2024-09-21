@@ -674,6 +674,99 @@ const level = {
             return who
         }
     },
+    elevatorLegacy(x, y, width, height, maxHeight, force = 0.003, friction = { up: 0.01, down: 0.2 }, isAtTop = false) {
+        x += width / 2
+        y += height / 2
+        maxHeight += height / 2
+        const yTravel = maxHeight - y
+        force += simulation.g
+        const who = body[body.length] = Bodies.rectangle(x, isAtTop ? maxHeight : y, width, height, {
+            collisionFilter: {
+                category: cat.map,
+                mask: cat.map | cat.player | cat.body | cat.bullet | cat.powerUp | cat.mob | cat.mobBullet
+            },
+            isNoSetCollision: true,
+            inertia: Infinity, //prevents rotation
+            isNotHoldable: true,
+            friction: 1,
+            frictionStatic: 1,
+            restitution: 0,
+            frictionAir: 0.001,
+            holdX: x,
+            move() {
+                if (!m.isBodiesAsleep) {
+                    if (this.isUp) { //moving up still with high air friction
+                        this.force.y -= force * this.mass //hard force propels up, even with high friction
+
+                        if (this.position.y < maxHeight) { //switch to down mode
+                            this.isUp = false
+                            this.frictionAir = friction.down
+                            //adds a hard jerk at the top of vertical motion because it's fun
+                            Matter.Body.setPosition(this, {
+                                x: this.holdX,
+                                y: maxHeight
+                            });
+                            Matter.Body.setVelocity(this, {
+                                x: 0,
+                                y: 0
+                            });
+                        }
+                    } else if (this.position.y + 10 * this.velocity.y > y) { //free falling down, with only air friction
+                        Matter.Body.setVelocity(this, { //slow down early to avoid a jerky stop that can pass through blocks
+                            x: 0,
+                            y: this.velocity.y * 0.7
+                        });
+                        if (this.position.y + this.velocity.y > y) { //switch to up mode
+                            this.isUp = true
+                            this.frictionAir = friction.up
+                        }
+                    }
+
+                }
+                // hold horizontal position
+                Matter.Body.setPosition(this, {
+                    x: this.holdX,
+                    y: this.position.y
+                });
+                Matter.Body.setVelocity(this, {
+                    x: 0,
+                    y: this.velocity.y
+                });
+            },
+            off() {
+                Matter.Body.setPosition(this, {
+                    x: this.holdX,
+                    y: this.position.y
+                });
+                Matter.Body.setVelocity(this, {
+                    x: 0,
+                    y: this.velocity.y
+                });
+            },
+            constraint: this.null,
+            addConstraint() {
+                this.constraint = Constraint.create({
+                    pointA: {
+                        x: this.position.x,
+                        y: this.position.y
+                    },
+                    bodyB: this,
+                    stiffness: 0.01,
+                    damping: 0.3
+                });
+                Composite.add(engine.world, this.constraint);
+            },
+            removeConstraint() {
+                Composite.remove(engine.world, this.constraint, true)
+            },
+            drawTrack() {
+                ctx.fillStyle = "#ccc"
+                ctx.fillRect(this.holdX, y, 5, yTravel)
+            }
+        });
+        Matter.Body.setDensity(who, 0.01) //10x density for added stability
+        return who
+    },
     elevator(x, y, width, height, maxHeight, force = 0.003, friction = { up: 0.01, down: 0.2 }, isAtTop = false) {
         x += width / 2
         y += height / 2
@@ -825,8 +918,8 @@ const level = {
             }
         });
         Matter.Body.setDensity(who, 0.01) //10x density for added stability
-        Composite.add(engine.world, who); //add to world
-        who.classType = "body"
+        //Composite.add(engine.world, who); //add to world
+        //who.classType = "body"
         return who
     },
     spring(x, y, v = "-100 0  100 0  70 40  0 50  -70 40", force = 0.01, distance = 300, angle = 0) {
@@ -1816,8 +1909,6 @@ const level = {
             },
         });
         Matter.Body.setStatic(rect, true); //make static
-        Composite.add(engine.world, rect); //add to world
-        rect.classType = "body"
         return rect
     },
     chain(x, y, angle = 0, isAttached = true, len = 15, radius = 20, stiffness = 1, damping = 1) {
@@ -3812,8 +3903,8 @@ const level = {
         slime.height -= slime.maxHeight - 60 //start slime at zero
         slime.min.y += slime.maxHeight
         slime.max.y = slime.min.y + slime.height
-        const elevator1 = level.elevator(-1625, -90, 310, 800, -2000, 0.0025, { up: 0.1, down: 0.2 }) //x, y, width, height, maxHeight, force = 0.003, friction = { up: 0.01, down: 0.2 }) {
-        const elevator2 = level.elevator(1175, -3050, 200, 250, -4475, 0.0025, { up: 0.12, down: 0.2 }) //x, y, width, height, maxHeight, force = 0.003, friction = { up: 0.01, down: 0.2 }) {
+        const elevator1 = level.elevatorLegacy(-1625, -90, 310, 800, -2000, 0.0025, { up: 0.1, down: 0.2 }) //x, y, width, height, maxHeight, force = 0.003, friction = { up: 0.01, down: 0.2 }) {
+        const elevator2 = level.elevatorLegacy(1175, -3050, 200, 250, -4475, 0.0025, { up: 0.12, down: 0.2 }) //x, y, width, height, maxHeight, force = 0.003, friction = { up: 0.01, down: 0.2 }) {
         let waterFallWidth = 0
         let waterFallX = 0
         let waterFallSmoothX = 0
@@ -6232,7 +6323,11 @@ const level = {
                     spawn.mapRect(x + 2675, -2350, 1625, 150);
                     //up mode triggered by player contact
                     const elevator0 = level.elevator(x - 1300, -1175, 175, 50, -1600, 0.011, { up: 0.01, down: 0.7 })
+                    body[body.length-1].classType = "body"
+                    Composite.add(engine.world, body[body.length-1]); //add to world
                     const elevator1 = level.elevator(x + 1125, -1175, 175, 50, -1600, 0.011, { up: 0.01, down: 0.7 })
+                    body[body.length-1].classType = "body"
+                    Composite.add(engine.world, body[body.length-1]); //add to world
 
                     //floor 2  slow with some things to jump on and mobs
                     portals.push(level.portal({ x: x + 3985, y: -3410 }, Math.PI, { x: x - 3985, y: -5110 }, 0))
@@ -6895,7 +6990,7 @@ const level = {
     },
     satellite() {
         const boost1 = level.boost(5825, 235, 1400)
-        const elevator = level.elevator(4210, -1265, 380, 50, -3450) //, 0.003, { up: 0.01, down: 0.2 }
+        const elevator = level.elevatorLegacy(4210, -1265, 380, 50, -3450) //, 0.003, { up: 0.01, down: 0.2 }
         level.custom = () => {
             boost1.query();
 
@@ -7069,7 +7164,7 @@ const level = {
         }
     },
     rooftops() {
-        const elevator = level.elevator(1450, -990, 235, 45, -2000)
+        const elevator = level.elevatorLegacy(1450, -990, 235, 45, -2000)
         const boost1 = level.boost(4950, 0, 1100)
 
         level.custom = () => {
@@ -7629,12 +7724,12 @@ const level = {
         }
     },
     highrise() {
-        const elevator1 = level.elevator(-790, -190, 180, 25, -1150, 0.0025, { up: 0.01, down: 0.2 }, true) //x, y, width, height, maxHeight, force = 0.003, friction = { up: 0.01, down: 0.2 }) {
+        const elevator1 = level.elevatorLegacy(-790, -190, 180, 25, -1150, 0.0025, { up: 0.01, down: 0.2 }, true) //x, y, width, height, maxHeight, force = 0.003, friction = { up: 0.01, down: 0.2 }) {
         elevator1.addConstraint();
         // const button1 = level.button(-500, -200)
         const toggle1 = level.toggle(-300, -200) //(x,y,isOn,isLockOn = true/false)
 
-        const elevator2 = level.elevator(-3630, -1000, 180, 25, -1740) //x, y, width, height, maxHeight, force = 0.003, friction = { up: 0.01, down: 0.2 }) {
+        const elevator2 = level.elevatorLegacy(-3630, -1000, 180, 25, -1740) //x, y, width, height, maxHeight, force = 0.003, friction = { up: 0.01, down: 0.2 }) {
         elevator2.addConstraint();
         // const button2 = level.button(-3100, -1330) 
         const toggle2 = level.toggle(-3100, -1330) //(x,y,isOn, isLockOn = true/false)
@@ -8010,9 +8105,9 @@ const level = {
         let elevator1, elevator2, elevator3
         if (Math.random() < 0.5) {
             isElevators = true
-            elevator1 = level.elevator(-1780, 500, 260, 40, 7, 0.0003) //    x, y, width, height, maxHeight, force = 0.003, friction = { up: 0.01, down: 0.2 }) {
-            elevator2 = level.elevator(820, 1300, 260, 40, 607, 0.0003)
-            elevator3 = level.elevator(-2850, 1250, 160, 40, 600, 0.007)
+            elevator1 = level.elevatorLegacy(-1780, 500, 260, 40, 7, 0.0003) //    x, y, width, height, maxHeight, force = 0.003, friction = { up: 0.01, down: 0.2 }) {
+            elevator2 = level.elevatorLegacy(820, 1300, 260, 40, 607, 0.0003)
+            elevator3 = level.elevatorLegacy(-2850, 1250, 160, 40, 600, 0.007)
             if (simulation.isHorizontalFlipped) {
                 spawn.mapVertex(-2900, 225, "0 0  0 -500  -500 -500")
             } else {
@@ -8593,7 +8688,7 @@ const level = {
         } else {
             isLevelReversed = true;
         }
-        const elevator = level.elevator(4545, -220, 110, 30, -3000)
+        const elevator = level.elevatorLegacy(4545, -220, 110, 30, -3000)
         const hazard = level.hazard(1675, -1050, 800, 150);
         const portal = level.portal({
             x: -620,
@@ -11353,7 +11448,7 @@ const level = {
         spawn.mapRect(7900, 400, 50, 300);
         spawn.mapRect(7900, 700, 1000, 50);
 
-        const elevator = level.elevator(7962.5, 500, 75, 50, -1800)
+        const elevator = level.elevatorLegacy(7962.5, 500, 75, 50, -1800)
 
 
         // fire damage
@@ -13803,11 +13898,11 @@ const level = {
         b.removeAllGuns();
         b.giveGuns("grenades")
 
-        const elevator1 = level.elevator(550, -100, 180, 25, -840, 0.003, { up: 0.05, down: 0.2 }) // x, y, width, height, maxHeight, force = 0.003, friction = { up: 0.01, down: 0.2 }) {
+        const elevator1 = level.elevatorLegacy(550, -100, 180, 25, -840, 0.003, { up: 0.05, down: 0.2 }) // x, y, width, height, maxHeight, force = 0.003, friction = { up: 0.01, down: 0.2 }) {
         elevator1.addConstraint();
         const toggle1 = level.toggle(275, 0) //(x,y,isOn,isLockOn = true/false)
 
-        const elevator2 = level.elevator(1400, -950, 180, 25, -2400, 0.0025) // x, y, width, height, maxHeight, force = 0.003, friction = { up: 0.01, down: 0.2 }) {
+        const elevator2 = level.elevatorLegacy(1400, -950, 180, 25, -2400, 0.0025) // x, y, width, height, maxHeight, force = 0.003, friction = { up: 0.01, down: 0.2 }) {
         elevator2.addConstraint();
         const button2 = level.button(1000, -850)
 
