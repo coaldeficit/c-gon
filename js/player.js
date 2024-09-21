@@ -247,6 +247,7 @@ const m = {
             y: Math.max(-10, Math.min(m.standingOn.velocity.y, 10)) //cap velocity contribution from blocks you are standing on to 10 in the vertical
         });
     },
+    moverX: 0, //used to tell the player about moving platform x velocity
     groundControl() {
         //check for crouch or jump
         if (m.crouch) {
@@ -257,34 +258,30 @@ const m = {
             m.jump()
         }
 
+        const moveX = player.velocity.x - m.moverX //account for mover platforms
         if (input.left) {
-            if (player.velocity.x > -2) {
+            if (moveX > -2) {
                 player.force.x -= m.Fx * 1.5
             } else {
                 player.force.x -= m.Fx
             }
             // }
         } else if (input.right) {
-            if (player.velocity.x < 2) {
+            if (moveX < 2) {
                 player.force.x += m.Fx * 1.5
             } else {
                 player.force.x += m.Fx
             }
         } else {
             const stoppingFriction = 0.92; //come to a stop if no move key is pressed
-            Matter.Body.setVelocity(player, {
-                x: player.velocity.x * stoppingFriction,
-                y: player.velocity.y * stoppingFriction
-            });
+            Matter.Body.setVelocity(player, { x: m.moverX * 0.08 + player.velocity.x * stoppingFriction, y: player.velocity.y * stoppingFriction });
         }
-        //come to a stop if fast 
-        if (player.speed > 4) {
+
+        if (Math.abs(moveX) > 4) { //come to a stop if fast     // if (player.speed > 4) { //come to a stop if fast 
             const stoppingFriction = (m.crouch) ? 0.65 : 0.89; // this controls speed when crouched
-            Matter.Body.setVelocity(player, {
-                x: player.velocity.x * stoppingFriction,
-                y: player.velocity.y * stoppingFriction
-            });
+            Matter.Body.setVelocity(player, { x: m.moverX * (1 - stoppingFriction) + player.velocity.x * stoppingFriction, y: player.velocity.y * stoppingFriction });
         }
+        m.moverX = 0 //reset the level mover offset
     },
     airControl() {
         //check for coyote time jump
