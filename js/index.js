@@ -1262,7 +1262,7 @@ if (localSettings.isAllowed && !localSettings.isEmpty) {
       intermission: "modern",
       prefinal: "subway",
       extendedLevels: true,
-      blacklist: [],
+      blacklist: "",
     }
     simulation.mapSettings = localSettings.mapSettings
     document.getElementById("main-maps").checked = localSettings.mapSettings.main
@@ -1314,8 +1314,8 @@ if (localSettings.isAllowed && !localSettings.isEmpty) {
           intermission: "modern",
           prefinal: "subway",
           extendedLevels: true,
-        blacklist: [],
-    },
+          blacklist: "",
+        },
         key: undefined
     };
     input.setDefault()

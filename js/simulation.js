@@ -119,7 +119,18 @@ const simulation = {
     cycle: 0, //total cycles, 60 per second
     fpsCap: null, //limits frames per second to 144/2=72,  on most monitors the fps is capped at 60fps by the hardware
     fpsCapDefault: 72, //use to change fpsCap back to normal after a hit from a mob
-    isCommunityMaps: false,
+    mapSettings: {
+      main: true,
+      modern: true,
+      cgon: true,
+      community: false,
+      moderncommunity: false,
+      gimmick: false,
+      intermission: "modern",
+      prefinal: "subway",
+      extendedLevels: true,
+      blacklist: "",
+    },
     cyclePaused: 0,
     fallHeight: 6000, //below this y position the player dies
     lastTimeStamp: 0, //tracks time stamps for measuring delta
