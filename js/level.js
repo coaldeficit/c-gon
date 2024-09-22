@@ -5124,7 +5124,6 @@ const level = {
                                 for (let i = 0; i < body.length; i++) {
                                     if (laserHit[0].body.id === body[i].id) { //need to find the block id so it can be removed
                                         let list = ["flutter", "flutter", "flutter", "hopper", "slasher", "slasher", "slasher", "stabber", "springer", "striker", "sneaker", "launcher", "launcherOne", "exploder", "sucker", "spinner", "grower", "beamer", "spawner", "ghoster"]
-                                        list = ["hopper", "slasher", "slasher", "slasher", "stabber", "springer", "striker", "sneaker", "launcher", "launcherOne", "exploder", "sucker", "spinner", "grower", "beamer", "spawner", "ghoster"] // replacement list since we dont have flutter yet. todo: remove
                                         const pick = list[Math.floor(Math.random() * list.length)]
                                         spawn[pick](lasers[laserIndex].max.x, lasers[laserIndex].max.y - 20);
                                         const who = mob[mob.length - 1]
