@@ -10,7 +10,7 @@ const level = {
     //see level.populateLevels:   (intro, ... , reservoir, reactor, ... , gauntlet, final)    added later
     playableLevels: ["labs", "rooftops", "skyscrapers", "warehouse", "highrise", "office", "aerie", "satellite", "sewers", "testChamber", "pavilion"],
     modernPlayableLevels: ["lock", "towers", "flocculation"],
-    cgonLevels: ["descent"],
+    cgonLevels: ["descent", "split"],
     communityLevels: ["stronghold", "basement", "crossfire", "vats", "n-gon", "house", "perplex", "coliseum", "tunnel", "islands"],
     modernCommunityLevels: [], // todo: backport
     gimmickLevels: ["run"],
@@ -12615,6 +12615,7 @@ const level = {
 	};
     },
 	split() {
+      simulation.makeTextLog(`<strong>split</strong> by <span class='color-var'>CD</span>. made for c-gon`);
       level.setPosToSpawn(0, -50); //normal spawn
       level.exit.x = -50;
       level.exit.y = 1250;
@@ -12744,8 +12745,11 @@ const level = {
       // spawn.randomMob(2650, -975, 0.8);
       // spawn.randomGroup(1700, -900, 0.4);
       if (simulation.difficulty > 1) {
-        spawn.randomLevelBoss(0, 860);
-        spawn.secondaryBossChance(500, 860);
+        let acceptableBosses = spawn.randomBossList.concat(['tetherBoss'])
+        let unacceptableBosses = ['constraintBoss', 'blinkBoss', 'pulsarBoss'].concat(spawn.nonCollideBossList)
+        acceptableBosses = acceptableBosses.filter((boss)=>!unacceptableBosses.includes(boss))
+        spawn.randomLevelBoss(0, 860, acceptableBosses);
+        spawn.secondaryBossChance(500, 860, acceptableBosses);
       }
       level.custom = () => {
         boost1.query()
