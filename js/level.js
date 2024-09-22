@@ -12716,6 +12716,29 @@ const level = {
       let rotor1 = level.rotor(-1050, 1100, 500, 25, 0.004);
       let endRoomSlime = level.hazard(-1650, 1320, 3300, 500);
       
+      spawn.randomSmallMob(-600, -625, 1);
+      spawn.randomSmallMob(525, -650, 1);
+      spawn.randomSmallMob(-375, 1125, 1);
+      spawn.randomSmallMob(400, 1125, 1);
+      spawn.randomSmallMob(2300, -750, 1);
+      spawn.randomSmallMob(-2400, -575, 1);
+      spawn.randomSmallMob(1500, -2000, 1);
+      spawn.randomSmallMob(-1450, -1575, 1);
+      
+      spawn.randomMob(-1700, -1575, 0.7);
+      spawn.randomMob(2025, -1775, 0.7);
+      spawn.randomMob(-3275, 225, 0.7);
+      spawn.randomMob(1725, -350, 0.7);
+      spawn.randomMob(-3275, -500, 0.7);
+      spawn.randomMob(2125, 375, 0.7);
+      
+      spawn.randomGroup(525, 850, 0.3);
+      spawn.randomGroup(-1775, 275, 0.4, 'node');
+      spawn.randomGroup(-1300, 850, 0.4);
+      spawn.randomGroup(1650, -850, 0.4, 'node');
+      spawn.randomGroup(-3150, -1575, 0.4);
+      spawn.randomGroup(2225, -2275, 0.4);
+      
       // spawn.bodyRect(1540, -1110, 300, 25, 0.9); 
       // spawn.randomSmallMob(1300, -70);
       // spawn.randomMob(2650, -975, 0.8);
