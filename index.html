@@ -116,9 +116,6 @@
                         <option value="12">dont</option>
                         <option value="special">☆ S P E C I A L ☆</option>
                     </select>
-                    <br>
-                    <label for="community-maps" title="">include community maps:</label>
-                    <input type="checkbox" id="community-maps" name="community-maps" style="width:17px; height:17px;">
                     <!-- <br>
 					<label for="body-damage" title="allow damage from the ground and large fast moving blocks">collision damage from blocks:</label>
 					<input type="checkbox" id="body-damage" name="body-damage" checked style="width:17px; height:17px;"> -->
@@ -127,7 +124,7 @@
                     <select name="classic-select" id="classic-select" onChange="window.location.href=this.value">
                         <option value="https://landgreen.github.io/sidescroller/">vanilla</option>
                         <option value="https://ashortername.github.io/awfulgarbagebadngonmod/">awfulgarbagebadngonmod</option>
-                        <!-- <option value="https://n-gon.theshwarma.repl.co/">orbBoss mod</option> defunct -->
+                        <!-- <option value="https://n-gon.theshwarma.repl.co/">orbBoss mod</option> sadly defunct -->
                         <option value="https://therealivyx.github.io/j-gon/">j-gon</option>
                         <option value="" selected>c-gon</option>
                     </select>
@@ -140,6 +137,51 @@
                         <option value="45">45 fps</option>
                         <option value="30">30 fps</option>
                     </select>
+                </div>
+            </details>
+        </div>
+        <div id="map-settings">
+            <details>
+                <summary>map settings</summary>
+                <div style="line-height: 150%;" class="details-div">
+                    <label for="main-maps" title="vanilla n-gon maps present in j-gon">main maps:</label>
+                    <input type="checkbox" id="main-maps" name="main-maps" style="width:17px; height:17px;">
+					<br>
+                    <label for="new-main-maps" title="vanilla n-gon maps not present in j-gon">modern main maps:</label>
+                    <input type="checkbox" id="new-main-maps" name="new-main-maps" style="width:17px; height:17px;">
+					<br>
+                    <label for="cgon-maps" title="maps only found in j-gon and/or c-gon">c-gon maps:</label>
+                    <input type="checkbox" id="cgon-maps" name="cgon-maps" style="width:17px; height:17px;">
+					<br>
+                    <label for="community-maps" title="vanilla community maps present in j-gon">community maps:</label>
+                    <input type="checkbox" id="community-maps" name="community-maps" style="width:17px; height:17px;">
+					<br>
+                    <label for="new-community-maps" title="vanilla community maps not present in j-gon">modern community maps:</label>
+                    <input type="checkbox" id="new-community-maps" name="new-community-maps" style="width:17px; height:17px;">
+					<br>
+                    <label for="gimmick-maps" title="maps significantly deviating from normal gameplay">gimmick maps:</label>
+                    <input type="checkbox" id="gimmick-maps" name="gimmick-maps" style="width:17px; height:17px;">
+                    <br>
+                    <label for="intermission-maps" title="maps always present at some point in all runs"> intermission maps:</label>
+                    <select name="intermission-maps" id="intermission-maps">
+                        <option value="none">none</option>
+                        <option value="classic">classic (reservoir, reactor)</option>
+                        <option value="modernonly">modern only (factory)</option>
+                        <option value="modern" selected>modern (reservoir, factory, reactor)</option>
+                    </select>
+                    <br>
+                    <label for="prefinal-map" title="map right before final"> pre-final map:</label>
+                    <select name="prefinal-map" id="prefinal-map">
+                        <option value="gauntlet" selected>gauntlet</option>
+                        <option value="subway">subway</option>
+                        <option value="random">random normal map</option>
+                    </select>
+					<br>
+                    <label for="extra-level-count" title="increase level count from 12 to 15">extended levels:</label>
+                    <input type="checkbox" id="extra-level-count" name="extra-level-count" style="width:17px; height:17px;">
+                    <br>
+                    <label for="banned" title="type banned levels with a comma between them.  Example:  run,temple,biohazard">level blacklist:</label>
+                    <input type="text" id="banned" name="banned" placeholder="list levels by name" autocomplete="off" spellcheck="false" style="width: 182px;"/>
                 </div>
             </details>
         </div>

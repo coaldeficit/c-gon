@@ -1252,8 +1252,29 @@ if (localSettings.isAllowed && !localSettings.isEmpty) {
         localStorage.setItem("localSettings", JSON.stringify(localSettings)); //update local storage
     }
 
-    simulation.isCommunityMaps = localSettings.isCommunityMaps
-    document.getElementById("community-maps").checked = localSettings.isCommunityMaps
+    if (localSettings.mapSettings === undefined) localSettings.mapSettings = {
+      main: true,
+      modern: true,
+      cgon: true,
+      community: false,
+      modernCommunity: false,
+      gimmick: false,
+      intermission: "modern",
+      prefinal: "subway",
+      extendedLevels: true,
+      blacklist: [],
+    }
+    simulation.mapSettings = localSettings.mapSettings
+    document.getElementById("main-maps").checked = localSettings.mapSettings.main
+    document.getElementById("new-main-maps").checked = localSettings.mapSettings.modern
+    document.getElementById("cgon-maps").checked = localSettings.mapSettings.cgon
+    document.getElementById("community-maps").checked = localSettings.mapSettings.community
+    document.getElementById("new-community-maps").checked = localSettings.mapSettings.modernCommunity
+    document.getElementById("gimmick-maps").checked = localSettings.mapSettings.gimmick
+    document.getElementById("intermission-maps").value = localSettings.mapSettings.intermission
+    document.getElementById("prefinal-map").value = localSettings.mapSettings.prefinal
+    document.getElementById("extra-level-count").checked = localSettings.mapSettings.extendedLevels
+    document.getElementById("banned").value = localSettings.mapSettings.blacklist
 
     if (localSettings.difficultyMode === undefined) localSettings.difficultyMode = "2"
     simulation.difficultyMode = localSettings.difficultyMode
@@ -1283,6 +1304,18 @@ if (localSettings.isAllowed && !localSettings.isEmpty) {
         levelsClearedLastGame: 0,
         loreCount: 0,
         isHuman: false,
+        mapSettings: {
+          main: true,
+          modern: true,
+          cgon: true,
+          community: false,
+          moderncommunity: false,
+          gimmick: false,
+          intermission: "modern",
+          prefinal: "subway",
+          extendedLevels: true,
+        blacklist: [],
+    },
         key: undefined
     };
     input.setDefault()
@@ -1291,6 +1324,17 @@ if (localSettings.isAllowed && !localSettings.isEmpty) {
     simulation.isCommunityMaps = localSettings.isCommunityMaps
     document.getElementById("difficulty-select").value = localSettings.difficultyMode
     document.getElementById("fps-select").value = localSettings.fpsCapDefault
+    
+    document.getElementById("main-maps").checked = localSettings.mapSettings.main
+    document.getElementById("new-main-maps").checked = localSettings.mapSettings.modern
+    document.getElementById("cgon-maps").checked = localSettings.mapSettings.cgon
+    document.getElementById("community-maps").checked = localSettings.mapSettings.community
+    document.getElementById("new-community-maps").checked = localSettings.mapSettings.modernCommunity
+    document.getElementById("gimmick-maps").checked = localSettings.mapSettings.gimmick
+    document.getElementById("intermission-maps").value = localSettings.mapSettings.intermission
+    document.getElementById("prefinal-map").value = localSettings.mapSettings.prefinal
+    document.getElementById("extra-level-count").checked = localSettings.mapSettings.extendedLevels
+    document.getElementById("banned").value = localSettings.mapSettings.blacklist
 }
 document.getElementById("control-testing").style.visibility = (localSettings.loreCount === 0) ? "hidden" : "visible"
 // document.getElementById("experiment-button").style.visibility = (localSettings.loreCount === 0) ? "hidden" : "visible"
@@ -1311,9 +1355,54 @@ document.getElementById("fps-select").addEventListener("input", () => {
     if (localSettings.isAllowed) localStorage.setItem("localSettings", JSON.stringify(localSettings)); //update local storage
 });
 
+document.getElementById("main-maps").addEventListener("input", () => {
+    simulation.mapSettings.main = document.getElementById("main-maps").checked
+    localSettings.mapSettings.main = simulation.mapSettings.main
+    if (localSettings.isAllowed) localStorage.setItem("localSettings", JSON.stringify(localSettings)); //update local storage
+});
+document.getElementById("new-main-maps").addEventListener("input", () => {
+    simulation.mapSettings.modern = document.getElementById("new-main-maps").checked
+    localSettings.mapSettings.modern = simulation.mapSettings.modern
+    if (localSettings.isAllowed) localStorage.setItem("localSettings", JSON.stringify(localSettings)); //update local storage
+});
+document.getElementById("cgon-maps").addEventListener("input", () => {
+    simulation.mapSettings.cgon = document.getElementById("cgon-maps").checked
+    localSettings.mapSettings.cgon = simulation.mapSettings.cgon
+    if (localSettings.isAllowed) localStorage.setItem("localSettings", JSON.stringify(localSettings)); //update local storage
+});
 document.getElementById("community-maps").addEventListener("input", () => {
-    simulation.isCommunityMaps = document.getElementById("community-maps").checked
-    localSettings.isCommunityMaps = simulation.isCommunityMaps
+    simulation.mapSettings.community = document.getElementById("community-maps").checked
+    localSettings.mapSettings.community = simulation.mapSettings.community
+    if (localSettings.isAllowed) localStorage.setItem("localSettings", JSON.stringify(localSettings)); //update local storage
+});
+document.getElementById("new-community-maps").addEventListener("input", () => {
+    simulation.mapSettings.modernCommunity = document.getElementById("new-community-maps").checked
+    localSettings.mapSettings.modernCommunity = simulation.mapSettings.modernCommunity
+    if (localSettings.isAllowed) localStorage.setItem("localSettings", JSON.stringify(localSettings)); //update local storage
+});
+document.getElementById("gimmick-maps").addEventListener("input", () => {
+    simulation.mapSettings.gimmick = document.getElementById("gimmick-maps").checked
+    localSettings.mapSettings.gimmick = simulation.mapSettings.gimmick
+    if (localSettings.isAllowed) localStorage.setItem("localSettings", JSON.stringify(localSettings)); //update local storage
+});
+document.getElementById("intermission-maps").addEventListener("input", () => {
+    simulation.mapSettings.intermission = document.getElementById("intermission-maps").value
+    localSettings.mapSettings.intermission = simulation.mapSettings.intermission
+    if (localSettings.isAllowed) localStorage.setItem("localSettings", JSON.stringify(localSettings)); //update local storage
+});
+document.getElementById("prefinal-map").addEventListener("input", () => {
+    simulation.mapSettings.prefinal = document.getElementById("prefinal-map").value
+    localSettings.mapSettings.prefinal = simulation.mapSettings.prefinal
+    if (localSettings.isAllowed) localStorage.setItem("localSettings", JSON.stringify(localSettings)); //update local storage
+});
+document.getElementById("extra-level-count").addEventListener("input", () => {
+    simulation.mapSettings.extendedLevels = document.getElementById("extra-level-count").checked
+    localSettings.mapSettings.extendedLevels = simulation.mapSettings.extendedLevels
+    if (localSettings.isAllowed) localStorage.setItem("localSettings", JSON.stringify(localSettings)); //update local storage
+});
+document.getElementById("banned").addEventListener("input", () => {
+    simulation.mapSettings.blacklist = document.getElementById("banned").value
+    localSettings.mapSettings.blacklist = simulation.mapSettings.blacklist
     if (localSettings.isAllowed) localStorage.setItem("localSettings", JSON.stringify(localSettings)); //update local storage
 });
 
@@ -1352,8 +1441,8 @@ document.getElementById("updates").addEventListener("toggle", function() {
     ///  https://api.github.com/repos/landgreen/n-gon/stats/commit_activity
     loadJSON('https://api.github.com/repos/landgreen/n-gon/commits',
         function(data) {
-            // console.log(data)
-            for (let i = 0, len = 20; i < len; i++) {
+             console.log(data)
+            for (let i = 0, len = 30; i < len; i++) {
                 text += "<strong>" + data[i].commit.author.date.substr(0, 10) + "</strong> - "; //+ "<br>"
                 text += data[i].commit.message
                 if (i < len - 1) text += "<hr>"

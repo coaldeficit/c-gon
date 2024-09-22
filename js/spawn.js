@@ -82,7 +82,7 @@ const spawn = {
             this[pick](x, y);
         }
     },
-    randomGroup(x, y, chance = 1) {
+    randomGroup(x, y, chance = 1, forced = 'none') {
         if (spawn.spawnChance(chance) && simulation.difficulty > 2 || chance === Infinity) {
             //choose from the possible picklist
             let pick = spawn.pickList[Math.floor(Math.random() * spawn.pickList.length)];
@@ -95,7 +95,7 @@ const spawn = {
                 }
             }
             if (canBeGroup) {
-                if (Math.random() < 0.55) {
+                if ((Math.random() < 0.55 || forced == 'node') && forced != 'line') {
                     spawn.nodeGroup(x, y, pick);
                 } else {
                     spawn.lineGroup(x, y, pick);
