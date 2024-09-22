@@ -271,6 +271,7 @@ const powerUps = {
         setTimeout(() => {
             document.getElementById("choose-grid").style.pointerEvents = "auto";
             document.getElementById("choose-grid").style.transitionDuration = "0s";
+            document.body.style.cursor = "auto";
         }, 500);
 
         // if (tech.isExtraChoice) {
