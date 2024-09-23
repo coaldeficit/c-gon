@@ -6042,36 +6042,37 @@ const spawn = {
         };
     },
     snakeSpitBoss(x, y, radius = 50) {
-        const nodes = Math.min(8 + Math.ceil(0.5 * simulation.difficulty), 40)
         let angle = Math.PI
-        let mag = 300
+        const tailRadius = 300
 
         const color1 = "rgb(235,180,255)"
-        mobs.spawn(x + mag * Math.cos(angle), y + mag * Math.sin(angle), 8, radius, color1); //"rgb(55,170,170)"
+        mobs.spawn(x + tailRadius * Math.cos(angle), y + tailRadius * Math.sin(angle), 8, radius, color1); //"rgb(55,170,170)"
         let me = mob[mob.length - 1];
         me.isBoss = true;
-        me.accelMag = 0.0001 + 0.0002 * Math.sqrt(simulation.accelScale)
+        me.accelMag = 0.0001 + 0.0004 * Math.sqrt(simulation.accelScale)
+        // me.accelMag = 0.0004 + 0.0002 * Math.sqrt(simulation.accelScale)
         me.memory = 250;
         me.laserRange = 500;
         Matter.Body.setDensity(me, 0.0022 + 0.00022 * Math.sqrt(simulation.difficulty)); //extra dense //normal is 0.001 //makes effective life much larger
-        me.onDeath = function() {
+        me.startingDamageReduction = 0.14
+        me.damageReduction = 0
+        me.isInvulnerable = true
+
+        me.onDeath = function () {
             powerUps.spawnBossPowerUp(this.position.x, this.position.y)
-            for (let i = 0; i < mob.length; i++) { //wake up tail mobs
-                if (mob[i].isSnakeTail && mob[i].alive) {
-                    mob[i].isSnakeTail = false;
-                    mob[i].do = mob[i].doActive
-                    // mob[i].removeConsBB();
+            me.onDeath = function () {
+                powerUps.spawnBossPowerUp(this.position.x, this.position.y)
+                for (let i = 0, len = mob.length; i < len; i++) {
+                    if (this.id === mob[i].snakeHeadID && mob[i].alive) mob[i].death()
                 }
-            }
+            };
         };
         me.canFire = false;
         me.closestVertex1 = 0;
-        // me.closestVertex2 = 1;
         me.cycle = 0
-        me.damageReduction = 0.2 / (tech.isScaleMobsWithDuplication ? 1 + tech.duplicationChance() : 1)
-        me.do = function() {
+        me.do = function () {
             // this.armor();
-            this.seePlayerByHistory()
+            this.seePlayerByHistory(40)
             this.checkStatus();
             this.attraction();
             this.cycle++
@@ -6088,7 +6089,7 @@ const spawn = {
                     }
                     spawn.seeker(this.vertices[this.closestVertex1].x, this.vertices[this.closestVertex1].y, 6)
                     Matter.Body.setDensity(mob[mob.length - 1], 0.000001); //normal is 0.001
-                    const velocity = Vector.mult(Vector.normalise(Vector.sub(this.position, this.vertices[this.closestVertex1])), -10)
+                    const velocity = Vector.mult(Vector.normalise(Vector.sub(this.vertices[this.closestVertex1], this.position)), 15)
                     Matter.Body.setVelocity(mob[mob.length - 1], {
                         x: this.velocity.x + velocity.x,
                         y: this.velocity.y + velocity.y
@@ -6100,7 +6101,7 @@ const spawn = {
                     //     x: this.velocity.x + velocity2.x,
                     //     y: this.velocity.y + velocity2.y
                     // });
-                } else if (this.cycle > 210) {
+                } else if (this.cycle > 200) {
                     this.cycle = 0
                     this.canFire = true
 
@@ -6120,17 +6121,31 @@ const spawn = {
                     // }
                 }
             }
+            if (this.isInvulnerable) {
+                ctx.beginPath();
+                let vertices = this.vertices;
+                ctx.moveTo(vertices[0].x, vertices[0].y);
+                for (let j = 1; j < vertices.length; j++) ctx.lineTo(vertices[j].x, vertices[j].y);
+                ctx.lineTo(vertices[0].x, vertices[0].y);
+                ctx.lineWidth = 20;
+                ctx.strokeStyle = "rgba(255,255,255,0.7)";
+                ctx.stroke();
+            }
         };
         //extra space to give head room
-        angle -= 0.1
-        mag -= 10
+        angle -= 0.07
+        let previousTailID = 0
+        const nodes = Math.min(10 + Math.ceil(0.6 * simulation.difficulty), 60)
         for (let i = 0; i < nodes; ++i) {
-            angle -= 0.15 + i * 0.008
-            mag -= 5
-            spawn.snakeBody(x + mag * Math.cos(angle), y + mag * Math.sin(angle), 20);
+            angle -= 0.1
+            spawn.snakeBody(x + tailRadius * Math.cos(angle), y + tailRadius * Math.sin(angle), i === 0 ? 25 : 20);
+            if (i < 4) mob[mob.length - 1].snakeHeadID = me.id
+            mob[mob.length - 1].previousTailID = previousTailID
+            previousTailID = mob[mob.length - 1].id
         }
-        this.constrain2AdjacentMobs(nodes, Math.random() * 0.06 + 0.01);
-
+        const damping = 1
+        const stiffness = 1
+        this.constrain2AdjacentMobs(nodes, stiffness, false, damping);
         for (let i = mob.length - 1, len = i - nodes; i > len; i--) { //set alternating colors
             if (i % 2) {
                 mob[i].fill = "#778"
@@ -6142,22 +6157,24 @@ const spawn = {
         consBB[consBB.length] = Constraint.create({
             bodyA: mob[mob.length - nodes],
             bodyB: mob[mob.length - 1 - nodes],
-            stiffness: 0.05
+            stiffness: stiffness,
+            damping: damping
         });
         Composite.add(engine.world, consBB[consBB.length - 1]);
         consBB[consBB.length] = Constraint.create({
             bodyA: mob[mob.length - nodes + 1],
             bodyB: mob[mob.length - 1 - nodes],
-            stiffness: 0.05
+            stiffness: stiffness,
+            damping: damping
         });
         Composite.add(engine.world, consBB[consBB.length - 1]);
         consBB[consBB.length] = Constraint.create({
             bodyA: mob[mob.length - nodes + 2],
             bodyB: mob[mob.length - 1 - nodes],
-            stiffness: 0.05
+            stiffness: stiffness,
+            damping: damping
         });
         Composite.add(engine.world, consBB[consBB.length - 1]);
-        // spawn.shield(me, x, y, 1);
     },
     snakeBossOld(x, y, radius = 50) { //snake boss with a laser head
         const nodes = Math.min(8 + Math.ceil(0.5 * simulation.difficulty), 40)
