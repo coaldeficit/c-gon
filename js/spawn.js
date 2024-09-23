@@ -6612,8 +6612,8 @@ const spawn = {
                 this.frictionAir = 0
                 this.wingGoal = 0
                 this.wingSize = 0
-                this.flapRate += 0.13
-                this.accelMag *= 1.4
+                this.flapRate += 0.11
+                this.accelMag *= 1.25
             }
         };
         me.do = function () {
