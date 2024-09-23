@@ -5124,7 +5124,6 @@ const level = {
                                 for (let i = 0; i < body.length; i++) {
                                     if (laserHit[0].body.id === body[i].id) { //need to find the block id so it can be removed
                                         let list = ["flutter", "flutter", "flutter", "hopper", "slasher", "slasher", "slasher", "stabber", "springer", "striker", "sneaker", "launcher", "launcherOne", "exploder", "sucker", "spinner", "grower", "beamer", "spawner", "ghoster"]
-                                        list = ["hopper", "slasher", "slasher", "slasher", "stabber", "springer", "striker", "sneaker", "launcher", "launcherOne", "exploder", "sucker", "spinner", "grower", "beamer", "spawner", "ghoster"] // replacement list since we dont have flutter yet. todo: remove
                                         const pick = list[Math.floor(Math.random() * list.length)]
                                         spawn[pick](lasers[laserIndex].max.x, lasers[laserIndex].max.y - 20);
                                         const who = mob[mob.length - 1]
@@ -8228,7 +8227,7 @@ const level = {
             if (Math.random() < 0.70) {
                 spawn.randomLevelBoss(-800, -1300)
             } else {
-                spawn.snakeBoss(-1000 + Math.random() * 2500, -1300); //boss snake with head
+                spawn.snakeBossOld(-1000 + Math.random() * 2500, -1300); //boss snake with head
             }
         }
         powerUps.addResearchToLevel() //needs to run after mobs are spawned
@@ -8907,7 +8906,7 @@ const level = {
                     spawn.tetherBoss(2300, -1300, { x: 2300, y: -1750 })
                     if (simulation.difficulty > 4) spawn.nodeGroup(2350, -1300, "spawns", 8, 20, 105);
                 } else {
-                    spawn.randomLevelBoss(2300, -1400, ["shooterBoss", "launcherBoss", "laserTargetingBoss", "spiderBoss", "laserBoss", "snakeBoss", "pulsarBoss"]);
+                    spawn.randomLevelBoss(2300, -1400, ["shooterBoss", "launcherBoss", "laserTargetingBoss", "spiderBoss", "laserBoss", "dragonFlyBoss", "pulsarBoss"]);
                 }
             }
         }
@@ -9755,7 +9754,7 @@ const level = {
                 spawn.tetherBoss(3380, -1775, { x: 3775, y: -1775 })
                 if (simulation.difficulty > 4) spawn.nodeGroup(3380, -1775, "spawns", 8, 20, 105); //chance to spawn a ring of exploding mobs around this boss
             } else {
-                spawn.randomLevelBoss(3100, -1850, ["shooterBoss", "spiderBoss", "launcherBoss", "laserTargetingBoss", "snakeBoss", "laserBoss"]);
+                spawn.randomLevelBoss(3100, -1850, ["shooterBoss", "spiderBoss", "launcherBoss", "laserTargetingBoss", "dragonFlyBoss", "laserBoss"]);
             }
         }
     },
@@ -10203,7 +10202,7 @@ const level = {
         // spawn.randomGroup(7700, -1100, 0.5);
         spawn.randomGroup(9800, -1100, 0.5);
 
-        if (simulation.difficulty > 3) spawn.randomLevelBoss(8600, -600, ["powerUpBoss", "bomberBoss", "snakeBoss", "spiderBoss", "historyBoss"])
+        if (simulation.difficulty > 3) spawn.randomLevelBoss(8600, -600, ["powerUpBoss", "bomberBoss", "dragonFlyBoss", "spiderBoss", "historyBoss"])
         spawn.secondaryBossChance(7900, -400)
 
         //Boss Spawning
@@ -12437,7 +12436,7 @@ const level = {
 	    array.splice(index, 1); // 2nd parameter means remove one item only
 	  }
 	}
-	let unacceptableBosses = ['pulsarBoss','shooterBoss','historyBoss','spiderBoss','cellBossCulture','growBossCulture','spawnerBossCulture','snakeBoss','snakeSpitBoss','streamBoss']
+	let unacceptableBosses = ['pulsarBoss','shooterBoss','historyBoss','spiderBoss','cellBossCulture','growBossCulture','spawnerBossCulture','dragonFlyBoss','snakeSpitBoss','streamBoss']
 	for (let boss of unacceptableBosses) {removeFromArray(acceptableBosses, boss)}
 	spawn.randomLevelBoss(10000, -10000, acceptableBosses) // spawn boss out of bounds as it will be teleported into the arena later
 	spawn.secondaryBossChance(10000, -10500, acceptableBosses) // spawn boss out of bounds as it will be teleported into the arena later
