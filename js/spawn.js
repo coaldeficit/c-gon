@@ -1,11 +1,11 @@
 //main object for spawning things in a level
 const spawn = {
     nonCollideBossList: ["cellBossCulture", "bomberBoss", "powerUpBoss", "orbitalBoss", "spawnerBossCulture", "growBossCulture"],
-    // other bosses: suckerBoss, laserBoss, tetherBoss, mantisBoss, bounceBoss, sprayBoss    //these need a particular level to work so they are not included in the random pool
+    // other bosses: suckerBoss, laserBoss, tetherBoss, bounceBoss, sprayBoss    //these need a particular level to work so they are not included in the random pool
     randomBossList: ["shieldingBoss", "orbitalBoss", "historyBoss", "shooterBoss", "cellBossCulture", "bomberBoss", "spiderBoss", "launcherBoss", "laserTargetingBoss",
         "powerUpBoss", "powerUpBossBaby", "dragonFlyBoss", "streamBoss", "pulsarBoss", "spawnerBossCulture", "grenadierBoss", "growBossCulture", "blinkBoss",
         "snakeSpitBoss", "laserBombingBoss", "blockBoss", "revolutionBoss", "slashBoss", "healBoss", "constraintBoss", "beetleBoss", "timeSkipBoss", "sneakBoss",
-        "laserLayerBoss"
+        "laserLayerBoss", "mantisBoss"
     ],
     bossTypeSpawnOrder: [], //preset list of boss names calculated at the start of a run by the randomSeed
     bossTypeSpawnIndex: 0, //increases as the boss type cycles
@@ -35,7 +35,7 @@ const spawn = {
     ],
     mobTypeSpawnOrder: [], //preset list of mob names calculated at the start of a run by the randomSeed
     mobTypeSpawnIndex: 0, //increases as the mob type cycles
-    allowedGroupList: ["spinner", "striker", "springer", "laser", "focuser", "beamer", "exploder", "spawner", "shooter", "launcher", "launcherOne", "stabber", "sniper", "pulsar", "grenadier", "slasher"],
+    allowedGroupList: ["spinner", "striker", "springer", "laser", "focuser", "beamer", "exploder", "spawner", "shooter", "launcher", "launcherOne", "stabber", "sniper", "pulsar", "grenadier", "slasher", "slasher2", "slasher3", "flutter", "stinger", "laserLayer"],
     setSpawnList() { //this is run at the start of each new level to determine the possible mobs for the level
         spawn.pickList.splice(0, 1);
         const push = spawn.mobTypeSpawnOrder[spawn.mobTypeSpawnIndex++ % spawn.mobTypeSpawnOrder.length]
@@ -1969,8 +1969,8 @@ const spawn = {
         me.friction = 0;
         me.frictionAir = 0.0067;
         me.g = 0.0002; //required if using this.gravity
-        me.seePlayerFreq = 300;
-        const springStiffness = 0.00008; //simulation.difficulty
+        me.seePlayerFreq = Math.max(50-(simulation.difficulty/2), 3);
+        const springStiffness = Math.min(0.00008+(0.0000025*simulation.difficulty), 0.00012); //simulation.difficulty
         const springDampening = 0.01;
 
         me.springTarget = {
@@ -2056,10 +2056,7 @@ const spawn = {
                     this.springTarget.y = goal.y;
                     this.cons.length = -200;
                     this.cons2.length = 100 + 1.5 * this.radius;
-
-                    this.isInvulnerable = false
-                    this.invulnerabilityCountDown = 80 + Math.max(0, 70 - simulation.difficulty * 0.5)
-                    this.damageReduction = this.startingDamageReduction
+                    
                     for (let i = 0; i < this.babyList.length; i++) {
                         if (this.babyList[i].alive) this.babyList[i].damageReduction = this.startingDamageReduction
                     }
@@ -2071,12 +2068,14 @@ const spawn = {
                     this.cons.length = 100 + 1.5 * this.radius;
                     this.cons2.length = -200;
 
-                    this.isInvulnerable = false
-                    this.invulnerabilityCountDown = 80 + Math.max(0, 70 - simulation.difficulty)
-                    this.damageReduction = this.startingDamageReduction
                     for (let i = 0; i < this.babyList.length; i++) {
                         if (this.babyList[i].alive) this.babyList[i].damageReduction = this.startingDamageReduction
                     }
+                }
+                if (!(simulation.cycle % 300)) {
+                    this.damageReduction = this.startingDamageReduction
+                    this.isInvulnerable = false
+                    this.invulnerabilityCountDown = 80 + Math.max(0, 70 - simulation.difficulty)
                 }
             } else {
                 this.torque = this.lookTorque * this.inertia;
@@ -2122,7 +2121,7 @@ const spawn = {
                     }
                 };
                 //move to a random location
-                if (!(simulation.cycle % (this.seePlayerFreq))) {
+                if (!(simulation.cycle % (this.seePlayerFreq*6))) {
                     best = {
                         x: null,
                         y: null,
@@ -7179,8 +7178,8 @@ const spawn = {
             this.checkStatus();
             this.harmZone();
 	    for (let jej of mob) {
-	      jej.health += 0.0175 * (jej.isBoss ? 0.333 : 1)
-	      if (jej.health > 1) jej.health = 1
+	      jej.health += 0.0125 * (jej.isBoss ? 0.333 : 1)
+	      if (jej.health > tech.mobSpawnWithHealth) jej.health = tech.mobSpawnWithHealth
 	    }
         };
     },
@@ -7190,10 +7189,9 @@ const spawn = {
         let me = mob[mob.length - 1];
 	me.isBoss = true;
         me.accelMag = 0.0002
-	me.damageReduction = 0.25 / (tech.isScaleMobsWithDuplication ? 1 + tech.duplicationChance() : 1)
+	me.damageReduction = 0 // invincible until attacking
         me.memory = 240;
         me.seeAtDistance2 = 2000000 //1400 vision range
-        me.laserRange = 370;
         me.randombsgo = 0
         Matter.Body.setDensity(me, 0.0017 + 0.0002 * Math.sqrt(simulation.difficulty))
         me.onDeath = function() {
@@ -7207,7 +7205,18 @@ const spawn = {
 	    if (me.randombsgo == 0) {
 	      const sub = Vector.sub(player.position, this.position)
 	      const mag = Vector.magnitude(sub)
-	      if (mag <= 666) { // attach constraint to player if too close
+          ctx.beginPath();
+          let vertices = this.vertices;
+          ctx.moveTo(vertices[0].x, vertices[0].y);
+          for (let j = 1; j < vertices.length; j++) ctx.lineTo(vertices[j].x, vertices[j].y);
+          ctx.lineTo(vertices[0].x, vertices[0].y);
+          ctx.lineWidth = 13 + 5 * Math.random();
+          ctx.strokeStyle = `rgba(255,255,255,${0.5+0.2*Math.random()})`;
+          ctx.stroke();
+	      if (mag <= 666 &&
+            Matter.Query.ray(map, this.position, player.position).length === 0
+          ) { // attach constraint to player if too close and in sight
+            me.damageReduction = 0.17 / (tech.isScaleMobsWithDuplication ? 1 + tech.duplicationChance() : 1)
 	        me.randombsgo = 1
 	        consBB[consBB.length] = Constraint.create({
 	            bodyA: me,
@@ -7218,7 +7227,7 @@ const spawn = {
 	      }
 	    }
 	    if (me.randombsgo == 1) {
-	      if (!(simulation.cycle % 60)) m.damage(0.1)
+	      if (!(simulation.cycle % 60)) m.damage(0.05 * simulation.dmgScale)
 	      Matter.Body.setAngularVelocity(this, 0.1)
 	    }
         };
