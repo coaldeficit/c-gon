@@ -253,6 +253,11 @@ function setupCanvas() {
     ctx.lineJoin = "round";
     ctx.lineCap = "round";
     simulation.setZoom();
+    
+    if (simulation.isInvertedVertical) {
+        ctx.translate(0, canvas.height); // Move the origin down to the bottom
+        ctx.scale(1, -1); // Flip vertically
+    }
 }
 setupCanvas();
 window.onresize = () => {
@@ -631,7 +636,7 @@ ${simulation.isCheating ? "<br><br><em>lore disabled</em>": ""}
         document.getElementById("experiment-grid").style.display = "grid"
     },
     shareURL(isCustom = false) {
-        let url = "https://c-gon.surge.sh/index.html?"
+        let url = "https://coaldeficit.github.io/c-gon/index.html?"
         url += `&seed=${Math.initialSeed}`
         let count = 0;
         for (let i = 0; i < b.inventory.length; i++) {
@@ -1192,9 +1197,13 @@ window.addEventListener("keydown", function(event) {
     }
 });
 //mouse move input
-document.body.addEventListener("mousemove", (e) => {
+function mouseMoveDefault(e) {
     simulation.mouse.x = e.clientX;
     simulation.mouse.y = e.clientY;
+}
+let mouseMove = mouseMoveDefault
+document.body.addEventListener("mousemove", (e) => {
+    mouseMove(e)
 });
 
 document.body.addEventListener("mouseup", (e) => {
