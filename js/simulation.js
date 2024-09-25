@@ -35,6 +35,7 @@ const simulation = {
         b.bulletDraw();
         if (!m.isBodiesAsleep) b.bulletDo();
         simulation.drawCircle();
+        simulation.runEphemera();
         // simulation.clip();
         ctx.restore();
         simulation.drawCursor();
@@ -70,6 +71,7 @@ const simulation = {
         simulation.draw.cons();
         simulation.draw.testing();
         simulation.drawCircle();
+        simulation.runEphemera();
         simulation.constructCycle()
         ctx.restore();
         simulation.testingOutput();
@@ -98,8 +100,23 @@ const simulation = {
             b.fire();
             b.bulletRemove();
             b.bulletDo();
+            simulation.runEphemera();
         }
         simulation.isTimeSkipping = false;
+    },
+    ephemera: [], //array that is used to store ephemera objects
+    removeEphemera: function (name) {
+        for (let i = 0, len = simulation.ephemera.length; i < len; i++) {
+            if (simulation.ephemera[i].name === name) {
+                simulation.ephemera.splice(i, 1);
+                break;
+            }
+        }
+    },
+    runEphemera() {
+        for (let i = 0; i < simulation.ephemera.length; i++) {
+            simulation.ephemera[i].do();
+        }
     },
     mouse: {
         x: canvas.width / 2,
@@ -480,6 +497,125 @@ const simulation = {
         m.transY += (m.transSmoothY - m.transY) * 1;
     },
     edgeZoomOutSmooth: 1,
+    isInvertedVertical: false,
+    flipCameraVertical(frames = 1, passFunction = () => { }) {
+        if (!simulation.isInvertedVertical) {
+            if (frames > 0) {
+                let count = 0
+                const loop = () => {
+                    if (m.alive) {
+                        if (simulation.paused) {
+                            requestAnimationFrame(loop);
+                        } else {
+                            count++
+                            ctx.setTransform(1, 0, 0, 1, 0, 0); ///reset to avoid build up of transformations
+                            if (count === frames) {
+                                // Flip the canvas vertically
+                                ctx.translate(0, canvas.height); // Move the origin down to the bottom
+                                ctx.scale(1, -1); // Flip vertically
+                                simulation.isInvertedVertical = true
+                                //flip mouse Y again to make sure it caught
+                                mouseMove = function (e) {
+                                    simulation.mouse.x = e.clientX;
+                                    simulation.mouse.y = window.innerHeight - e.clientY;
+                                }
+                            } else {
+                                requestAnimationFrame(loop);
+                                ctx.translate(0, canvas.height * count / frames);
+                                ctx.scale(1, 1 - 2 * count / frames);
+                            }
+                            if (count === Math.floor(frames / 2)) {
+                                //flip mouse Y at the 1/2 way point
+                                mouseMove = function (e) {
+                                    simulation.mouse.x = e.clientX;
+                                    simulation.mouse.y = window.innerHeight - e.clientY;
+                                }
+                                //passFunction probably flips the map elements 
+                                passFunction()
+                            }
+                        }
+                    }
+                }
+                requestAnimationFrame(loop);
+            } else {
+                // Flip the canvas vertically
+                ctx.translate(0, canvas.height); // Move the origin down to the bottom
+                ctx.scale(1, -1); // Flip vertically
+                //flip mouse Y
+                simulation.isInvertedVertical = true
+                mouseMove = function (e) {
+                    simulation.mouse.x = e.clientX;
+                    simulation.mouse.y = window.innerHeight - e.clientY;
+                }
+            }
+        }
+    },
+    unFlipCameraVertical(frames = 0, passFunction = () => { }) {
+        if (frames) {
+            let count = 0
+            const loop = () => {
+                if (m.alive) {
+                    if (simulation.paused) {
+                        requestAnimationFrame(loop);
+                    } else {
+                        count++
+                        ctx.setTransform(1, 0, 0, 1, 0, 0); ///reset to avoid build up of transformations
+                        if (count === frames) {
+                            // requestAnimationFrame(() => { ctx.reset(); });
+                            // ctx.translate(0, 0);
+                            // ctx.scale(1, 1);
+                            simulation.isInvertedVertical = false
+                            //flip mouse Y again to make sure it caught
+                            mouseMove = mouseMoveDefault
+
+                        } else {
+                            requestAnimationFrame(loop);
+                            ctx.translate(0, canvas.height - canvas.height * count / frames);
+                            ctx.scale(1, -1 + 2 * count / frames);
+                        }
+                        if (count === Math.floor(frames / 2)) {
+                            mouseMove = mouseMoveDefault//flip mouse Y at the 1/2 way point
+                            passFunction()//passFunction probably draws new map elements 
+                        }
+                    }
+                }
+            }
+            requestAnimationFrame(loop);
+        } else {
+            ctx.reset();
+            ctx.font = "25px Arial";
+            simulation.isInvertedVertical = false
+            mouseMove = mouseMoveDefault
+        }
+    },
+    translatePlayerAndCamera(where) {
+        //infinite falling.  teleport to sky after falling
+        const before = { x: player.position.x, y: player.position.y, }
+        Matter.Body.setPosition(player, { x: where.x, y: where.y });
+        const change = { x: before.x - player.position.x, y: before.y - player.position.y }
+        // translate camera to preserve illusion to endless fall
+        m.transX += change.x
+        m.transY += change.y
+        simulation.mouseInGame.x = (simulation.mouse.x - canvas.width2) / simulation.zoom * simulation.edgeZoomOutSmooth + canvas.width2 - m.transX;
+        simulation.mouseInGame.y = (simulation.mouse.y - canvas.height2) / simulation.zoom * simulation.edgeZoomOutSmooth + canvas.height2 - m.transY;
+
+        m.angle = Math.atan2(simulation.mouseInGame.y - m.pos.y, simulation.mouseInGame.x - m.pos.x);
+
+        //is there a reason to update m.pos here?
+        // m.pos.x = player.position.x;
+        // m.pos.y = playerBody.position.y - m.yOff;
+
+        for (let i = 0; i < bullet.length; i++) {
+            if (bullet[i].botType) {
+                if (Vector.magnitudeSquared(Vector.sub(bullet[i].position, player.position)) > 1000000) { //far away bots teleport to player
+                    Matter.Body.setPosition(bullet[i], Vector.add(player.position, { x: 250 * (Math.random() - 0.5), y: 250 * (Math.random() - 0.5) }));
+                    Matter.Body.setVelocity(bullet[i], { x: 0, y: 0 });
+                } else { //close bots maintain relative distance to player on teleport
+                    Matter.Body.setPosition(bullet[i], Vector.sub(bullet[i].position, change));
+                }
+            }
+        }
+    },
     camera() {
         //zoom out when mouse gets near the edge of the window
         const dx = simulation.mouse.x / window.innerWidth - 0.5 //x distance from mouse to window center scaled by window width
@@ -793,6 +929,7 @@ const simulation = {
     },
     clearNow: false,
     clearMap() {
+        simulation.unFlipCameraVertical()
         if (m.alive) {
             if (tech.isLongitudinal) {
                 for (i = 0, len = b.guns.length; i < len; i++) { //find which gun
