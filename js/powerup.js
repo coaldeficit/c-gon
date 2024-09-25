@@ -112,9 +112,39 @@ const powerUps = {
             }
             return text
         },
+        energyHeal(num = 1) {
+            switch (num) {
+                case 1:
+                    return `<div class="energy-heal-circle"></div>`
+            }
+            let text = '<span style="position:relative;">'
+            for (let i = 0; i < num; i++) {
+                text += `<div class="energy-heal-circle" style="position:absolute; top:1px; left:${i*10}px;"></div>`
+            }
+            text += '</span> &nbsp; &nbsp; '
+            for (let i = 0; i < num; i++) {
+                text += '&nbsp; '
+            }
+            return text
+        },
         tech(num = 1) {
             return `<div class="tech-circle"></div>`
-        }
+        },
+        boost(num = 1) {
+            switch (num) {
+                case 1:
+                    return `<div class="boost-circle"></div>`
+            }
+            let text = '<span style="position:relative;">'
+            for (let i = 0; i < num; i++) {
+                text += `<div class="boost-circle" style="position:absolute; top:1.5px; left:${i * 8}px;"></div>`
+            }
+            text += '</span> &nbsp; &nbsp; '
+            for (let i = 0; i < num; i++) {
+                text += '&nbsp; '
+            }
+            return text
+        },
     },
     totalPowerUps: 0, //used for tech that count power ups at the end of a level
     lastTechIndex: null,
@@ -497,6 +527,10 @@ const powerUps = {
                 tech.healMaxEnergyBonus += 0.12
                 m.setMaxEnergy();
             }
+            //if (tech.isIonizationEnergy) {
+            //  tech.ionizationEnergyRegenTime = 12
+            //  tech.ionizationEnergyBoost += 0.02
+            //}
         },
         spawn(x, y, size) { //used to spawn a heal with a specific size / heal amount, not normally used
             powerUps.directSpawn(x, y, "heal", false, null, size)
@@ -949,38 +983,45 @@ const powerUps = {
     //     }
     // },
     spawnRandomPowerUp(x, y) { //mostly used after mob dies,  doesn't always return a power up
-        if ((Math.random() * Math.random() - 0.3 > Math.sqrt(m.health) && !tech.isEnergyHealth) || Math.random() < (0.04+(0.01*tech.isLooting))*(tech.isExoticParts ? 0.7 : 1)) { //spawn heal chance is higher at low health
+        if (!tech.isTreasure) {
+          if ((Math.random() * Math.random() - 0.3 > Math.sqrt(m.health) && !tech.isEnergyHealth) || Math.random() < (0.04+(0.01*tech.isLooting))*(tech.isExoticParts ? 0.7 : 1)) { //spawn heal chance is higher at low health
             powerUps.spawn(x, y, "heal");
             return;
-        }
-        if (Math.random() < 0.15+(0.05*tech.isLooting)*(tech.isExoticParts ? 0.7 : 1) && b.inventory.length > 0) {
+          }
+          if (Math.random() < 0.15+(0.05*tech.isLooting)*(tech.isExoticParts ? 0.7 : 1) && b.inventory.length > 0) {
             powerUps.spawn(x, y, "ammo");
             return;
-        }
-        if (Math.random() < 0.0007*(tech.isExoticParts ? 0.7 : 1) * (3 - b.inventory.length)) { //a new gun has a low chance for each not acquired gun up to 3
+          }
+          if (Math.random() < 0.0007*(tech.isExoticParts ? 0.7 : 1) * (3 - b.inventory.length)) { //a new gun has a low chance for each not acquired gun up to 3
             powerUps.spawn(x, y, "gun");
             return;
-        }
-        // if (Math.random() < 0.0027 * (22 - tech.totalCount)) { //a new tech has a low chance for each not acquired tech up to 25
-        if (Math.random() < 0.005*(tech.isExoticParts ? 0.7 : 1) * 10-level.levelsCleared) { //a new tech has a low chance that decreases in later levels
+          }
+          // if (Math.random() < 0.0027 * (22 - tech.totalCount)) { //a new tech has a low chance for each not acquired tech up to 25
+          if (Math.random() < 0.005*(tech.isExoticParts ? 0.7 : 1) * 10-level.levelsCleared) { //a new tech has a low chance that decreases in later levels
             powerUps.spawn(x, y, "tech");
             return;
-        }
-        if (Math.random() < 0.0015*(tech.isExoticParts ? 0.7 : 1)) {
+          }
+          if (Math.random() < 0.0015*(tech.isExoticParts ? 0.7 : 1)) {
             powerUps.spawn(x, y, "field");
             return;
-        }
-        if (Math.random() < 0.02*(tech.isExoticParts ? 0.7 : 1) && tech.isLooting) {
-           powerUps.spawn(x, y, "research");
-           return;
-        }
-        if (Math.random() < 0.07 && tech.isExoticParts) {
-           powerUps.spawn(x, y, "exoticPartsMaxHP");
-           return;
-        }
-        if (Math.random() < 0.07 && tech.isExoticParts) {
-           powerUps.spawn(x, y, "exoticPartsMaxE");
-           return;
+          }
+          if (Math.random() < 0.02*(tech.isExoticParts ? 0.7 : 1) && tech.isLooting) {
+            powerUps.spawn(x, y, "research");
+            return;
+          }
+          if (Math.random() < 0.07 && tech.isExoticParts) {
+            powerUps.spawn(x, y, "exoticPartsMaxHP");
+            return;
+          }
+          if (Math.random() < 0.07 && tech.isExoticParts) {
+            powerUps.spawn(x, y, "exoticPartsMaxE");
+            return;
+          }
+        } else {
+          if (Math.random() < 0.1) {
+            powerUps.spawn(x, y, "research");
+            return;
+          }
         }
     },
     randomPowerUpCounter: 0,

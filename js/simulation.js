@@ -1049,6 +1049,12 @@ const simulation = {
                 if (tech.isEnergyRecovery && m.immuneCycle < m.cycle) m.energy += m.maxEnergy * 0.05
                 if (tech.isHealthRecovery) m.addHealth(0.01 * m.maxHealth)
             }
+        //if (tech.isIonizationEnergy && tech.ionizationEnergyRegenTime > 0) {
+        //    if (m.immuneCycle < m.cycle) m.energy += tech.ionizationEnergyBoost
+        //    tech.ionizationEnergyRegenTime--
+        //} else {
+        //    tech.ionizationEnergyBoost = 0
+        //}
 	    if (!(m.cycle % 1800)) {
 	      if (tech.isFurnace) {
 		if (powerUps.research.count > 0) {

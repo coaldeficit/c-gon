@@ -1082,7 +1082,7 @@ const mobs = {
                     //     dmg *= this.damageReduction
                     // }
                     dmg *= this.damageReduction
-		    dmg /= (tech.isTreasure ? 1+tech.duplicationChance() : 1)
+		    //dmg /= (tech.isTreasure ? 1+tech.duplicationChance() : 1)
                     //energy and heal drain should be calculated after damage boosts
                     if (tech.energySiphon && dmg !== Infinity && this.isDropPowerUp && m.immuneCycle < m.cycle) m.energy += Math.min(this.health, dmg) * tech.energySiphon
                     if (tech.healthDrain && dmg !== Infinity && this.isDropPowerUp) {
