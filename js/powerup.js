@@ -112,9 +112,39 @@ const powerUps = {
             }
             return text
         },
+        energyHeal(num = 1) {
+            switch (num) {
+                case 1:
+                    return `<div class="energy-heal-circle"></div>`
+            }
+            let text = '<span style="position:relative;">'
+            for (let i = 0; i < num; i++) {
+                text += `<div class="energy-heal-circle" style="position:absolute; top:1px; left:${i*10}px;"></div>`
+            }
+            text += '</span> &nbsp; &nbsp; '
+            for (let i = 0; i < num; i++) {
+                text += '&nbsp; '
+            }
+            return text
+        },
         tech(num = 1) {
             return `<div class="tech-circle"></div>`
-        }
+        },
+        boost(num = 1) {
+            switch (num) {
+                case 1:
+                    return `<div class="boost-circle"></div>`
+            }
+            let text = '<span style="position:relative;">'
+            for (let i = 0; i < num; i++) {
+                text += `<div class="boost-circle" style="position:absolute; top:1.5px; left:${i * 8}px;"></div>`
+            }
+            text += '</span> &nbsp; &nbsp; '
+            for (let i = 0; i < num; i++) {
+                text += '&nbsp; '
+            }
+            return text
+        },
     },
     totalPowerUps: 0, //used for tech that count power ups at the end of a level
     lastTechIndex: null,
@@ -497,6 +527,10 @@ const powerUps = {
                 tech.healMaxEnergyBonus += 0.12
                 m.setMaxEnergy();
             }
+            //if (tech.isIonizationEnergy) {
+            //  tech.ionizationEnergyRegenTime = 12
+            //  tech.ionizationEnergyBoost += 0.02
+            //}
         },
         spawn(x, y, size) { //used to spawn a heal with a specific size / heal amount, not normally used
             powerUps.directSpawn(x, y, "heal", false, null, size)
@@ -984,8 +1018,8 @@ const powerUps = {
             return;
           }
         } else {
-          if (Math.random() < 0.2) {
-            powerUps.spawn(x, y, "research";
+          if (Math.random() < 0.1) {
+            powerUps.spawn(x, y, "research");
             return;
           }
         }

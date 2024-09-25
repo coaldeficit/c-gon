@@ -2255,7 +2255,7 @@ const tech = {
         {
             name: "1st ionization energy",
             link: `<a target="_blank" href='https://en.wikipedia.org/wiki/Ionization_energy' class="link">1st ionization energy</a>`,
-            description: `each ${powerUps.orb.heal()} you collect<br>increases your <strong>maximum</strong> <strong class='color-f'>energy</strong> by <strong>12</strong>`,
+            description: `replace all ${powerUps.orb.heal()} with ${powerUps.orb.energyHeal()}<br>${powerUps.orb.energyHeal()} increase your <strong>maximum</strong> <strong class='color-f'>energy</strong> by <strong>12</strong>`,
             maxCount: 1,
             count: 0,
             frequency: 2,
@@ -2266,6 +2266,7 @@ const tech = {
             requires: "mass-energy equivalence",
             effect() {
                 tech.healGiveMaxEnergy = true; //tech.healMaxEnergyBonus given from heal power up
+                //tech.isIonizationEnergy = true;
                 powerUps.heal.color = "#0ae"
                 for (let i = 0; i < powerUp.length; i++) { //find active heal power ups and adjust color live
                     if (powerUp[i].name === "heal") powerUp[i].color = powerUps.heal.color
@@ -2274,6 +2275,9 @@ const tech = {
             remove() {
                 tech.healGiveMaxEnergy = false;
                 // tech.healMaxEnergyBonus = 0
+                //tech.isIonizationEnergy = false;
+                //tech.ionizationEnergyRegenTime = 0;
+                //tech.ionizationEnergyBoost = 0;
                 powerUps.heal.color = "#0eb"
                 for (let i = 0; i < powerUp.length; i++) { //find active heal power ups and adjust color live
                     if (powerUp[i].name === "heal") powerUp[i].color = powerUps.heal.color
@@ -2729,7 +2733,7 @@ const tech = {
         },
         {
             name: "quenching",
-            description: `over healing from ${powerUps.orb.heal()} does <strong class='color-harm'>harm</strong><br>but it also increase your <strong>maximum</strong> <strong class='color-h'>health</strong>`,
+            description: `increase combat <strong>difficulty</strong> by <strong>3 levels</strong>, but overhealing from<br>${powerUps.orb.heal()} does <strong class='color-harm'>harm</strong> and increases your <strong>maximum</strong> <strong class='color-h'>health</strong>`,
             maxCount: 1,
             count: 0,
             frequency: 1,
@@ -2740,9 +2744,11 @@ const tech = {
             requires: "not mass-energy equivalence, ergodicity",
             effect() {
                 tech.isOverHeal = true;
+                level.difficultyIncrease(simulation.difficultyMode * 3)
             },
             remove() {
                 tech.isOverHeal = false;
+                level.difficultyDecrease(simulation.difficultyMode * 3)
             }
         },
         {
@@ -9856,6 +9862,9 @@ const tech = {
     bonusEnergy: null,
     healGiveMaxEnergy: null,
     healMaxEnergyBonus: 0, //not null
+    isIonizationEnergy: null,
+    ionizationEnergyRegenTime: 0,
+    ionizationEnergyBoost: 0,
     aimDamage: null,
     isNoFireDefense: null,
     isNoFireDamage: null,

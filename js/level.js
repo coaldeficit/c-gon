@@ -12767,7 +12767,7 @@ const level = {
         ctx.fillRect(0, -387.5, 2800, 1362.5);
         ctx.fillRect(537.5, -1250, 2337.5, 862.5);
       };
-      //powerUps.addResearchToLevel() //needs to run after mobs are spawned
+      powerUps.addResearchToLevel() //needs to run after mobs are spawned
 	},
     // ********************************************************************************************************
     // ********************************************************************************************************

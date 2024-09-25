@@ -794,6 +794,28 @@ summary {
     margin-bottom: -3px;
 }
 
+.energy-heal-circle {
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    display: inline-block;
+    background-color: #0ae;
+    border: 0.5px #fff solid;
+    opacity: 0.85;
+    margin-bottom: -3px;
+}
+
+.boost-circle {
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    display: inline-block;
+    background-color: #f03;
+    border: 0.5px #fff solid;
+    opacity: 0.85;
+    margin-bottom: -3px;
+}
+
 .circle-grid-shadow {
     width: 43px;
     height: 43px;
