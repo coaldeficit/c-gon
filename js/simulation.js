@@ -582,9 +582,8 @@ const simulation = {
             }
             requestAnimationFrame(loop);
         } else {
-            ctx.reset();
-            ctx.font = "25px Arial";
             simulation.isInvertedVertical = false
+            setupCanvas()
             mouseMove = mouseMoveDefault
         }
     },
