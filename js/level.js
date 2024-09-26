@@ -12,8 +12,8 @@ const level = {
     modernPlayableLevels: ["lock", "towers", "flocculation"],
     cgonLevels: ["descent", "split"],
     communityLevels: ["stronghold", "basement", "crossfire", "vats", "n-gon", "house", "perplex", "coliseum", "tunnel", "islands"],
-    modernCommunityLevels: ["dripp"], // todo: backport
-    gimmickLevels: ["run", "testChamber2", "temple", "biohazard", "stereoMadness", "yingYang"],
+    modernCommunityLevels: ["dripp", "fortress"], // todo: backport
+    gimmickLevels: ["run", "testChamber2", "temple", "biohazard", "stereoMadness", "yingYang", "staircase"],
     trainingLevels: ["walk", "crouch", "jump", "hold", "throw", "throwAt", "deflect", "heal", "fire", "nailGun", "shotGun", "superBall", "matterWave", "missile", "stack", "mine", "grenades", "harpoon"],
     levels: [],
     announceMobTypes() {
@@ -17600,7 +17600,236 @@ const level = {
         powerUps.spawnStartingPowerUps(0, 0)
         powerUps.addResearchToLevel()
     },
+    staircase() {
+        simulation.makeTextLog(`<strong>staircase</strong> by <span class='color-var'>ryanbear</span>`);
 
+        level.custom = () => {
+            level.exit.drawAndCheck();
+            level.enter.draw();
+        };
+        level.customTopLayer = () => {
+            aaa.query();
+            bbb.query();
+            ccc.query();
+            ddd.move();
+            eee.query();
+            fff.query();
+            ggg.query();
+            hhh.query();
+            iii.query();
+            jjj.query();
+            kk.query();
+            lll.query();
+            mmm.query();
+            nnn.query();
+            ooo.query();
+            ppp.query();
+        };
+        level.setPosToSpawn(0, -50); //normal spawn
+        level.exit.x = 7300;
+        level.exit.y = -5154;
+        //        spawn.mapRect(level.enter.x, level.enter.y + 20, 100, 20);
+        level.defaultZoom = 1800
+        simulation.zoomTransition(level.defaultZoom)
+        document.body.style.backgroundColor = "#d8dadf";
+        // powerUps.spawnStartingPowerUps(1475, -1175);
+        // spawn.debris(750, -2200, 3700, 16); //16 debris per level
+
+        spawn.mapRect(-100, 0, 2100, 100);
+        spawn.mapRect(1984, 17, 100, 500);
+        spawn.mapRect(2013, 522, 1618, 100);
+        spawn.bodyRect(2090, 328, 100, 100);
+
+        spawn.mapRect(3619, 14, 100, 500)
+        var aaa = level.hazard(1999, 10, 1618, 500);
+        var bbb = level.vanish(2320, -345, 234, 20);
+        var ccc = level.vanish(2862, -324, 234, 20);
+        var eee = level.vanish(3002, -1100, 234, 20);
+        var ddd = level.elevator(3399, -420, 200, 200, -950, 0.003, { up: 0.1, down: 0.2 }) //x, y, width, height, maxHeight, force = 0.003, friction = { up: 0.01, down: 0.2 }) {
+        var fff = level.vanish(3359, -1300, 234, 20);
+        var ggg = level.boost(3020, -1600, 700);
+        var hhh = level.vanish(2700, -1940, 1147, 20);
+        var iii = level.boost(5038, -2000, 700);
+        var jjj = level.vanish(5092, -3498, 100, 100);
+        var kk = level.boost(5092, -3772, 700);
+        var lll = level.boost(5372, -2824, 700);
+        var mmm = level.vanish(5112, -3000, 100, 100);
+        var nnn = level.vanish(5367, -3000, 100, 100);
+        var ooo = level.boost(4810, -3161, 700);
+        var ppp = level.vanish(5383, -3485, 100, 100);
+        spawn.mapRect(5377, -4198, 1000, 100);
+        spawn.mapRect(6390, -4359, 200, 200);
+        spawn.mapRect(6605, -4563, 200, 200);
+        spawn.mapRect(6809, -4758, 200, 200);
+        spawn.mapRect(7014, -4962, 200, 200);
+        spawn.mapRect(7212, -5158, 200, 200);
+
+
+
+        spawn.mapRect(4156, -1898, 1000, 100);
+        // spawn.bodyRect(1540, -1110, 300, 25, 0.9); 
+        // spawn.randomSmallMob(1300, -70);
+        spawn.randomMob(590, -315);
+        spawn.randomMob(1343, -757);
+        spawn.randomMob(4037, -926);
+        spawn.randomMob(3621, -2376);
+        spawn.randomMob(5026, -2441);
+        spawn.randomMob(4253, -2863);
+        spawn.randomMob(4355, -2430);
+        spawn.randomMob(5316, -3265);
+        spawn.randomMob(5885, -4427);
+        spawn.randomMob(6666, -4979);
+
+
+
+        spawn.laserBoss(6128, -4905);
+
+        // spawn.randomGroup(1700, -900, 0.4);
+        // if (simulation.difficulty > 1) spawn.randomLevelBoss(2200, -1300);
+        powerUps.addResearchToLevel() //needs to run after mobs are spawned
+    },
+    fortress() {
+        simulation.makeTextLog(`<strong>fortress</strong> by <span class='color-var'>Desboot</span>`);
+        const boost1 = level.boost(3600, -250, 1000)
+        const boost2 = level.boost(60, -604, 1000)
+        const boost3 = level.boost(2160, -1260, 1000)
+        powerUps.spawnStartingPowerUps(1033.3, -121.4)
+        level.custom = () => {
+            boost1.query();
+            boost2.query();
+            boost3.query();
+            level.exit.drawAndCheck();
+            level.enter.draw();
+        };
+        level.setPosToSpawn(0, -50); //normal spawn
+        level.exit.x = 3586; //3586.5, -1464.0
+        level.exit.y = -1494;
+        spawn.mapRect(level.enter.x, level.enter.y + 20, 100, 20);
+        level.defaultZoom = 1800
+        simulation.zoomTransition(level.defaultZoom)
+        document.body.style.backgroundColor = "#d8dadf";
+        level.customTopLayer = () => {
+            ctx.fillStyle = "rgba(0,0,0,0.3)"
+            ctx.fillRect(-272, -580, 1700, 600)
+            ctx.fillRect(1427.5, -487, 1280, 600)
+            ctx.fillRect(2707.3, -580, 1200, 600)
+            ctx.fillStyle = "rgba(0,0,0,0.2)"
+            ctx.fillRect(2752, -1744, 1075, 1164)
+            ctx.fillRect(937, -1590, 339, 550)
+            ctx.fillRect(1158, -1040, 118, 550)
+            ctx.fillRect(3049, -1063, 339, 500)
+            ctx.fillRect(1439, -1281, 297, 800)
+            ctx.fillRect(2130, -1182, 167, 800)
+            ctx.fillRect(1892, -2073, 238, 1593)
+            ctx.fillRect(2297, -2073, 238, 1593)
+            ctx.fillStyle = "rgba(0,0,0,0.15)"
+            ctx.fillRect(483, -1277, 350, 700)
+            ctx.fillRect(833, -1000, 325, 450)
+            ctx.fillStyle = "rgba(64,64,64,0.97)" //hidden section
+            ctx.fillRect(2800, -1712, 730, 300)
+        };
+
+        spawn.debris(2700, -120, 180, 3);
+        spawn.debris(1350, -100, 280, 3);
+        spawn.debris(2300, -700, 380, 5);
+        spawn.debris(976, -775, 38, 5);
+        spawn.debris(840, -1424, 3080, 5);
+        spawn.debris(2300, -700, 3080, 5);
+
+        spawn.mapRect(-272, 0, 4198, 123);
+        spawn.mapRect(-272, -581, 132, 581);
+        spawn.mapRect(-272, -581, 572, 326);
+        spawn.mapRect(1462, -229, 92, 229);
+        spawn.mapRect(1462, -229, 352, 57);
+        spawn.mapRect(2872, -220, 1056, 330);
+        spawn.mapRect(170, -260, 484, 80);
+        spawn.mapRect(476, -581, 1162, 75);
+        spawn.mapRect(951, -519, 1760, 132);
+        spawn.mapRect(1747, -492, 506, 66);
+        spawn.mapRect(2462, -581, 1074, 75);
+        spawn.mapRect(1136, -616, 510, 100);
+        spawn.mapRect(3815.6, -1461, 114, 1300); //far right wall
+        spawn.mapRect(480, -1456, 106, 651); //far left wall
+        spawn.mapRect(1426, -906, 106, 400);
+        spawn.mapRect(480, -1302, 374, 57);
+        spawn.mapRect(788, -1302, 75, 308);
+        spawn.mapRect(788, -1055, 370, 62);
+        spawn.mapRect(3049, -1170, 471, 106);
+        spawn.mapRect(3348, -1170, 188, 663);
+        spawn.mapRect(2751, -1461, 1088, 53); //roof under the exit
+        spawn.mapRect(2751, -1743, 92, 915); //wall on left or far right side
+        spawn.mapRect(937, -1667, 339, 84); //upper left platform
+        spawn.mapRect(1135, -3239, 119, 1450);
+        spawn.mapRect(1440, -1346, 295, 66); //center left platform
+        spawn.mapRect(2090, -1240, 242, 57); //center righ platform
+        spawn.mapRect(1892, -2214, 88, 220); //vertical part of left L
+        spawn.mapRect(1892, -2073, 238, 84); //flat part of left L
+        spawn.mapRect(2447, -2214, 88, 220); //vertical part of right L
+        spawn.mapRect(2297, -2073, 238, 84); //flat part of right L
+        spawn.mapRect(2751, -1743, 1078, 57); //exit roof //3587.2, -1470.0
+        spawn.mapRect(3584, -1470, 103, 57); //wall below door3689
+        spawn.mapRect(3428, -1735, 103, 173); //wall covering secret
+
+        spawn.mapRect(-11000, -1000, 100, 10); //SAL
+        spawn.mapRect(-11000, -1000, 10, 100); //SAL
+        spawn.mapRect(-10900, -900, 10, 100); //SAL
+        spawn.mapRect(-11000, -900, 100, 10); //SAL
+        spawn.mapRect(-11000, -800, 100, 10); //SAL
+        spawn.mapRect(-10800, -1000, 10, 200); //SAL
+        spawn.mapRect(-10700, -1000, 10, 200); //SAL
+        spawn.mapRect(-10800, -1000, 100, 10); //SAL
+        spawn.mapRect(-10800, -900, 100, 10); //SAL
+        spawn.mapRect(-10600, -1000, 10, 200); //SAL
+        spawn.mapRect(-10600, -800, 100, 10); //SAL
+
+        spawn.mapRect(-11000, -91000, 100, 10); //SAL
+        spawn.mapRect(-11000, -91000, 10, 100); //SAL
+        spawn.mapRect(-10900, -90900, 10, 100); //SAL
+        spawn.mapRect(-11000, -90900, 100, 10); //SAL
+        spawn.mapRect(-11000, -90800, 100, 10); //SAL
+        spawn.mapRect(-10800, -91000, 10, 200); //SAL
+        spawn.mapRect(-10700, -91000, 10, 200); //SAL
+        spawn.mapRect(-10800, -91000, 100, 10); //SAL
+        spawn.mapRect(-10800, -90900, 100, 10); //SAL
+        spawn.mapRect(-10600, -91000, 10, 200); //SAL
+        spawn.mapRect(-10600, -90800, 100, 10); //SAL
+        //mobs
+        spawn.randomMob(3104.9, -1284.9, 0.2);
+        spawn.randomMob(1784.7, -95.9, 0.2);
+        spawn.randomMob(3474.2, -406.7, 0.1);
+        spawn.randomMob(1603.2, -1493.5, 0.4);
+        spawn.randomMob(772.4, -1505.2, 0.2);
+        spawn.randomMob(824.6, -781.3, 0.2);
+        spawn.randomMob(818.8, -1468.9, 0.2);
+        spawn.randomMob(-124.7, -853, 0.2);
+        spawn.randomMob(3011.1, -1978.0, -0.2);
+        spawn.randomMob(2428.0, -236.8, 0.1);
+        spawn.randomSmallMob(694.3, -385.3);
+        spawn.randomSmallMob(1142.0, -808.4);
+        spawn.randomSmallMob(791.5, -803.7);
+        spawn.randomSmallMob(3175.8, -830.8);
+        spawn.randomSmallMob(1558.5, -1940.8);
+        spawn.randomSmallMob(2700, -475);
+        spawn.randomSmallMob(2700, -475);
+        spawn.pulsar(1762.9, -2768.3)
+        spawn.pulsar(3821.5, -2373.9)
+        let randomBoss = Math.floor(Math.random() * 5);
+        spawn[["laserBoss", "blinkBoss", "shooterBoss", "launcherBoss", "pulsarBoss", "beetleBoss", "slashBoss", "revolutionBoss", "dragonFlyBoss", "spiderBoss"][randomBoss]](2058.5, -711.4);
+
+        //spawn powerups
+        // powerUps.spawn(3167.6, -1300, "tech")
+        powerUps.spawn(3125.8, -1543.4, "tech")
+        powerUps.spawn(3125.8, -1543.4, "heal")
+        powerUps.spawn(3125.8, -1543.4, "ammo")
+        powerUps.spawn(3125.8, -1543.4, "ammo")
+        powerUps.spawn(3137.6, -1300, "ammo")
+        powerUps.spawn(1605.2, -1436.9, "heal")
+        powerUps.spawn(2912.9, -1940.9, "ammo")
+        powerUps.spawn(3167.6, -1300, "heal")
+        powerUps.spawn(1, 1, "ammo")
+        powerUps.addResearchToLevel() //needs to run after mobs are spawned
+    },
+    
     // ********************************************************************************************************
     // ********************************************************************************************************
     // **************************************** c-gon exclusives **********************************************
