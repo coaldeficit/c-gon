@@ -494,17 +494,18 @@ const level = {
         x += width / 2
         y += height / 2
         const who = body[body.length] = Bodies.rectangle(x, y, width, height, {
-            isRotor: true,
             collisionFilter: {
                 category: cat.map,
                 mask: cat.player | cat.body | cat.bullet | cat.powerUp | cat.mob | cat.mobBullet
             },
+            isNoSetCollision: true,
             isNotHoldable: true,
             frictionAir: frictionAir,
             friction: 1,
             frictionStatic: 1,
             restitution: 0,
             rotationForce: rotationForce,
+            isRotor: true,
         });
         Matter.Body.setAngle(who, angle)
         Matter.Body.setAngularVelocity(who, angularVelocity);
@@ -520,11 +521,8 @@ const level = {
             damping: 1
         });
         Composite.add(engine.world, constraint);
-        who.center = {
-            x: who.position.x,
-            y: who.position.y
-        }
-        who.rotate = function () {
+        who.center = { x: who.position.x, y: who.position.y }
+        who.rotate = function() {
             if (!m.isBodiesAsleep) {
                 Matter.Body.applyForce(this, {
                     x: this.position.x + 100,
@@ -552,6 +550,7 @@ const level = {
         //         }
         //     }
         // }
+
 
         return who
     },
@@ -6724,6 +6723,7 @@ const level = {
             verticalForce: 0.03,
             isUp: false,
             drag: 0.01,
+            isElevator: true,
             move() {
                 this.force.y -= this.mass * simulation.g; //undo gravity
                 if (!m.isBodiesAsleep) {
@@ -6965,6 +6965,7 @@ const level = {
             removeAll(buttons);
             buttons = []
             lasers = []
+            Matter.Composite.remove(engine.world, elevator);
 
             function invertVertical(array) {
                 for (let i = 0; i < array.length; ++i) {
@@ -7009,7 +7010,21 @@ const level = {
                                 buildMapOutline()
                                 buildNormalMap(); //rewrite flipped version of map
                                 simulation.draw.setPaths() //update map graphics
-                                level.addToWorld()
+                                for (let i = 0; i < balance.length; i++) {
+                                  if (balance[i] !== m.holdingTarget && !balance[i].isNoSetCollision) {
+                                    balance[i].collisionFilter.category = cat.body;
+                                    balance[i].collisionFilter.mask = cat.player | cat.map | cat.body | cat.bullet | cat.mob | cat.mobBullet
+                                  }
+                                  balance[i].classType = "body";
+                                  Composite.add(engine.world, balance[i]); //add to world
+                                }
+                                Composite.add(engine.world, elevator); //add to world
+                                for (let i = 0; i < map.length; i++) {
+                                  map[i].collisionFilter.category = cat.map;
+                                  map[i].collisionFilter.mask = cat.player | cat.map | cat.body | cat.bullet | cat.powerUp | cat.mob | cat.mobBullet;
+                                  Matter.Body.setStatic(map[i], true); //make static
+                                  Composite.add(engine.world, map[i]); //add to world
+                                }
                             }
                             simulation.unFlipCameraVertical(flipAnimationCycles, normalMap)
                         } else {
@@ -7019,7 +7034,21 @@ const level = {
                                 buildMapOutline()
                                 buildVerticalFlippedMap(); //rewrite flipped version of map
                                 simulation.draw.setPaths() //update map graphics
-                                level.addToWorld()
+                                for (let i = 0; i < balance.length; i++) {
+                                  if (balance[i] !== m.holdingTarget && !balance[i].isNoSetCollision) {
+                                    balance[i].collisionFilter.category = cat.body;
+                                    balance[i].collisionFilter.mask = cat.player | cat.map | cat.body | cat.bullet | cat.mob | cat.mobBullet
+                                  }
+                                  balance[i].classType = "body";
+                                  Composite.add(engine.world, balance[i]); //add to world
+                                }
+                                Composite.add(engine.world, elevator); //add to world
+                                for (let i = 0; i < map.length; i++) {
+                                  map[i].collisionFilter.category = cat.map;
+                                  map[i].collisionFilter.mask = cat.player | cat.map | cat.body | cat.bullet | cat.powerUp | cat.mob | cat.mobBullet;
+                                  Matter.Body.setStatic(map[i], true); //make static
+                                  Composite.add(engine.world, map[i]); //add to world
+                                }
                                 if (!isSpawned) {
                                     isSpawned = true
                                     //spawn second wave of flipped mobs only once
