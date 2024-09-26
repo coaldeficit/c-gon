@@ -12,8 +12,8 @@ const level = {
     modernPlayableLevels: ["lock", "towers", "flocculation"],
     cgonLevels: ["descent", "split"],
     communityLevels: ["stronghold", "basement", "crossfire", "vats", "n-gon", "house", "perplex", "coliseum", "tunnel", "islands"],
-    modernCommunityLevels: ["dripp"], // todo: backport
-    gimmickLevels: ["run", "testChamber2"],
+    modernCommunityLevels: ["dripp", "fortress", "commandeer", "clock"], // todo: backport
+    gimmickLevels: ["run", "testChamber2", "temple", "biohazard", "stereoMadness", "yingYang", "staircase"],
     trainingLevels: ["walk", "crouch", "jump", "hold", "throw", "throwAt", "deflect", "heal", "fire", "nailGun", "shotGun", "superBall", "matterWave", "missile", "stack", "mine", "grenades", "harpoon"],
     levels: [],
     announceMobTypes() {
@@ -13129,7 +13129,7057 @@ const level = {
 
         powerUps.addResearchToLevel() //needs to run after mobs are spawned
     },
+    temple() {
+        simulation.makeTextLog(`<strong>temple</strong> by <span class='color-var'>Scar1337</span>`);
 
+        const V = Vector;
+        const Equation = (function() {
+            function Equation(a, b, c) {
+                this.a = a;
+                this.b = b;
+                this.c = c;
+            }
+            Equation.prototype.getXfromY = function(y) {
+                return (-this.b * y - this.c) / this.a;
+            }
+            Equation.prototype.getYfromX = function(x) {
+                return (-this.a * x - this.c) / this.b;
+            }
+            Equation.fromPoints = function(v1, v2) {
+                if (v1.x === v2.x) return new Equation(1, 0, -v1.x);
+                if (v1.y === v2.y) return new Equation(0, 1, -v1.y);
+                const d = (v2.y - v1.y) / (v2.x - v1.x);
+                return new Equation(-d, 1, d * v1.x - v1.y);
+            };
+            return Equation;
+        })();
+        const Rect = (function() {
+            function Rect(x, y, w, h) {
+                this.pos = { x, y };
+                this.width = w;
+                this.height = h;
+            }
+            Rect.prototype.has = function({ x, y }) {
+                return x >= this.pos.x && x <= this.pos.x + this.width &&
+                    y >= this.pos.y && y <= this.pos.y + this.height;
+            }
+            Rect.prototype.hasLine = function(eq) {
+                const leftInter = eq.getYfromX(this.pos.x);
+                const rightInter = eq.getYfromX(this.pos.x + this.width);
+                const topInter = eq.getXfromY(this.pos.y);
+                return (leftInter >= this.pos.y && leftInter <= this.pos.y + this.height) ||
+                    (rightInter >= this.pos.y && rightInter <= this.pos.y + this.height) ||
+                    (topInter >= this.pos.x && topInter <= this.pos.x + this.width);
+            }
+            Rect.prototype.addToMap = function() {
+                spawn.mapRect(this.pos.x, this.pos.y, this.width, this.height);
+            }
+            Object.defineProperty(Rect.prototype, "midPos", {
+                get() {
+                    return V.add(this.pos, { x: this.width / 2, y: this.height / 2 });
+                }
+            });
+            Rect.fromBounds = function(min, max) {
+                return new Rect(min.x, min.y, max.x - min.x, max.y - min.y);
+            }
+            return Rect;
+        })();
+
+        function isInBound(bound) {
+            return bound.has(player.bounds.min) || bound.has(player.bounds.max);
+        }
+
+        function addWIMP(x, y) {
+            spawn.WIMP(x, y);
+            const me = mob[mob.length - 1];
+            me.isWIMP = true;
+        }
+
+        function relocateWIMPs(x, y) {
+            for (const i of mob) {
+                if (i.isWIMP) {
+                    setPos(i, { x: x + 300 * (Math.random() - 0.5), y: y + 300 * (Math.random() - 0.5) });
+                }
+            }
+        }
+
+        function secondRoomBoss(x, y, radius = 25, isDark = false) {
+            mobs.spawn(x, y, 12, radius, isDark ? "#000" : "#fff");
+            let me = mob[mob.length - 1];
+            me.isBoss = true;
+            me.isDark = isDark;
+
+            me.stroke = "transparent";
+            me.eventHorizon = 500; // How family friendly content much do I have to reduce this
+            me.seeAtDistance2 = 5e6; // Basically just see at all times, in the context it's given
+            me.accelMag = 0.00003 * simulation.accelScale;
+            me.collisionFilter.mask = cat.player | cat.bullet;
+            me.memory = 1600;
+            me.randomPRNGMult = Math.random() * 500;
+
+            me.attackCycle = 0;
+            me.lastAttackCycle = 0;
+            Matter.Body.setDensity(me, 0.014); // extra dense, normal is 0.001 // makes effective life much larger
+            me.onDeath = function() {
+                // applying forces to player doesn't seem to work inside this method, not sure why
+                powerUps.spawn(this.position.x, this.position.y, "ammo");
+                powerUps.spawn(this.position.x, this.position.y, "ammo");
+                if (Math.random() > 0.2) powerUps.spawn(this.position.x, this.position.y, "heal", true, null,
+                    30 * (simulation.healScale ** 0.25) * Math.sqrt(tech.largerHeals) * Math.sqrt(0.1 + Math.random() * 0.5));
+                if (simulation.difficulty > 5) {
+                    // fling player to center
+                    const SUB = V.sub(this.position, player.position)
+                    const DISTANCE = V.magnitude(SUB)
+                    if (DISTANCE < this.eventHorizon) {
+                        Matter.Body.setVelocity(player, V.mult(SUB, 5e4 / (100 + DISTANCE) / (100 + DISTANCE)))
+                    }
+                }
+            };
+            me.damageReduction = 0.25 / (tech.isScaleMobsWithDuplication ? 1 + tech.duplicationChance() : 1)
+            me.do = function() {
+                // keep it slow, to stop issues from explosion knock backs
+                if (this.speed > 1) {
+                    Matter.Body.setVelocity(this, {
+                        x: this.velocity.x * 0.95,
+                        y: this.velocity.y * 0.95
+                    });
+                }
+                if (!(simulation.cycle % this.seePlayerFreq)) {
+                    if (this.distanceToPlayer2() < this.seeAtDistance2) { // ignore cloak for black holes
+                        this.locatePlayer();
+                        if (!this.seePlayer.yes) this.seePlayer.yes = true;
+                    } else if (this.seePlayer.recall) {
+                        this.lostPlayer();
+                    }
+                }
+                this.checkStatus();
+                if (this.seePlayer.recall) {
+                    // accelerate towards the player
+                    const forceMag = this.accelMag * this.mass;
+                    const dx = this.seePlayer.position.x - this.position.x
+                    const dy = this.seePlayer.position.y - this.position.y
+                    const mag = Math.sqrt(dx * dx + dy * dy)
+                    this.force.x += forceMag * dx / mag;
+                    this.force.y += forceMag * dy / mag;
+
+                    // eventHorizon waves in and out
+                    const eventHorizon = this.eventHorizon * (1 + 0.2 * Math.sin(simulation.cycle * 0.008));
+
+                    // draw darkness
+                    ctx.fillStyle = this.isDark ? "rgba(0,20,40,0.6)" : "rgba(225,215,255,0.6)";
+                    DrawTools.arc(this.position.x, this.position.y, eventHorizon * 0.2, 0, 2 * Math.PI);
+                    ctx.fillStyle = this.isDark ? "rgba(0,20,40,0.4)" : "rgba(225,215,255,0.4)";
+                    DrawTools.arc(this.position.x, this.position.y, eventHorizon * 0.4, 0, 2 * Math.PI);
+                    ctx.fillStyle = this.isDark ? "rgba(0,20,40,0.3)" : "rgba(225,215,255,0.3)";
+                    DrawTools.arc(this.position.x, this.position.y, eventHorizon * 0.6, 0, 2 * Math.PI);
+                    ctx.fillStyle = this.isDark ? "rgba(0,20,40,0.2)" : "rgba(225,215,255,0.2)";
+                    DrawTools.arc(this.position.x, this.position.y, eventHorizon * 0.8, 0, 2 * Math.PI);
+                    ctx.fillStyle = this.isDark ? "rgba(0,0,0,0.05)" : "rgba(255,255,255,0.05)";
+                    DrawTools.arc(this.position.x, this.position.y, eventHorizon, 0, 2 * Math.PI);
+                    // when player is inside event horizon
+                    if (distance(this.position, player.position) < eventHorizon) {
+                        if (this.isDark) {
+                            // Standard black hole stuff
+                            if (m.immuneCycle < m.cycle) {
+                                if (m.energy > 0) m.energy -= 0.003;
+                                if (m.energy < 0.1) m.damage(0.00015 * simulation.dmgScale);
+                            }
+                            const angle = Math.atan2(player.position.y - this.position.y, player.position.x - this.position.x);
+                            player.force.x -= 0.0005 * Math.cos(angle) * player.mass * (m.onGround ? 1.7 : 1);
+                            player.force.y -= 0.0005 * Math.sin(angle) * player.mass;
+                            // draw line to player
+                            ctx.lineWidth = Math.min(60, this.radius * 2);
+                            ctx.strokeStyle = "rgba(0,0,0,0.5)";
+                            DrawTools.line([this.position, m.pos]);
+                            ctx.fillStyle = "rgba(0,0,0,0.3)";
+                            DrawTools.arc(m.pos.x, m.pos.y, 40, 0, 2 * Math.PI);
+                        } else {
+                            // Lightning attacks
+                            this.attackCycle++;
+                            if (this.attackCycle >= 30) {
+                                this.attackCycle = 0;
+                                this.lastAttackCycle = simulation.cycle;
+                                Matter.Body.setVelocity(player, V.add(player.velocity, { x: 0, y: -10 }));
+                                if (m.immuneCycle < m.cycle) {
+                                    if (m.energy > 0) m.energy -= 0.03;
+                                    m.damage(0.005 * simulation.dmgScale);
+                                }
+                            }
+                            DrawTools.lightning(this.position, m.pos, this.lastAttackCycle, this.randomPRNGMult);
+                            ctx.fillStyle = `rgba(255,240,127,${0.12 * Math.max(15 - simulation.cycle + this.lastAttackCycle, 0)})`;
+                            DrawTools.arc(m.pos.x, m.pos.y, 40, 0, 2 * Math.PI);
+                        }
+                    }
+                }
+            }
+        };
+
+        function mobGrenade(...args) {
+            spawn.grenade(...args);
+            const pulseRadius = args[3] || Math.min(550, 250 + simulation.difficulty * 3)
+            let me = mob[mob.length - 1];
+            me.fill = "#ace";
+            me.onDeath = function() {
+                //damage player if in range
+                if (distance(player.position, this.position) < pulseRadius && m.immuneCycle < m.cycle) {
+                    m.immuneCycle = m.cycle + tech.collisionImmuneCycles; //player is immune to damage
+                    m.damage(0.02 * simulation.dmgScale);
+                }
+                simulation.drawList.push({ //add dmg to draw queue
+                    x: this.position.x,
+                    y: this.position.y,
+                    radius: pulseRadius,
+                    color: "rgba(170,204,238,0.3)",
+                    time: simulation.drawTime
+                });
+            };
+            me.do = function() {
+                this.timeLimit();
+                ctx.beginPath(); //draw explosion outline
+                ctx.arc(this.position.x, this.position.y, pulseRadius * (1.01 - this.timeLeft / this.lifeSpan), 0, 2 * Math.PI); //* this.fireCycle / this.fireDelay
+                ctx.fillStyle = "rgba(170,204,238,0.1)";
+                ctx.fill();
+            };
+        }
+        // Todo: nerf ThirdRoomBoss a bit?
+        function thirdRoomBoss(x, y) {
+            mobs.spawn(x, y, 6, 60, "#000");
+            let me = mob[mob.length - 1];
+            // Fix in place
+            me.constraint = Constraint.create({
+                pointA: {
+                    x: me.position.x,
+                    y: me.position.y
+                },
+                bodyB: me,
+                stiffness: 1,
+                damping: 1
+            });
+            Composite.add(engine.world, me.constraint);
+            me.isBoss = true;
+
+            me.stroke = "transparent";
+            me.eventHorizon = 1000;
+            me.collisionFilter.mask = cat.player | cat.bullet | cat.body;
+
+            me.memory = Infinity;
+            me.attackCycle = 0;
+            me.lastAttackCycle = 0;
+            Matter.Body.setDensity(me, 0.08); //extra dense //normal is 0.001 //makes effective life much larger
+            me.onDeath = function() {
+                for (let j = 0; j < 8; j++) { //in case some mobs leave things after they die
+                    for (let i = 0, len = mob.length; i < len; ++i) {
+                        if (mob[i] !== this) {
+                            if (mob[i].isInvulnerable) { //disable invulnerability
+                                mob[i].isInvulnerable = false
+                                mob[i].damageReduction = 1
+                            }
+                            mob[i].damage(Infinity, true);
+                        }
+                    }
+                }
+                // You earned it: One more tech
+                powerUps.spawn(this.position.x, this.position.y, "tech");
+                powerUps.spawnBossPowerUp(this.position.x, this.position.y);
+                templePlayer.room3ToEndAnim = 1;
+            };
+            me.nextHealthThreshold = 0.75;
+            me.trapCycle = 0;
+            me.onDamage = function() {
+                if (this.health < this.nextHealthThreshold) {
+                    this.health = this.nextHealthThreshold - 0.01
+                    this.nextHealthThreshold = Math.floor(this.health * 4) / 4 //0.75,0.5,0.25
+                    this.trapCycle = 1;
+                    this.isInvulnerable = true;
+                    this.damageReduction = 0;
+                }
+            };
+            me.damageReduction = 0.25 / (tech.isScaleMobsWithDuplication ? 1 + tech.duplicationChance() : 1);
+            me.rings = [{
+                colour: "#65f",
+                radius: 300,
+                id: 0
+            }, {
+                colour: "#0f0",
+                radius: 400,
+                id: 1
+            }, {
+                colour: "#f00",
+                radius: 500,
+                id: 2
+            }];
+            me.ring = function() {
+                const rings = this.isInvulnerable ? [] : this.rings;
+                ctx.lineWidth = 10;
+                for (const ring of rings) {
+                    const radius = ring.radius * (1 + 0.3 * Math.sin(simulation.cycle / 60 * (ring.id + 2)));
+                    if (Math.abs(distance(player.position, this.position) - radius) < 60 && m.immuneCycle < simulation.cycle) {
+                        m.damage(0.4 / radius);
+                    }
+                    ctx.strokeStyle = ring.colour;
+                    DrawTools.arcOut(this.position.x, this.position.y, radius, 0, Math.PI * 2);
+                }
+            }
+            me.horizon = function() {
+                // eventHorizon waves in and out
+                const eventHorizon = this.eventHorizon * (1 + 0.2 * Math.sin(simulation.cycle * 0.008));
+
+                const charge = this.attackCycle / 90;
+                this.fill = this.isInvulnerable ? "#f00" : `rgb(${charge * 255},${charge * 255},${charge * 255})`;
+                // draw darkness
+                ctx.fillStyle = `rgba(${charge * 225},${20 + charge * 195},${40 + charge * 215},0.6)`;
+                DrawTools.arc(this.position.x, this.position.y, eventHorizon * 0.2, 0, 2 * Math.PI);
+                ctx.fillStyle = `rgba(${charge * 225},${20 + charge * 195},${40 + charge * 215},0.4)`;
+                DrawTools.arc(this.position.x, this.position.y, eventHorizon * 0.4, 0, 2 * Math.PI);
+                ctx.fillStyle = `rgba(${charge * 225},${20 + charge * 195},${40 + charge * 215},0.3)`;
+                DrawTools.arc(this.position.x, this.position.y, eventHorizon * 0.6, 0, 2 * Math.PI);
+                ctx.fillStyle = `rgba(${charge * 225},${20 + charge * 195},${40 + charge * 215},0.2)`;
+                DrawTools.arc(this.position.x, this.position.y, eventHorizon * 0.8, 0, 2 * Math.PI);
+                ctx.fillStyle = `rgba(${charge * 255},${charge * 255},${charge * 255},0.05)`;
+                DrawTools.arc(this.position.x, this.position.y, eventHorizon, 0, 2 * Math.PI);
+
+                // when player is inside event horizon
+                if (V.magnitude(V.sub(this.position, player.position)) < eventHorizon) {
+                    // Standard black hole stuff
+                    if (m.immuneCycle < m.cycle) {
+                        if (m.energy > 0) m.energy -= 0.004;
+                        if (m.energy < 0.1) m.damage(0.0002 * simulation.dmgScale);
+                    }
+                    const angle = Math.atan2(player.position.y - this.position.y, player.position.x - this.position.x);
+                    player.force.x -= 0.001 * Math.cos(angle) * player.mass * (m.onGround ? 1.7 : 1);
+                    player.force.y -= 0.001 * Math.sin(angle) * player.mass;
+                    // draw line to player
+                    ctx.lineWidth = Math.min(60, this.radius * 2);
+                    ctx.strokeStyle = "rgba(0,0,0,0.5)";
+                    DrawTools.line([this.position, m.pos]);
+                    ctx.fillStyle = "rgba(0,0,0,0.3)";
+                    DrawTools.arc(m.pos.x, m.pos.y, 40, 0, 2 * Math.PI);
+                    // Lightning attacks
+                    this.attackCycle++;
+                    if (this.attackCycle >= 90) {
+                        this.attackCycle = 0;
+                        this.lastAttackCycle = simulation.cycle;
+                        Matter.Body.setVelocity(player, V.add(player.velocity, { x: 0, y: -20 }));
+                        if (m.immuneCycle < m.cycle) {
+                            m.damage(0.015 * simulation.dmgScale);
+                        }
+                    }
+                    const lightningCycle = simulation.cycle * 2 / 3 + this.lastAttackCycle / 3;
+                    DrawTools.lightning(this.position, m.pos, lightningCycle, 1, 12);
+                    DrawTools.lightning(this.position, m.pos, lightningCycle, 2, 12);
+                    ctx.fillStyle = `rgba(255,240,127,${0.12 * Math.max(15 - simulation.cycle + this.lastAttackCycle, 0)})`;
+                    DrawTools.arc(m.pos.x, m.pos.y, 40, 0, 2 * Math.PI);
+                }
+            }
+            me.periodicSpawns = function() {
+                // Spawn annoying purple thing(s) that chases the player
+                if (!(simulation.cycle % 180)) {
+                    spawn.seeker(this.position.x, this.position.y, 15 * (0.7 + 0.5 * Math.random()), 7);
+                    spawn.seeker(this.position.x, this.position.y, 4 * (0.7 + 0.5 * Math.random()), 7);
+                    spawn.seeker(this.position.x, this.position.y, 4 * (0.7 + 0.5 * Math.random()), 7);
+                }
+                // Spawn the annoying pink (now blue) exploder that doesn't chase the player
+                if (!(simulation.cycle % 300)) {
+                    for (let i = 0; i < 3; i++) {
+                        mobGrenade(1100 + 700 * i, -13030, undefined, Math.min(700, 300 + simulation.difficulty * 4), 10);
+                        setVel(mob[mob.length - 1], { x: 0, y: -10 });
+                        mobGrenade(1100 + 700 * i, -14370, undefined, Math.min(700, 300 + simulation.difficulty * 4), 10);
+                        setVel(mob[mob.length - 1], { x: 0, y: 10 });
+                    }
+                }
+                // Spawn a bunch of mobs
+                if (!(simulation.cycle % 600)) {
+                    spawn.nodeGroup(this.position.x, this.position.y, "focuser", 3);
+                }
+            }
+            me.invulnerableTrap = function() {
+                if (this.trapCycle < 1) return;
+                this.trapCycle++;
+                // 32 is just an arbitrarily large number
+                const spawnCycles = Math.min(32, Math.max(8, 6 + Math.floor(simulation.difficulty / 3)));
+                // I have no idea how to balance at all, please help me
+                const spawnDelay = Math.floor(5 + 10 / (1 + Math.sqrt(simulation.difficulty) / 5));
+                if (this.trapCycle >= 120) {
+                    const cycle = this.trapCycle - 120;
+                    if (!(cycle % spawnDelay)) {
+                        const radius = Math.min(500, 200 + simulation.difficulty * 3);
+                        mobGrenade(600, -13050, 30, radius);
+                        Matter.Body.setVelocity(mob[mob.length - 1], { x: 35, y: 0 });
+                        mobGrenade(3000, -13050, 30, radius);
+                        Matter.Body.setVelocity(mob[mob.length - 1], { x: -35, y: 0 });
+                        mobGrenade(600, -14350, 30, radius);
+                        Matter.Body.setVelocity(mob[mob.length - 1], { x: 35, y: 0 });
+                        mobGrenade(3000, -14350, 30, radius);
+                        Matter.Body.setVelocity(mob[mob.length - 1], { x: -35, y: 0 });
+                        if (Math.floor(cycle / spawnDelay) >= spawnCycles - 1) {
+                            this.trapCycle = 0;
+                            this.isInvulnerable = false;
+                            this.damageReduction = 0.25 / (tech.isScaleMobsWithDuplication ? 1 + tech.duplicationChance() : 1);
+                        }
+                    }
+                }
+                ctx.font = "100px Arial";
+                ctx.fillStyle = "#f00";
+                ctx.shadowBlur = 10;
+                ctx.shadowColor = "#f00";
+                ctx.textAlign = "center";
+                ctx.textBaseLine = "middle";
+                ctx.fillText("!", 900, -13050);
+                ctx.fillText("!", 900, -14350);
+                ctx.fillText("!", 1800, -13050);
+                ctx.fillText("!", 1800, -14350);
+                ctx.fillText("!", 2700, -13050);
+                ctx.fillText("!", 2700, -14350);
+                ctx.shadowBlur = 0;
+            }
+            me.do = function() {
+                this.checkStatus();
+                this.horizon();
+                this.ring();
+                this.periodicSpawns();
+                this.invulnerableTrap();
+            }
+        };
+        let oldNextLevel = level.nextLevel;
+        level.nextLevel = () => {
+            color.map = "#444";
+            m.death = m.oldDeath;
+            canvas.style.filter = "";
+            level.nextLevel = oldNextLevel;
+            oldNextLevel();
+        }
+        let bounds = [];
+        let mobPositionsQueue = Array.from(Array(10), () => []);
+        m.oldDeath = m.death;
+        m.death = function() {
+            if (!tech.isImmortal) {
+                requestAnimationFrame(() => color.map = "#444");
+                m.death = m.oldDeath;
+                canvas.style.filter = "";
+                level.nextLevel = oldNextLevel;
+            }
+            m.oldDeath();
+        }
+        let name = "⥟ᘊ5⪊Ыᳪៗⱕ␥ዘᑧ⍗";
+        addPartToMap = (len = map.length - 1) => {
+            map[len].collisionFilter.category = cat.map;
+            map[len].collisionFilter.mask = cat.player | cat.map | cat.body | cat.bullet | cat.powerUp | cat.mob | cat.mobBullet;
+            Matter.Body.setStatic(map[len], true); // make static
+            Composite.add(engine.world, map[len]);
+        }
+        level.setPosToSpawn(50, -50); // normal spawn
+        // Make the level exit really far away so WIMP powerups don't show up at all
+        level.exit.x = 1e6;
+        level.exit.y = -1e6;
+        Promise.resolve().then(() => {
+            // Clear all WIMPS and their research
+            for (let i = 0; i < mob.length; i++) {
+                while (mob[i] && !mob[i].isMACHO) {
+                    mob[i].replace(i);
+                }
+            }
+            for (let i = 0; i < powerUp.length; i++) {
+                while (powerUp[i] && powerUp[i].name === "research") {
+                    Matter.Composite.remove(engine.world, powerUp[i]);
+                    powerUp.splice(i, 1);
+                }
+            }
+            level.exit.x = 1500;
+            level.exit.y = -30;
+        });
+        spawn.mapRect(level.enter.x, level.enter.y + 20, 100, 20);
+        spawn.mapRect(1500, -10, 100, 20);
+        level.defaultZoom = 1800
+        simulation.setZoom(1200);
+        document.body.style.backgroundColor = "#daa69f";
+        color.map = "#600";
+
+        function box(x, y, w, h, s) {
+            spawn.mapRect(x, y, w, s);
+            spawn.mapRect(x, y, s, h);
+            spawn.mapRect(x + w - s, y, s, h);
+            spawn.mapRect(x, y + h - s, w, s);
+        }
+
+        function diamond(x, y, s) {
+            spawn.mapVertex(x, y, `0 -${s}  -${s} 0  0 ${s}  ${s} 0`);
+        }
+
+        // Fake level
+        bounds.push(new Rect(-200, -500, 2000, 600));
+        box(-200, -500, 2000, 600, 100);
+
+        // Actual level, Room 1
+        const firstRoomBounds = new Rect(-200, -4000, 5000, 2100);
+        bounds.push(firstRoomBounds);
+
+        box(-200, -4000, 5000, 2100, 100);
+        spawn.mapRect(-200, -2500, 1300, 100);
+        spawn.mapRect(3500, -2500, 1300, 100);
+        spawn.mapRect(-200, -4000, 1000, 1600);
+        spawn.mapRect(3800, -4000, 1000, 1600);
+        // Enter and Exit platforms
+        spawn.mapRect(0, -2010, 100, 20);
+        spawn.mapRect(4500, -2010, 100, 20);
+
+        // Altar of Room 1
+        spawn.mapRect(2100, -2200, 100, 300);
+        spawn.mapRect(2400, -2200, 100, 300);
+        spawn.mapRect(2070, -2200, 460, 20);
+
+        spawn.debris(1700, -2100, 300, 10);
+        spawn.debris(2500, -2100, 300, 10);
+
+        // Actual level, Room 2
+        const secondRoomBounds = new Rect(-1500, -10500, 3000, 3600);
+        bounds.push(secondRoomBounds);
+
+        box(-1500, -10500, 3000, 3600, 100);
+        spawn.mapRect(-2000, -8500, 1600, 1600);
+        spawn.mapRect(400, -8500, 1600, 1600);
+        // Enter and Exit platforms
+        spawn.mapRect(-50, -7010, 100, 20);
+        spawn.mapRect(-50, -10010, 100, 20);
+
+        // Hazard traversing
+        spawn.mapRect(-300, -7320, 800, 20);
+        spawn.mapRect(175, -7600, 325, 20);
+        spawn.mapRect(200, -7775, 300, 20);
+        spawn.mapRect(-500, -7600, 325, 20);
+        spawn.mapRect(-500, -7775, 300, 20);
+        spawn.mapRect(-500, -7950, 800, 20);
+        spawn.mapRect(-300, -8100, 800, 20);
+        spawn.mapRect(-500, -8250, 800, 20);
+        for (let i = 0; i < 2; i++) spawn.mapRect(-250, -8400 + 150 * i, 500, 60);
+        const room2SlimePit = level.hazard(-400, -8410, 800, 1090);
+        room2SlimePit.logic = function() {
+            if (this.height > 0 && Matter.Query.region([player], this).length) {
+                if (m.immuneCycle < m.cycle) {
+                    // Trolled
+                    const hasCPT = tech.isRewindAvoidDeath;
+                    tech.isRewindAvoidDeath = false;
+                    const DRAIN = 0.002 * (tech.isRadioactiveResistance ? 0.25 : 1) + m.fieldRegen;
+                    if (m.energy > DRAIN && !tech.isEnergyHealth) {
+                        m.energy -= DRAIN;
+                    }
+                    m.damage(0.00015 * (tech.isRadioactiveResistance ? 0.25 : 1));
+                    if (tech.isEnergyHealth) {
+                        const previousEnergy = m.energy;
+                        m.regenEnergy();
+                        const energyRegenerated = m.energy - previousEnergy;
+                        if (energyRegenerated > 0) {
+                            m.energy = previousEnergy;
+                            m.damage(energyRegenerated);
+                        }
+                    }
+                    tech.isRewindAvoidDeath = hasCPT;
+                }
+                player.force.y -= 0.3 * player.mass * simulation.g;
+                setVel(player, Vector.sub(player.velocity, { x: 0, y: player.velocity.y * 0.02 }));
+            }
+            // Float power ups
+            powerUpCollide = Matter.Query.region(powerUp, this)
+            for (let i = 0, len = powerUpCollide.length; i < len; i++) {
+                const diameter = 2 * powerUpCollide[i].size
+                const buoyancy = 1 - 0.2 * Math.max(0, Math.min(diameter, this.min.y - powerUpCollide[i].position.y + powerUpCollide[i].size)) / diameter
+                powerUpCollide[i].force.y -= buoyancy * 1.14 * powerUpCollide[i].mass * simulation.g;
+                setVel(powerUpCollide[i], { x: powerUpCollide[i].velocity.x, y: 0.96 * powerUpCollide[i].velocity.y });
+            }
+        }
+        room2SlimePit.draw = function() {
+            if (this.isOn) {
+                ctx.fillStyle = "hsla(160, 100%, 35%, 0.75)";
+                ctx.fillRect(this.min.x, this.min.y, this.width, this.height);
+            }
+        }
+        // Room 2 spawning bounds
+        const secondRoomSpawnBounds = new Rect(-1500, -10500, 3000, 2000);
+        spawn.mapRect(-700, -8700, 150, 20);
+        spawn.mapRect(550, -8700, 150, 20);
+        spawn.mapRect(-400, -8900, 800, 20);
+        diamond(-600, -9800, 30);
+        diamond(0, -9800, 30);
+        diamond(600, -9800, 30);
+
+        spawn.mapRect(-1000, -10000, 2000, 30);
+
+        // Actual level, Room 3 (Final Boss?)
+        const thirdRoomBounds = new Rect(-200, -14500, 4000, 1600);
+        bounds.push(thirdRoomBounds);
+        box(-200, -14500, 4000, 1600, 100);
+        spawn.mapRect(-200, -14500, 800, 1100);
+        spawn.mapRect(3000, -14500, 800, 1100);
+        // Enter and Exit platforms
+        spawn.mapRect(0, -13110, 100, 20);
+        spawn.mapRect(-200, -13100, 800, 200);
+        spawn.mapRect(3500, -13110, 100, 20);
+        spawn.mapRect(3000, -13100, 800, 200);
+        for (let i = 0; i < 3; i++) spawn.bodyRect(500, -13400 + i * 100, 100, 100);
+
+        for (let i = 0; i < 3; i++) {
+            diamond(1100 + 700 * i, -13000, 30, 30);
+            diamond(1100 + 700 * i, -14400, 30, 30);
+        }
+
+        const Objects = {
+            altar: {
+                get isHeal() {
+                    return simulation.cycle % 600 >= 300;
+                },
+                pos: {
+                    x: 2300,
+                    y: -2200
+                },
+                get isActive() {
+                    const roughPlayerCentre = V.add(m.pos, { x: 0, y: 40 });
+                    return distance(roughPlayerCentre, this.pos) < 240 &&
+                        (Math.abs(angle(roughPlayerCentre, this.pos) - Math.PI / 2) < 1);
+                },
+                logic() {
+                    if (!this.isActive) return;
+                    if (this.isHeal) {
+                        m.energy += 0.005;
+                    } else {
+                        m.energy = Math.max(m.energy - 0.007 - m.fieldRegen, 0);
+                        if (m.energy <= 0.01 && m.immuneCycle < m.cycle) m.damage(0.002);
+                    }
+                },
+                drawTop() {
+                    if (!isInBound(firstRoomBounds)) return;
+                    const colour = this.isHeal ? m.fieldMeterColor : "#f00";
+                    DrawTools.flame([2300, -2200, 26, 4, colour], 7);
+                    ctx.fillStyle = colour;
+                    ctx.fillRect(2200, -2200, 200, 200);
+                },
+                drawBottom() {
+                    ctx.fillStyle = this.isHeal ? "#fff5" : "#0005";
+                    for (const radius of [230, 180, 130, 80, 30]) {
+                        DrawTools.arc(2300, -2200, radius, 0, Math.PI, true);
+                    }
+                }
+            },
+            room2Initiator: {
+                pos: {
+                    x: 0,
+                    y: -9050
+                },
+                get distance() {
+                    return distance(player.position, this.pos);
+                },
+                range: 120,
+                rings: [{
+                    colour: [102, 85, 255],
+                    radius: 200
+                }, {
+                    colour: [0, 255, 0],
+                    radius: 300
+                }, {
+                    colour: [255, 0, 0],
+                    radius: 400
+                }],
+                get ringNumber() {
+                    return this.rings.length;
+                },
+                get cap() {
+                    return (this.ringNumber + 1) * 90 + 240;
+                },
+                get capped() {
+                    return templePlayer.room2.spawnInitiatorCycles > this.cap;
+                },
+                logic() {
+                    if (this.distance < this.range) {
+                        templePlayer.room2.spawnInitiatorCycles++;
+                    }
+                },
+                draw() {
+                    Promise.resolve().then(() => {
+                        const cycle = templePlayer.room2.spawnInitiatorCycles;
+                        if (!this.capped && this.distance < 400) {
+                            ctx.fillStyle = `rgba(0, 0, 0, ${Math.min(1, (400 - this.distance) / (400 - this.range)) * 0.9})`;
+                            ctx.fillRect(0, 0, canvas.width, canvas.height);
+                        }
+                        ctx.save();
+                        simulation.camera();
+                        if (this.distance < this.range && !this.capped) {
+                            DrawTools.lightning(V.sub(this.pos, { x: 300, y: 300 }), V.add(this.pos, { x: 300, y: 300 }), simulation.cycle - 5);
+                            DrawTools.lightning(V.add(this.pos, { x: -300, y: 300 }), V.add(this.pos, { x: 300, y: -300 }), simulation.cycle - 5);
+                        }
+                        if (!this.capped && cycle >= this.cap - 200) {
+                            const multCoeff = (cycle - this.cap + 200) * 0.4
+                            ctx.translate((Math.random() - 0.5) * multCoeff, (Math.random() - 0.5) * multCoeff);
+                        }
+                        ctx.shadowBlur = 20;
+                        ctx.lineWidth = 12;
+                        ctx.strokeStyle = (templePlayer.room2.cycles % 60 < 30) ? "#fff" : "#000";
+                        ctx.shadowColor = (templePlayer.room2.cycles % 60 < 30) ? "#fff" : "#000";
+                        DrawTools.arcOut(this.pos.x, this.pos.y, 100, 0, Math.PI * 2);
+                        if (templePlayer.room2.cycles <= 100) {
+                            for (let i = 0; i < this.ringNumber; i++) {
+                                if (cycle < i * 90 + 90) break;
+                                const ring = this.rings[i];
+                                ctx.shadowColor = `rgb(${ring.colour.join(",")})`;
+                                const opacity = this.capped ? 1 - 0.01 * templePlayer.room2.cycles : (cycle / 180 - i / 2 - 0.5);
+                                ctx.strokeStyle = `rgba(${ring.colour.join(",")}, ${Math.min(opacity, 1)})`;
+                                const radius = (this.capped ? 1 + 0.07 * templePlayer.room2.cycles : Math.sin(Math.min(cycle - i * 90 - 90, 45) / 90 * Math.PI)) * ring.radius;
+                                DrawTools.arcOut(this.pos.x, this.pos.y, radius, 0, Math.PI * 2);
+                            }
+                        }
+                        ctx.restore();
+                    });
+                }
+            },
+            room2Lightning: {
+                one: [{ x: -1400, y: -10400 }, { x: 1400, y: -8500 }],
+                two: [{ x: -1400, y: -8500 }, { x: 1400, y: -10400 }],
+                get isHeal() {
+                    return simulation.cycle % 360 < 180;
+                },
+                get oneEq() {
+                    return Equation.fromPoints(this.one[0], this.one[1]);
+                },
+                get twoEq() {
+                    return Equation.fromPoints(this.two[0], this.two[1]);
+                },
+                logic() {
+                    if (!isInBound(secondRoomSpawnBounds) || !templePlayer.room2.cycles) return;
+
+                    const playerbounds = Rect.fromBounds(player.bounds.min, player.bounds.max);
+                    if (playerbounds.hasLine(this.oneEq) || playerbounds.hasLine(this.twoEq)) {
+                        if (this.isHeal) {
+                            m.energy += 0.003;
+                        } else if (m.immuneCycle < m.cycle) {
+                            m.energy -= 0.003;
+                        }
+                    }
+                },
+                draw() {
+                    if (!isInBound(secondRoomBounds) || !templePlayer.room2.cycles) return;
+
+                    const colour = this.isHeal ? undefined : [0, 0, 0];
+                    DrawTools.lightning(...this.one, Math.floor(simulation.cycle / 15) * 15, 1, 9, colour);
+                    DrawTools.lightning(...this.two, Math.floor(simulation.cycle / 15) * 15, 2, 9, colour);
+                }
+            },
+            room2GeneratedPath: {
+                rects: (function() {
+                    const rects = [];
+                    for (let i = 0; i < 4; i++) {
+                        rects.push(new Rect(-1405 + (i & 1) * 200, -9700 + i * 300, 205, 30));
+                        rects.push(new Rect(1200 - (i & 1) * 200, -9700 + i * 300, 205, 30));
+                    }
+                    return rects;
+                })(),
+                logic() {
+                    if (templePlayer.room2.readyPathCycle && simulation.cycle - templePlayer.room2.readyPathCycle === 180) {
+                        for (const r of this.rects) {
+                            r.addToMap();
+                            addPartToMap();
+                            simulation.draw.setPaths();
+                        }
+                    }
+                },
+                draw() {
+                    if (templePlayer.room2.readyPathCycle && simulation.cycle - templePlayer.room2.readyPathCycle < 180) {
+                        ctx.fillStyle = "#fe79";
+                        for (const r of this.rects) {
+                            ctx.fillRect(r.pos.x, r.pos.y, r.width, r.height);
+                        }
+                    } else if (simulation.cycle - templePlayer.room2.readyPathCycle < 195) {
+                        for (const r of this.rects) {
+                            DrawTools.lightning(Objects.room2Initiator.pos, r.midPos, templePlayer.room2.readyPathCycle + 180);
+                        }
+                    }
+                }
+            },
+            room3Rotors: {
+                rotor1: (function() {
+                    const rotor = level.spinner(900, -13700, 200, 30);
+                    rotor.rotate = function() {
+                        Matter.Body.setAngularVelocity(this.bodyB, (this.bodyB.angularVelocity + 0.01) * 0.9)
+                    }
+                    return rotor;
+                })(),
+                rotor2: (function() {
+                    const rotor = level.spinner(2700, -13700, 200, 30);
+                    rotor.rotate = function() {
+                        Matter.Body.setAngularVelocity(this.bodyB, (this.bodyB.angularVelocity - 0.01) * 0.9)
+                    }
+                    return rotor;
+                })(),
+                logic() {
+                    this.rotor1.rotate();
+                    this.rotor2.rotate();
+                }
+            },
+            room3SlimePits: {
+                pit1: level.hazard(-100, -13400, 0, 0, 0.004),
+                pit2: level.hazard(3700, -13400, 0, 0, 0.004),
+                logic() {
+                    if (templePlayer.room2ToRoom3Anim >= 1320 && templePlayer.room2ToRoom3Anim <= 1570) {
+                        this.pit1.height = this.pit2.height = 300;
+                        this.pit1.max.y = this.pit2.max.y = -13100;
+                        this.pit1.width = this.pit2.width = templePlayer.room2ToRoom3Anim * 2 - 2640;
+                        this.pit1.max.x = this.pit1.min.x + this.pit1.width;
+                        this.pit2.min.x = this.pit2.max.x - this.pit2.width;
+                    }
+                    if (templePlayer.room3ToEndAnim) {
+                        this.pit1.height = this.pit1.width = 0;
+                        this.pit2.height = this.pit2.width = 0;
+                    }
+
+                },
+                draw() {
+                    this.pit1.query();
+                    this.pit2.query();
+                }
+            }
+        };
+        let templePlayer = {
+            room1: {
+                cycles: 300
+            },
+            room2: {
+                spawnInitiatorCycles: 0,
+                cycles: 0,
+                readyPathCycle: 0
+            },
+            stage: 1,
+            startAnim: 0,
+            room1ToRoom2Anim: 0,
+            room2ToRoom3Anim: 0,
+            room3ToEndAnim: 0,
+            initialTrapY: 0,
+            clearedCycle: 0,
+            drawExit: true
+        };
+
+        const RoomTransitionHandler = {
+            room0() {
+                if (templePlayer.startAnim <= 0) return;
+                templePlayer.startAnim++;
+                if (templePlayer.startAnim == 120) {
+                    makeLore("Not so fast.");
+                }
+                if (templePlayer.startAnim < 360) {
+                    trapPlayer(1000, templePlayer.initialTrapY);
+                } else {
+                    level.exit.x = 4500;
+                    level.exit.y = -2030;
+                    relocateTo(50, -2050);
+                    simulation.setZoom(1800);
+                    templePlayer.startAnim = -1;
+                    for (let i = 0; i < tech.wimpCount + tech.wimpExperiment; i++) {
+                        addWIMP();
+                    }
+                    templePlayer.drawExit = false;
+                }
+            },
+            room1() {
+                if (templePlayer.room1ToRoom2Anim <= 0) return;
+                if (templePlayer.room1ToRoom2Anim === 1) {
+                    level.exit.x = -50;
+                    level.exit.y = -10030;
+                    makeLore("Pathetic.");
+                }
+                if (templePlayer.room1ToRoom2Anim === 241) {
+                    makeLore("You will never succeed.");
+                }
+                if (templePlayer.room1ToRoom2Anim >= 480 && templePlayer.room1ToRoom2Anim <= 960) {
+                    const factor = 200 - 200 * Math.cos((templePlayer.room1ToRoom2Anim / 120) * Math.PI);
+                    ctx.translate(factor, factor);
+                    Promise.resolve().then(() => {
+                        ctx.save();
+                        ctx.globalCompositeOperation = "color-burn";
+                        ctx.fillStyle = DrawTools.randomColours;
+                        DrawTools.updateRandomColours(5);
+                        ctx.fillRect(0, 0, canvas.width, canvas.height);
+                        ctx.restore();
+                    });
+                }
+                if (templePlayer.room1ToRoom2Anim === 960) {
+                    makeLore("You are trying too hard.");
+                    relocateTo(0, -7050);
+                    templePlayer.stage = 2;
+                }
+                if (templePlayer.room1ToRoom2Anim === 1200) {
+                    makeLore("I have mastered the understandings of the universe.");
+                }
+                if (templePlayer.room1ToRoom2Anim === 1260) {
+                    // Congrats, you discovered the actual words by looking at the source code. Are you happy now?
+                    const x = (
+                        ["a speck of dust", "an insignificant hindrance", "a tiny obstacle"]
+                    )[Math.floor(Math.random() * 3)].split("");
+                    for (let i = 0; i < x.length / 1.6; i++) {
+                        const randomIndex = Math.floor(Math.random() * x.length);
+                        if (x[randomIndex] !== " ") {
+                            x[randomIndex] = String.fromCharCode(Math.floor(Math.random() * 50) + 192);
+                        }
+                    };
+                    makeLore(`You are no more than ${x.join("")} to me.</h3></h2>`);
+                    relocateWIMPs(0, -10030);
+                }
+                templePlayer.room1ToRoom2Anim++;
+            },
+            room2() {
+                if (templePlayer.room2ToRoom3Anim <= 0) return;
+                if (templePlayer.room2ToRoom3Anim === 1) {
+                    level.exit.x = 3500;
+                    level.exit.y = -13130;
+                    makeLore("Do not try me.");
+                }
+                if (templePlayer.room2ToRoom3Anim === 240) {
+                    makeLore("I have absolute power over you.");
+                    canvas.style.filter = "hue-rotate(90deg)";
+                }
+                if (templePlayer.room2ToRoom3Anim === 480) {
+                    makeLore("You will not succeed...");
+                    canvas.style.filter = "invert(0.2)";
+                }
+                if (templePlayer.room2ToRoom3Anim === 600) {
+                    makeLore("<h6 style='display: inline-block'>succeed...</h6>");
+                    canvas.style.filter = "invert(0.4)";
+                }
+                if (templePlayer.room2ToRoom3Anim > 660 && templePlayer.room2ToRoom3Anim <= 840) {
+                    canvas.style.filter = `sepia(${(templePlayer.room2ToRoom3Anim - 660) / 180}) invert(${0.5 + (templePlayer.room2ToRoom3Anim - 660) / 360})`;
+                }
+                if (templePlayer.room2ToRoom3Anim === 960) {
+                    makeLore("Do not interfere with me.");
+                    templePlayer.stage = 3;
+                    relocateTo(50, -13150);
+                    simulation.zoomTransition(1800);
+                    templePlayer.startAnim = -1;
+                    // Might be a bit harsh to the player if the WIMPs are involved in the third level
+                    for (let i = 0; i < mob.length; i++) {
+                        while (mob[i] && !mob[i].isWIMP) {
+                            mob[i].replace(i);
+                        }
+                    }
+                }
+                if (templePlayer.room2ToRoom3Anim > 960 && templePlayer.room2ToRoom3Anim <= 1140) {
+                    canvas.style.filter = `sepia(${(1140 - templePlayer.room2ToRoom3Anim) / 180}) invert(${(1140 - templePlayer.room2ToRoom3Anim) / 180})`;
+                }
+                templePlayer.room2ToRoom3Anim++;
+            },
+            room3() {
+                if (templePlayer.room3ToEndAnim <= 0) return;
+                if (templePlayer.room3ToEndAnim === 1) {
+                    makeLore("No.");
+                }
+                if (templePlayer.room3ToEndAnim === 120) {
+                    makeLore("This cannot be.");
+                }
+                if (templePlayer.room3ToEndAnim === 240) {
+                    makeLore("Has my power failed me?");
+                }
+                if (templePlayer.room3ToEndAnim === 360) {
+                    makeLore("Was it worth it, destroying this place?");
+                }
+                if (templePlayer.room3ToEndAnim === 600) {
+                    makeLore("No one is greater than me.");
+                }
+                const text = "noone-";
+                for (let i = 0; i < 12; i++) {
+                    if (templePlayer.room3ToEndAnim === 720 + i * 20) {
+                        name = name.slice(0, -1);
+                        simulation.makeTextLog(`<span style="font-size: 1em"><span style="color: #f00">${name}:</span> &nbsp; ${text[i % 6]}</span>`);
+                        canvas.style.filter = `brightness(${1 - i / 22})`;
+                    }
+                }
+                if (templePlayer.room3ToEndAnim === 1060) {
+                    templePlayer.drawExit = true;
+                    for (let i = 0; i < 5 * tech.wimpCount; i++) {
+                        powerUps.spawn(level.exit.x + 100 * (Math.random() - 0.5), level.exit.y - 100 + 100 * (Math.random() - 0.5), "research", false);
+                    }
+                    canvas.style.filter = "";
+                }
+                templePlayer.room3ToEndAnim++;
+            },
+            end() {
+                if (!templePlayer.clearedCycle) return;
+                Promise.resolve().then(() => {
+                    ctx.save();
+                    ctx.setTransform(1, 0, 0, 1, 0, 0);
+                    ctx.fillStyle = `rgba(0, 0, 0, ${(simulation.cycle - templePlayer.clearedCycle) / 300})`;
+                    ctx.fillRect(0, 0, canvas.width, canvas.height);
+                    ctx.restore();
+                });
+                if (simulation.cycle - templePlayer.clearedCycle > 420) level.nextLevel();
+            }
+        };
+        const LogicHandler = {
+            bounds() {
+                let isInBounds = false;
+                for (const b of bounds) {
+                    if (isInBound(b)) {
+                        isInBounds = true;
+                        break;
+                    }
+                }
+                // UwU
+                // Will I get timed out for this
+                if (!isInBounds) {
+                    m.damage(0.1 * simulation.difficultyMode);
+                    trapPlayer(level.enter.x, level.enter.y);
+                    simulation.makeTextLog("<span style='color: #f00'>" + name + "</span>: &nbsp; You thought I could let you get away with that?");
+                }
+            },
+            room0() {
+                // Block the player from entering the first seemingly innocuous exit
+                if ((m.pos.x > 1000) && templePlayer.startAnim === 0) {
+                    spawn.mapRect(1200, -500, 100, 600);
+                    templePlayer.initialTrapY = Math.min(player.position.y, -75);
+                    trapPlayer(1000, templePlayer.initialTrapY);
+
+                    addPartToMap();
+                    simulation.draw.setPaths();
+                    templePlayer.startAnim = 1;
+                }
+            },
+            room1() {
+                WaveHandler.room1();
+                Objects.altar.logic();
+            },
+            room2() {
+                room2SlimePit.logic();
+                Objects.room2Initiator.logic();
+                Objects.room2Lightning.logic();
+                Objects.room2GeneratedPath.logic();
+                WaveHandler.room2();
+            },
+            room3() {
+                Objects.room3Rotors.logic();
+                Objects.room3SlimePits.logic();
+                WaveHandler.room3();
+            },
+            exit() {
+                if (!templePlayer.drawExit) return;
+                if (player.position.x > level.exit.x &&
+                    player.position.x < level.exit.x + 100 &&
+                    player.position.y > level.exit.y - 150 &&
+                    player.position.y < level.exit.y - 40 &&
+                    player.velocity.y < 0.1 &&
+                    level.exitCount + (input.down ? 8 : 2) > 100) {
+                    if (templePlayer.stage === 1) {
+                        templePlayer.drawExit = false;
+                        templePlayer.room1ToRoom2Anim = 1;
+                    } else if (templePlayer.stage === 2) {
+                        templePlayer.drawExit = false;
+                        templePlayer.room2ToRoom3Anim = 1;
+                    } else {
+                        level.exitCount = 99 - (input.down ? 8 : 2);
+                        if (!templePlayer.clearedCycle) templePlayer.clearedCycle = simulation.cycle;
+                    }
+                }
+            }
+        };
+        const DrawHandler = {
+            // Bottom layer
+            base() {
+                // Draw base red background
+                ctx.save();
+                ctx.setTransform(1, 0, 0, 1, 0, 0);
+                ctx.fillStyle = color.map;
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                ctx.restore();
+
+                // Draw the normal bg on the bounds
+                ctx.fillStyle = "#eab6af";
+                for (const b of bounds) {
+                    if (isInBound(b)) ctx.fillRect(b.pos.x + 2, b.pos.y + 2, b.width - 4, b.height - 4);
+                }
+            },
+            entrance() {
+                ctx.beginPath();
+                ctx.moveTo(level.enter.x, level.enter.y + 30);
+                ctx.lineTo(level.enter.x, level.enter.y - 80);
+                ctx.bezierCurveTo(level.enter.x, level.enter.y - 170, level.enter.x + 100, level.enter.y - 170, level.enter.x + 100, level.enter.y - 80);
+                ctx.lineTo(level.enter.x + 100, level.enter.y + 30);
+                ctx.lineTo(level.enter.x, level.enter.y + 30);
+                ctx.fillStyle = "#fca";
+                ctx.fill();
+            },
+            room1() {
+                if (!isInBound(firstRoomBounds)) return;
+
+                // Draw Cross
+                ctx.fillStyle = "#fed";
+                ctx.fillRect(2200, -3300, 200, 800);
+                ctx.fillRect(2000, -3100, 600, 200);
+
+                // Final boss-like spawn fire thing. Was it necessary? No!
+                const spawnFlameAngle = Math.min(Math.min(templePlayer.room1.cycles, 2520) % 600, 120) * Math.PI / 30 + Math.PI / 2;
+                DrawTools.flame([2300, -3000, 26, 4, "#f60", spawnFlameAngle], 7);
+
+                Objects.altar.drawBottom();
+            },
+            room2() {
+                if (!isInBound(secondRoomBounds)) return;
+
+                if (templePlayer.room2.cycles) {
+                    ctx.fillStyle = "#0006";
+                    ctx.fillRect(secondRoomBounds.pos.x + 2, secondRoomBounds.pos.y + 2, secondRoomBounds.width - 4, secondRoomBounds.height - 4);
+                }
+                room2SlimePit.draw();
+            },
+            room3() {
+                if (!isInBound(thirdRoomBounds)) return;
+                ctx.fillStyle = "#0006";
+                ctx.fillRect(thirdRoomBounds.pos.x + 2, thirdRoomBounds.pos.y + 2, thirdRoomBounds.width - 4, thirdRoomBounds.height - 4);
+                Objects.room3SlimePits.draw();
+            },
+            // Top layer
+            mobTrails() {
+                if (simulation.cycle % 4 === 0) {
+                    let newMobPositions = [];
+                    for (const i of mob) {
+                        if (!(i.isMACHO || i.isWIMP)) newMobPositions.push({ x: i.position.x, y: i.position.y });
+                    }
+                    mobPositionsQueue.shift();
+                    mobPositionsQueue.push(newMobPositions);
+                }
+                // Draw "holy" trails for mobs for no particular reason at all
+                ctx.strokeStyle = "#bae";
+                ctx.lineWidth = 3;
+                for (let i = 0; i < 10; i++) {
+                    const p = mobPositionsQueue[i];
+                    for (const m of p) {
+                        DrawTools.holy(m.x, m.y, i / 2 + 10);
+                    }
+                }
+                ctx.shadowBlur = 0;
+            },
+            waveTimer() {
+                const roomConditions = [
+                    isInBound(firstRoomBounds) && templePlayer.room1.cycles < 2400,
+                    isInBound(secondRoomBounds) && templePlayer.room2.cycles > 0 && templePlayer.room2.cycles < 2160,
+                    isInBound(thirdRoomBounds) && templePlayer.room2ToRoom3Anim < 1320
+                ];
+                Promise.resolve(roomConditions).then(roomConditions => {
+                    // First Room
+                    if (roomConditions[0]) {
+                        ctx.save();
+                        ctx.setTransform(1, 0, 0, 1, 0, 0);
+                        ctx.fillStyle = "#0004";
+                        ctx.fillRect(canvas.width2 - 288, 50, 576, 20);
+                        ctx.fillStyle = "#0cf";
+                        ctx.fillRect(canvas.width2 - 288, 50, 0.8 * (600 - templePlayer.room1.cycles % 600), 20);
+                        ctx.restore();
+                    }
+                    // Second Room
+                    if (roomConditions[1]) {
+                        ctx.save();
+                        ctx.setTransform(1, 0, 0, 1, 0, 0);
+                        ctx.fillStyle = "#0004";
+                        ctx.fillRect(canvas.width2 - 288, 50, 576, 20);
+                        ctx.fillStyle = (Math.ceil(templePlayer.room2.cycles / 720) & 1) ? "#000" : "#e1d7ff";
+                        ctx.fillRect(canvas.width2 - 288, 50, 0.8 * (720 - templePlayer.room2.cycles % 720), 20);
+                        ctx.restore();
+                    }
+                    // Third Room
+                    if (roomConditions[2]) {
+                        ctx.save();
+                        ctx.setTransform(1, 0, 0, 1, 0, 0);
+                        ctx.fillStyle = "#0004";
+                        ctx.fillRect(canvas.width2 - 288, 50, 576, 20);
+                        ctx.fillStyle = "#000";
+                        ctx.fillRect(canvas.width2 - 288, 50, 1.6 * (1320 - templePlayer.room2ToRoom3Anim), 20);
+                        ctx.restore();
+                    }
+                });
+            },
+            room2Top() {
+                if (!isInBound(secondRoomBounds)) return;
+                Objects.room2Lightning.draw();
+                Objects.room2GeneratedPath.draw();
+                Objects.room2Initiator.draw();
+            }
+        };
+        const WaveHandler = {
+            room1() {
+                if (!isInBound(firstRoomBounds)) return;
+                if (templePlayer.room1.cycles === 0) powerUps.spawnStartingPowerUps(0, -2050);
+                templePlayer.room1.cycles++;
+                if (templePlayer.room1.cycles === 2400) {
+                    spawn.secondaryBossChance(2300, -2800);
+                    powerUps.addResearchToLevel();
+                }
+                if (templePlayer.room1.cycles % 600 === 0 && templePlayer.room1.cycles <= 2400) {
+                    for (let i = 0; i < 3 + Math.pow(simulation.difficulty / 2, 0.7) + Math.floor(templePlayer.room1.cycles / 720); i++) {
+                        if (Math.random() < 0.5 + 0.07 * simulation.difficulty) {
+                            spawn.randomMob(800 + Math.random() * 3e3, -2400 - Math.random() * 600, Infinity);
+                        }
+                    }
+                    spawn.randomMob(800 + Math.random() * 3e3, -2400 - Math.random() * 600, Infinity);
+                }
+                if (templePlayer.room1.cycles === 2520) {
+                    templePlayer.drawExit = true;
+                }
+            },
+            room2() {
+                if (!isInBound(secondRoomBounds)) return;
+                if (templePlayer.room2.spawnInitiatorCycles > Objects.room2Initiator.cap) {
+                    if (templePlayer.room2.cycles % 720 === 0 && templePlayer.room2.cycles <= 2160) {
+                        const isOdd = Math.floor(templePlayer.room2.cycles / 720) & 1;
+                        secondRoomBoss(-600, -9800, 25, isOdd);
+                        secondRoomBoss(600, -9800, 25, isOdd);
+                        secondRoomBoss(0, -9800, 25, !isOdd);
+                    }
+                    templePlayer.room2.cycles++;
+                    if (templePlayer.room2.cycles === 2400) {
+                        templePlayer.drawExit = true;
+                        templePlayer.room2.readyPathCycle = simulation.cycle;
+                    }
+                }
+            },
+            room3() {
+                if (templePlayer.room2ToRoom3Anim === 1320) {
+                    thirdRoomBoss(1800, -13700);
+                    for (let i = 0; i < 3; i++) {
+                        powerUps.spawn(m.spawnPos.x, m.spawnPos.y, "heal");
+                    }
+                }
+            }
+        };
+        const DrawTools = {
+            get randomColours() {
+                return `rgb(${this._randomColours.join(",")})`
+            },
+            _randomColours: [Math.random() * 255, Math.random() * 255, Math.random() * 255],
+            updateRandomColours(x = 0.8) {
+                for (let i = 0; i < this._randomColours.length; i++) {
+                    this._randomColours[i] = Math.max(Math.min(this._randomColours[i] + (this.randFact() * x * 2) - x, 255), 0);
+                }
+            },
+            randFact() {
+                return Math.random() * 0.8 + Math.sin(Date.now() / 300) * 0.2;
+            },
+
+            line(vecs) {
+                ctx.beginPath();
+                ctx.moveTo(vecs[0].x, vecs[0].y);
+                for (const v of vecs.slice(1)) ctx.lineTo(v.x, v.y);
+                ctx.stroke();
+            },
+            arc(...x) {
+                ctx.beginPath();
+                ctx.arc(...x);
+                ctx.fill();
+            },
+            arcOut(...x) {
+                ctx.beginPath();
+                ctx.arc(...x);
+                ctx.stroke();
+            },
+            flame(props, repeat) {
+                for (let i = 0; i < repeat; i++) this.singleFlame(...props);
+            },
+            singleFlame(x, y, size = 10, repeat = 3, color = "#f00", angle = Math.PI / 2) {
+                ctx.strokeStyle = color;
+                ctx.lineWidth = 3;
+                const path = [{ x, y }];
+                for (let i = 0; i < repeat; i++) {
+                    const randAng = (Math.random() - 0.5) * 2 + angle;
+                    const randLen = 2 * size + Math.random() * size;
+
+                    x += Math.cos(randAng) * randLen;
+                    y -= Math.sin(randAng) * randLen;
+                    path.push({ x, y })
+                }
+                DrawTools.line(path);
+            },
+            lightning(from, to, cycle, randomPRNGMult = 1, width = 8, color = [255, 240, 127]) {
+                const diff = simulation.cycle - cycle;
+                if (diff >= 15) return;
+                ctx.strokeStyle = `rgba(${color.join(",")},${(1 - diff / 15) * 255})`;
+                ctx.lineWidth = width * (1 - diff / 15);
+                ctx.shadowColor = `rgb(${color.join(",")})`;
+                ctx.shadowBlur = 20;
+                const path = [{ x: from.x, y: from.y }];
+                let vector = { x: from.x, y: from.y };
+                let distanceLeft = V.magnitude(V.sub(from, to));
+                const d = distanceLeft > 800 ? distanceLeft / 40 : 20;
+                const normalised = V.normalise(V.sub(to, from));
+                while (1) {
+                    const randOffset = rotateVector({ y: RNG(Math.floor(cycle * randomPRNGMult + distanceLeft)) * 2 * d - d, x: 0 }, normalised);
+                    const randLen = RNG(Math.floor(cycle * (randomPRNGMult + 1) + distanceLeft)) * d + d;
+                    distanceLeft -= randLen;
+                    if (distanceLeft <= 0) {
+                        path.push({ x: to.x, y: to.y });
+                        break;
+                    }
+                    vector = V.add(vector, V.mult(normalised, randLen));
+                    path.push({ x: vector.x + randOffset.x, y: vector.y + randOffset.y });
+                }
+                DrawTools.line(path);
+                ctx.shadowBlur = 0;
+            },
+            holy(x, y, size = 12) {
+                this.line([{ x, y: y - size }, { x: x - size, y },
+                    { x, y: y + size }, { x: x + size, y }, { x, y: y - size }
+                ]);
+            }
+        };
+
+        function RNG(x) {
+            x += Math.seed;
+            let start = Math.pow(x % 97, 4.3) * 232344573;
+            const a = 15485863;
+            const b = 521791;
+            start = (start * a) % b;
+            for (let i = 0; i < (x * x) % 90 + 90; i++) {
+                start = (start * a) % b;
+            }
+            return start / b;
+        }
+
+        function rotateVector(v, ang) {
+            const c = typeof ang === "number" ? { x: Math.cos(ang), y: Math.sin(ang) } : V.normalise(ang);
+            return { x: v.x * c.x - v.y * c.y, y: v.y * c.x + v.x * c.y };
+        }
+
+        function trapPlayer(x, y) {
+            setPosAndFreeze(player, { x, y });
+            const bLen = bullet.length;
+            for (let i = 0; i < bLen; i++) {
+                if (bullet[i].botType) setPosAndFreeze(bullet[i], V.add(player.position, { x: 100 * (RNG(i) - 0.5), y: 100 * (RNG(i + bLen) - 0.5) }));
+            }
+        }
+
+        function relocateTo(x, y) {
+            level.setPosToSpawn(x, y);
+            trapPlayer(x, y);
+            for (let i = 0; i < mob.length; i++) {
+                if (mob[i].isMACHO) {
+                    setPos(mob[i], { x, y });
+                    break;
+                }
+            }
+            m.resetHistory();
+        }
+        const distance = (a, b) => V.magnitude(V.sub(a, b));
+        const angle = (a, b) => Math.atan2(b.y - a.y, a.x - b.x);
+        const setPos = (a, b) => Matter.Body.setPosition(a, b);
+        const setVel = (a, b) => Matter.Body.setVelocity(a, b);
+        const freeze = a => setVel(a, { x: 0, y: 0 });
+        const setPosAndFreeze = (a, b) => {
+            setPos(a, b);
+            freeze(a);
+        };
+        const makeLore = x => simulation.makeTextLog(`<h2 style='color: #f00; display: inline-block'>${name}:</h2> &nbsp; <h3 style='display: inline-block'>${x}</h3>`);
+        // TODO: Remove this before merging
+        window.TempleHelper = {
+            skipInitial() {
+                templePlayer.startAnim = 360;
+            },
+            skipWaves() {
+                this.skipInitial();
+                templePlayer.room1.cycles = 2500;
+            },
+            skipToRoom2() {
+                this.skipInitial();
+                templePlayer.room1ToRoom2Anim = 1;
+            },
+            skipBossWaves() {
+                this.skipToRoom2();
+                templePlayer.room2.spawnInitiatorCycles = Objects.room2Initiator.cap;
+                templePlayer.room2.cycles = 2200;
+                setTimeout(() => trapPlayer(0, -9100), 500);
+            },
+            skipToRoom3() {
+                this.skipToRoom2();
+                requestAnimationFrame(() => templePlayer.room2ToRoom3Anim = 1);
+            },
+            spawnSecondRoomBoss(x, y) {
+                secondRoomBoss(x, y);
+            }
+        };
+        level.custom = () => {
+            // All the logic gets handled here. How nice!
+            for (const i in LogicHandler) {
+                LogicHandler[i]();
+            }
+
+            // Animations and lore for things that seem like exits
+            for (const i in RoomTransitionHandler) {
+                RoomTransitionHandler[i]();
+            }
+
+            // Bottom layer graphics
+            DrawHandler.base();
+            DrawHandler.room1();
+            DrawHandler.room2();
+            DrawHandler.room3();
+            DrawHandler.entrance();
+            if (templePlayer.drawExit) level.exit.drawAndCheck();
+        };
+        level.customTopLayer = () => {
+            // Top layer graphics
+            DrawHandler.mobTrails();
+            Objects.altar.drawTop();
+            DrawHandler.waveTimer();
+            DrawHandler.room2Top();
+        };
+    },
+    biohazard() {
+        // MAP BY INOOBBOI AND THESHWARMA
+        simulation.makeTextLog(`<strong>biohazard</strong> by <span class='color-var'>INOOBBOI</span> and <span class='color-var'>THESHWARMA</span>`);
+
+        // set here for the cutscene later
+        level.setPosToSpawn(-2800, -150)
+
+        // set up cutscenes
+        simulation.cutscene = (locations, speed, stay, xPos = m.pos.x, yPos = m.pos.y) => {
+            // locations: an array of location vectors, reversed for the pop ahead
+            locations.reverse()
+            // speed: the speed of the cutscene transition (0 to 1)
+            // stay: how much to stay in the destination (ticks)
+            // xPos & yPos: the initial location, also used as the current location
+
+            // start by disabling the default camera draw. Don't worry, it's backed up
+            const camera = simulation.camera
+            // create a new camera function
+            simulation.camera = () => {
+                ctx.save()
+                ctx.translate(canvas.width2, canvas.height2) //center
+                ctx.scale(simulation.zoom, simulation.zoom)
+                const xScaled = canvas.width2 - xPos
+                const yScaled = canvas.height2 - yPos
+                ctx.translate(-canvas.width2 + xScaled, -canvas.height2 + yScaled) //translate
+            }
+
+            // and set a restoring function
+            const restore = () => (simulation.camera = camera)
+
+            // then choose the next destination. There should be always at least one destination,
+            // if there isn't there's no point checking, the game should and will crash
+            let dest = locations.pop()
+            // animate the camera
+            const lerp = (first, second, percent) => first * (1 - percent) + second * percent
+            const speedDelta = speed / 5
+            // wait timer
+            let wait = 0
+            // polls the animation, should be called every tick
+            const poll = () => {
+                // update position
+                xPos = lerp(xPos, dest.x, speedDelta)
+                yPos = lerp(yPos, dest.y, speedDelta)
+                // if position is close enough, wait and go to the next position
+                const TOO_CLOSE = 100
+                if (Math.abs(dest.x - xPos) < TOO_CLOSE && Math.abs(dest.y - yPos) < TOO_CLOSE) {
+                    // wait for a bit
+                    if (++wait > stay) {
+                        // if there is another target, reset the wait timer and go there
+                        // otherwise end the cutscene
+                        wait = 0
+                        if (!(dest = locations.pop())) {
+                            // no more locations! End
+                            restore()
+                            return true
+                        }
+                    }
+                }
+                // early return if the player skips by fielding
+                if (input.field) {
+                    restore()
+                    return true
+                }
+                return false
+            }
+            return poll
+        }
+
+        const boost1 = level.boost(-1400, -100, 900)
+        const boost2 = level.boost(500, -900, 2500)
+        const boost3 = level.boost(4200, -100, 900)
+        const boost4 = level.boost(2200, -900, 2500)
+
+        const toggle = level.toggle(1340, -600, false, true)
+
+        let bossInit = false
+
+        const cutscenePoll = simulation.cutscene([{
+            x: 230,
+            y: -2700
+        }, {
+            x: 3500,
+            y: -1400
+        }, {
+            x: 1450,
+            y: -1150
+        }, m.pos], 0.1, 10)
+        let hasEnded = false
+
+        // ** PROPS ** 
+        // create some drips
+        const rndInRange = (min, max) => Math.random() * (max - min) + min
+
+        const amount = Math.round(5 + 20 * Math.random())
+        const drips = []
+        for (let i = 0; i < amount; i++) {
+            const locX = rndInRange(-2000, 4800)
+            drips.push(level.drip(locX, -3100, 1500, 200 + Math.random() * 500))
+        }
+
+        // a barrel of radioactive waste, which can drop ammo and heals
+        const barrelMob = (x, y, dirVector) => {
+            const MAX_WIDTH = 150
+            const personalWidth = MAX_WIDTH / 2
+            mobs.spawn(x, y, 4, personalWidth, 'rgb(232, 191, 40)')
+            const me = mob[mob.length - 1]
+            // steal some vertices
+            const betterVertices = Matter.Bodies.rectangle(x, y, personalWidth, personalWidth * 1.7).vertices
+            me.vertices = betterVertices
+            me.collisionFilter.mask = cat.player | cat.map | cat.body | cat.mob | cat.bullet
+            me.g = simulation.g
+            me.leaveBody = me.isDropPowerUp = false
+            me.do = function () {
+                this.gravity()
+                // apply shock damage when touching the map, if it's fast
+                if (this.speed > 5) {
+                    const collision = Matter.Query.collides(this, map)
+                    if (collision.length > 0) {
+                        // on collision reduce health
+                        this.health = this.health - this.speed / 250
+                        // die when it's too low, doesn't register for some reason
+                    }
+                }
+                // becomes more radioactive as it gets damaged!
+                this.fill = `rgb(${232 * this.health}, 191, 40)`
+            }
+
+            me.onDeath = function () {
+                const END = Math.floor(input.down ? 10 : 7)
+                const totalBullets = 10
+                const angleStep = (input.down ? 0.4 : 1.3) / totalBullets
+                let dir = m.angle - (angleStep * totalBullets) / 2
+                for (let i = 0; i < totalBullets; i++) {
+                    //5 -> 7
+                    dir += angleStep
+                    const me = bullet.length
+                    bullet[me] = Bodies.rectangle(
+                        this.position.x + 50 * Math.cos(this.angle),
+                        this.position.y + 50 * Math.sin(this.angle),
+                        17,
+                        4,
+                        b.fireAttributes(dir)
+                    )
+                    const end = END + Math.random() * 4
+                    bullet[me].endCycle = 2 * end + simulation.cycle
+                    const speed = (25 * end) / END
+                    const dirOff = dir + (Math.random() - 0.5) * 3
+                    Matter.Body.setVelocity(bullet[me], {
+                        x: speed * Math.cos(dirOff),
+                        y: speed * Math.sin(dirOff)
+                    })
+                    bullet[me].onEnd = function () {
+                        b.explosion(
+                            this.position,
+                            150 + (Math.random() - 0.5) * 40
+                        ) //makes bullet do explosive damage at end
+                    }
+                    bullet[me].beforeDmg = function () {
+                        this.endCycle = 0 //bullet ends cycle after hitting a mob and triggers explosion
+                    }
+                    bullet[me].do = function () { }
+                    Composite.add(engine.world, bullet[me]) //add bullet to world
+                }
+                // barrels drop a ton of ammo and some heals, scales up with difficulty because I have mercy
+                const amount = ~~(5 * Math.random() * simulation.difficulty / 10)
+                for (let i = 0; i < amount; i++) {
+                    powerUps.spawn(this.position.x, this.position.y, 'ammo', true)
+                    if (Math.random() > 0.7) {
+                        powerUps.spawn(this.position.x, this.position.y, 'heal', true)
+                    }
+                }
+            }
+            Matter.Body.rotate(me, Math.random() * Math.PI)
+            Matter.Body.setVelocity(me, dirVector)
+        }
+
+        // creates a platform with shadow
+        const platformShadow = (x, y, width, height, shadowList) => {
+            // faster than making manual shadows... Why not just calculate them semi-realsitically?
+            // the shadows are calculated on the object creation, so if you add map blocks it won't update.
+            // shadowList is an array of shadows that'll be rendered. When the platform shadow is ready,
+            // it is added to the list.
+            // some helper functions first
+            const perpCollision = point => {
+                // takes a point, and finds a collision with the map downwards
+                // the end of the ray, 3000 units down
+                const lowerPoint = Vector.add(point, {
+                    x: 0,
+                    y: 3000
+                })
+                // the destination point. If a collision was not found, then it defaults to some
+                // arbiterary point 3000 units down.
+                let dest = lowerPoint
+                for (const mapBody of map) {
+                    const check = simulation.checkLineIntersection(point, lowerPoint, mapBody.vertices[0], mapBody.vertices[1])
+                    // a collision was found
+                    if (check.onLine1 && check.onLine2) {
+                        dest = {
+                            x: check.x,
+                            y: check.y
+                        }
+                        break
+                    }
+                }
+                return dest
+            }
+            const boundsToRectangle = (firstBound, secondBound) => {
+                // takes two bounds and returns an (x, y, width, height) rectangle. The first one
+                // must be the top left, and the second one must be the bottom right
+                // sub to find the width and height
+                const width = Math.abs(firstBound.x - secondBound.x)
+                const height = Math.abs(firstBound.y - secondBound.y)
+                // compile to an object
+                return {
+                    x: firstBound.x,
+                    y: firstBound.y,
+                    width,
+                    height
+                }
+            }
+            // create the actual platform
+            spawn.mapRect(x, y, width, height)
+            const me = map[map.length - 1]
+            // the bottom vertices are the third and fourth ones
+            const first = me.vertices[3]
+            const second = me.vertices[2]
+            // cast shadows to find the last shadow location.
+            // iterate over all map objects, and check for collisions between a perpendicular ray
+            // cast from the vertex down to the map object's top panel
+            // const firstDown = perpCollision(first) // not needed in a rectangle settings
+            const secondDown = perpCollision(second)
+            // possible TODO: make it multirect for efficiency
+            // create a single rectangle and return
+            shadowList.push(boundsToRectangle(first, secondDown))
+        }
+
+        // cages with mobs, One of them holds the boss pre mutation
+        const cage = (x, y, maxChainLength, drawList, mobType = null, isTheBoss = false) => {
+            // the drawList is an array that the drawing function is added to
+            // if the cage containing the boss it has a 50% chance to just not spawn. Spices things a bit
+            if (!isTheBoss && Math.random() > 0.5) {
+                return
+            }
+            if (!mobType) {
+                // if mob type is null, then it picks a random mob
+                mobType = spawn.fullPickList[~~(Math.random() * spawn.fullPickList.length)]
+            }
+            // create the chain length, must take into account the radius of the mob.
+            // therefore, it'll create a pseudo mob of that type, take it radius and instantly kill it
+            const chainLength = maxChainLength / 5 + maxChainLength * Math.random()
+
+            // spawn and insantly kill a mob of the same type to get the radius.
+            // this is used to prevent spawning the mob too short, it's a horrible
+            // solution but it works
+            spawn[mobType](0, 0)
+            mob[mob.length - 1].leaveBody = mob[mob.length - 1].isDropPowerUp = false
+            const radius = mob[mob.length - 1].radius
+            mob[mob.length - 1].alive = false
+            // spawn the mob. Disable shields first
+            spawn.allowShields = false
+            spawn[mobType](x, y + chainLength + radius * 2)
+            const trappedMob = mob[mob.length - 1]
+            // destroy its mind so it won't attack
+            trappedMob.do = () => { }
+            // spawn the cage
+            mobs.spawn(x, y + chainLength + radius * 2, 4, trappedMob.radius + 50, 'rgba(150, 255, 150, 0.3)')
+            const cage = mob[mob.length - 1]
+            cage.g = simulation.g
+            cage.do = function () {
+                this.gravity()
+            }
+            // label it
+            cage.label = 'Cage'
+            // a special orb when hit
+            let damageTick = 0
+            cage.onDamage = (dmg) => {
+                // add some damage ticks, if the trapped mob is still alive.
+                // activating the boss by this method is almost impossible, since you need 10x damage
+                if (trappedMob.alive) damageTick += ~~(isTheBoss ? 5 * dmg : 50 * dmg)
+            }
+            // collision filter
+            trappedMob.collisionFilter.mask = cage.collisionFilter.mask = cat.player | cat.map | cat.bullet
+            // constrain together
+            spawn.constrain2AdjacentMobs(2, 0.05, false)
+            // move them to be together
+            trappedMob.position = Vector.clone(cage.position) // make sure you clone... Otherwise........
+            // invincibility, make homing bullets not hit these, remove health bar
+            trappedMob.health = cage.health = Infinity
+            trappedMob.isBadTarget = cage.isBadTarget = true
+            trappedMob.showHealthBar = cage.showHealthBar = false
+            trappedMob.leaveBody = trappedMob.isDropPowerUp = cage.leaveBody = cage.isDropPowerUp = false
+            // cross all edges of the cage with the rope, and see where it collides. Attach the rope there
+            const verts = cage.vertices
+            // the crossing location, doesn't stay null
+            let cross = null
+            for (let i = 0; i < verts.length; i++) {
+                // iterate over all vertices to form lines
+                const v1 = verts[i]
+                const v2 = verts[(i + 1) % verts.length]
+                const result = simulation.checkLineIntersection(cage.position, {
+                    x,
+                    y
+                }, v1, v2)
+                if (result.onLine1 && result.onLine2) {
+                    // both lines cross!
+                    cross = result
+                    break
+                }
+            }
+
+            if (!cross) {
+                // for some odd reason, sometimes it never finds a collision. I have no idea why
+                // just default to the center then
+                console.error("Couldn't find a cross... Origin: ", {
+                    x,
+                    y
+                }, " center: ", cage.position, ' vertices: ', cage.vertices)
+                cross = cage.position
+            }
+            // create the rope
+            const rope = Constraint.create({
+                pointA: {
+                    x,
+                    y
+                },
+                // offset the point be in the attachment point
+                pointB: Vector.sub(cross, cage.position),
+                bodyB: cage,
+                // the longer the rope, the looser it is
+                stiffness: Math.max(0.0005 - chainLength / 10000000, 0.00000001),
+                length: chainLength
+            })
+            Matter.Composite.add(engine.world, rope)
+            // create and return a function for drawing the rope
+            const draw = () => {
+                // draw a little recantagle at the base
+                ctx.fillStyle = color.map
+                ctx.fillRect(x - 20, y - 5, 40, 25)
+                // if the cage was destroyed... Do nothing beyond
+                if (!cage.alive) {
+                    return
+                }
+                // draw the rope
+                ctx.beginPath()
+                ctx.moveTo(x, y)
+                // line to the crossing point
+                // ctx.lineTo(cons[i].bodyB.position.x, cons[i].bodyB.position.y);
+                ctx.lineTo(cage.position.x + rope.pointB.x, cage.position.y + rope.pointB.y);
+                ctx.lineWidth = 7
+                ctx.strokeStyle = 'rgba(0, 0, 0, 0.5)'
+                ctx.stroke()
+                // now draw a mystic hit orb if touched
+                if (damageTick) damageTick-- // reduce the ticks
+                ctx.beginPath()
+                ctx.arc(cage.position.x, cage.position.y, cage.radius + 30, 0, Math.PI * 2)
+                ctx.lineWidth = 10
+                ctx.fillStyle = `rgba(255, 0, 0, ${Math.min(1, damageTick / 2000)})`
+                ctx.strokeStyle = `rgba(255, 100, 0, ${Math.min(1, damageTick / 1000)})`
+                ctx.setLineDash([125 * Math.random(), 125 * Math.random()])
+                ctx.stroke()
+                ctx.setLineDash([])
+                ctx.fill()
+                // if it's the boss, draw sucking arcs
+                if (isTheBoss && bossInit) {
+                    for (const entity of mob) {
+                        // suck the health of all mobs
+                        // I hate string manipulation in control flow but heh
+                        if (entity.alive) {
+                            ctx.beginPath()
+                            ctx.moveTo(entity.position.x, entity.position.y)
+                            ctx.lineTo(trappedMob.position.x, trappedMob.position.y)
+                            ctx.lineWidth = 10
+                            ctx.strokeStyle = 'rgba(38, 0, 255, 0.67)'
+                            ctx.stroke()
+                            // damage the mob
+                            entity.damage(1)
+                            // damage itself bonus
+                            cage.damage(1)
+                        }
+                    }
+                    cage.damage(5)
+                }
+
+                // ok if it's too much, explode
+                if (damageTick > 2000) {
+                    b.explosion(cage.position, cage.radius * 10)
+                    // die a silent death
+                    trappedMob.alive = cage.alive = false
+                    damageTick = 0
+                    if (isTheBoss) {
+                        // become the real boss
+                        geneticBoss(trappedMob.position.x, trappedMob.position.y)
+                    }
+                }
+            }
+            // restore the shields
+            spawn.allowShields = true
+            // add the drawing function
+            drawList.push(draw)
+        }
+
+        // platform shadows
+        const shadows = []
+        // cages
+        const cages = []
+
+        level.custom = () => {
+            level.exit.drawAndCheck() //draws the exit
+            level.enter.draw() //draws the entrance
+
+            player.force.y -= player.mass * simulation.g * 0.25 //this gets rid of some gravity on player
+
+            // if the cutscene is yet to end, continue polling
+            if (!hasEnded) {
+                hasEnded = cutscenePoll()
+            }
+
+            for (const drip of drips) drip.draw()
+            // throw some barrels after the boss spawns
+            if (Math.random() > 0.999 && bossInit && !hasEnded) {
+                const spawnLocs = [-1415, -30, 1345, 2815, 4285]
+                // const randVec = Vector.mult({ x: Math.cos(randAngle), y: Math.sin(randAngle) }, Math.random() * 15)
+                barrelMob(spawnLocs[~~(spawnLocs.length * Math.random())], -4200, {
+                    x: 0,
+                    y: 0
+                })
+            }
+
+            // platform shadow
+            ctx.beginPath()
+            for (const shadow of shadows) {
+                ctx.rect(shadow.x, shadow.y, shadow.width, shadow.height)
+            }
+            ctx.fillStyle = 'rgba(0,10,30,0.1)'
+            ctx.fill()
+
+            // player pressed lever
+            if (toggle.isOn && !bossInit) {
+                bossInit = true
+            }
+            // draw the cage
+        } //for dynamic stuff that updates while playing that is one Z layer below the player
+
+        level.customTopLayer = () => {
+            boost1.query()
+            boost2.query()
+            boost3.query()
+            boost4.query()
+            toggle.query()
+
+            // shadow holes
+            ctx.fillStyle = 'rgba(68, 68, 68,0.95)'
+            ctx.fillRect(-1450 - 10, -4350, 150 + 20, 1250)
+            ctx.fillRect(-50 - 10, -4350, 150 + 20, 1250)
+            ctx.fillRect(1325 - 10, -4350, 150 + 20, 1250)
+            ctx.fillRect(2800 - 10, -4350, 150 + 20, 1250)
+            ctx.fillRect(4275 - 10, -4350, 150 + 20, 1250)
+
+            for (const drawCage of cages) {
+                drawCage()
+            }
+        } //for dynamic stuff that updates while playing that is one Z layer above the player
+
+        const anotherBoss = (x, y) => {
+            if (tech.isDuplicateMobs && Math.random() < tech.duplicationChance()) {
+                spawn.historyBoss(x, y)
+            }
+        }
+
+        //GENETICBOSS
+        function drawEnergyBar(mob) {
+            if (mob.seePlayer.recall && mob.energy > 0) {
+                const h = mob.radius * 0.3
+                const w = mob.radius * 2
+                const x = mob.position.x - w / 2
+                const y = mob.position.y - w * 0.9
+                ctx.fillStyle = 'rgba(100, 100, 100, 0.3)'
+                ctx.fillRect(x, y, w, h)
+                ctx.fillStyle = '#0cf'
+                ctx.fillRect(x, y, w * mob.energy, h)
+            }
+        }
+
+        function generateGenome() {
+            // creates a random genome and returns it
+            const genome = {
+                density: Math.random() * 0.001,
+                size: 15 + Math.random() * 15,
+                speed: Math.random() * 0.1,
+                // color and vertex properties are "trash" genes as they don't really contribute to the orb
+                color: [Math.random() * 255, Math.random() * 255, Math.random() * 255, 50 + Math.random() * 205],
+                vertexCount: Math.floor(Math.random() * 5) + 3,
+                // TODO fix possible concaving
+                vertexOffset: null // placeholder
+            }
+            // initialized here as it depends on vertexCount. I could use `new function()` but nah.
+            genome.vertexOffset = Array(genome.vertexCount)
+                .fill()
+                .map(() => ({
+                    x: Math.random() - 0.5,
+                    y: Math.random() - 0.5
+                }))
+            return genome
+        }
+
+        function mutateGenome(genome) {
+            // takes an existing genome and applies tiny changes
+            const randomInRange = (min, max) => Math.random() * (max - min) + min
+            const tinyChange = x => randomInRange(-x, x)
+
+            const vertexMutator = x => ({
+                x: x.x + tinyChange(0.5),
+                y: x.y + tinyChange(0.5)
+            })
+            // mutates a genome and returns the mutated version.
+            const newGenome = {
+                density: genome.density + tinyChange(0.0005),
+                size: genome.size + tinyChange(5),
+                speed: genome.speed + tinyChange(0.05),
+                color: genome.color.map(x => (x + tinyChange(10)) % 255), // wrap around
+                vertexCount: Math.max(genome.vertexCount + Math.round(tinyChange(1)), 3),
+                vertexOffset: genome.vertexOffset.map(vertexMutator)
+            }
+            if (genome.vertexOffset.length < newGenome.vertexCount) {
+                const vo = newGenome.vertexOffset
+                vo.push(vertexMutator(vo[~~(vo.length * Math.random())]))
+            } else if (genome.vertexOffset.length > newGenome.vertexCount) {
+                newGenome.vertexOffset.pop()
+            }
+
+            return newGenome
+        }
+
+        function calculateGenomeCost(genome) {
+            // calculates the cost of a genome and returns it. The cost is used to
+            // determine how "costly" the genome is to make, and after the orb's life ends it
+            // is used together with the orb success score to determine the fittest orb.
+            const score = (1 / (genome.density * genome.size * genome.speed)) * 0.000001
+            return score
+        }
+        // distance functions
+        const dist2 = (a, b) => (a.x - b.x) ** 2 + (a.y - b.y) ** 2
+        const dist = (a, b) => Math.sqrt(dist2(a, b))
+
+        // ** MAP SPECIFIC MOBS **
+        function energyTransferBall(origin, target, boss, charge) {
+            // transports energy to the boss
+            // when the boss is hit by it, how much of the energy stored the boss actually recives
+            const ENERGY_TRANSFER_RATE = 80 /*%*/
+            // add 1 to the active ball list
+            boss.activeBalls++
+            const color = `rgba(${150 + 105 * charge}, 81, 50, 0.6)`
+            mobs.spawn(origin.x, origin.y, 12, 20 + 20 * charge, color)
+            const me = mob[mob.length - 1]
+            me.end = function () {
+                simulation.drawList.push({
+                    // some nice graphics
+                    x: this.position.x,
+                    y: this.position.y,
+                    radius: this.radius,
+                    color: '#f3571d',
+                    time: ~~(Math.random() * 20 + 10)
+                })
+                // on death spawn and explode a bomb
+                if (Math.random() > 0.95) {
+                    spawn.bomb(this.position.x, this.position.y, this.radius, this.vertices.length)
+                    mob[mob.length - 1].death()
+                }
+                // remove 1 from the active ball list
+                boss.activeBalls--
+                this.death()
+            }
+            me.collisionFilter.mask = cat.player | cat.map
+            // me.onHit = this.end
+            me.life = 0
+            me.isDropPowerUp = false
+            me.leaveBody = false
+            me.do = function () {
+                // die on collision with the map
+                if (Matter.Query.collides(this, map).length > 0) {
+                    this.end()
+                }
+                // die if too much time passes. Stronger bullets explode earlier
+                if (++this.life > 200 - charge * 100) {
+                    this.end()
+                }
+                // if the orb collides with the boss, die but give energy to the boss
+                if (Matter.Query.collides(this, [boss]).length > 0) {
+                    boss.energy = Math.min(charge * (ENERGY_TRANSFER_RATE / 100) + boss.energy, 1)
+                    // also make the boss fire once regardless of energy
+                    boss.spawnOrbs()
+                    this.end()
+                }
+                const movement = Vector.normalise(Vector.sub(target, origin))
+                Matter.Body.setVelocity(this, {
+                    x: this.velocity.x + movement.x,
+                    y: this.velocity.y + movement.y
+                })
+                // nice graphics
+                simulation.drawList.push({
+                    x: this.position.x,
+                    y: this.position.y,
+                    radius: this.radius,
+                    color: '#e81e1e',
+                    time: 3
+                })
+                simulation.drawList.push({
+                    x: this.position.x,
+                    y: this.position.y,
+                    radius: this.radius,
+                    color: '#e87f1e',
+                    time: 6
+                })
+                simulation.drawList.push({
+                    x: this.position.x,
+                    y: this.position.y,
+                    radius: this.radius,
+                    color: '#e8e41e',
+                    time: 9
+                })
+            }
+            me.onDamage = me.end
+        }
+
+        function energyBeacon(x, y, parentBoss) {
+            // an unmoving beacon that charges the genetic boss with energy either stolen
+            // from the player or generated. That energy is used to create stronger mobs.
+            mobs.spawn(x, y, 3, 50, '') // default color, changed an instant later
+            const me = mob[mob.length - 1]
+            me.laserRange = 500
+            me.leaveBody = false
+            me.isDropPowerUp = false
+            // custom variables
+            // max energy is 1
+            me.energy = 0
+            me.seed = simulation.cycle // seed to make sure this mob is unique render wise
+            me.chargeTicks = 0 // used to time charging the boss
+            me.bossPos = null // the position that the mob remembers when charging
+            me.density = me.density * 2
+            Matter.Body.setDensity(me, 0.0022 * 3 + 0.0002 * Math.sqrt(simulation.difficulty)) //extra dense
+            me.do = function () {
+                // if the boss is dead, die
+                if (!parentBoss.alive) {
+                    this.death()
+                }
+                // slowly rotate
+                Matter.Body.setAngularVelocity(this, 0.01)
+                this.fill = `rgba(${this.energy * 255}, 29, 136, 0.80)`
+                this.seePlayerCheck()
+                // steal energy from player
+                // this.harmZone() // regular harmZone
+                // custom effects on top of that
+                if (this.distanceToPlayer() < this.laserRange) {
+                    if (m.immuneCycle < m.cycle) {
+                        // suck extra energy from the player if it's in range
+                        if (m.energy > 0.1 && this.energy < 1 - 0.012) {
+                            m.energy -= 0.012
+                            this.energy += 0.012
+                        }
+                        // special "sucking" graphics
+                        ctx.beginPath()
+                        ctx.moveTo(this.position.x, this.position.y)
+                        ctx.lineTo(m.pos.x, m.pos.y)
+                        ctx.lineWidth = 3 + Math.abs(Math.sin((simulation.cycle + this.seed) / 100)) * 2
+                        ctx.strokeStyle = `rgb(${(
+                            Math.abs(Math.sin((simulation.cycle + this.seed + 100) / 100)) * 255
+                        ).toFixed(3)}, 204, 255)`
+                        ctx.setLineDash([125 * Math.random(), 125 * Math.random()])
+                        ctx.stroke()
+                        ctx.setLineDash([])
+                    }
+                }
+                // if the mob's energy is at least 50% full, try to send that energy to the boss.
+                // don't send that energy yet if more than 5 other transfer balls are active
+                if (this.energy > 0.5 && parentBoss.energy < 1 && parentBoss.activeBalls <= 5 && this.chargeTicks === 0) {
+                    const seesBoss = Matter.Query.ray(map, this.position, parentBoss.position).length === 0
+                    if (seesBoss) {
+                        this.chargeTicks = 100
+                        this.bossPos = Vector.clone(parentBoss.position)
+                    }
+                }
+                if (this.chargeTicks > 0) {
+                    if (--this.chargeTicks === 0) {
+                        // spawn the orb
+                        const location = Vector.add(
+                            Vector.mult(Vector.normalise(Vector.sub(this.bossPos, this.position)), this.radius * 3),
+                            this.position
+                        )
+                        energyTransferBall(location, this.bossPos, parentBoss, this.energy)
+                        this.energy = 0
+                    }
+                    // create a beam and aim it at the bossPos
+                    ctx.beginPath()
+                    ctx.moveTo(this.position.x, this.position.y)
+                    ctx.lineTo(this.bossPos.x, this.bossPos.y)
+                    ctx.lineWidth = 10 + Math.abs(Math.sin((simulation.cycle + this.seed) / 100)) * 5
+                    ctx.strokeStyle = `rgb(${(
+                        Math.abs(Math.sin((simulation.cycle + this.seed + 100) / 100)) * 255
+                    ).toFixed(3)}, 204, 255)`
+                    ctx.setLineDash([125 * Math.random(), 125 * Math.random()])
+                    ctx.stroke()
+                    ctx.setLineDash([])
+                }
+                // generate (0.15 * difficulty / 4)% energy per tick
+                if (this.energy < 1) this.energy += 0.0015 * (simulation.difficulty / 4)
+                // draw energy bar
+                drawEnergyBar(this)
+            }
+            me.onDeath = function () {
+                // remove itself from the list
+                const beacons = parentBoss.energyBeacons
+                beacons.splice(beacons.indexOf(this), 1)
+                // explode with the strength of its energy!
+                this.alive = false // to prevent retriggering infinitly
+                b.explosion(this.position, this.energy * this.radius * 15)
+                // when it dies, it reduces some of the boss' energy
+                parentBoss.energy -= 0.025
+                // and stuns it
+                mobs.statusStun(parentBoss, 70 + ~~(100 / simulation.difficulty))
+            }
+        }
+
+        function geneticSeeker(x, y, genome, parentBoss) {
+            // special bullets that get score based on their performance.
+            mobs.spawn(x, y, genome.vertexCount, genome.size, '#' + genome.color.map(it => (~~it).toString(16)).join(''))
+            const me = mob[mob.length - 1]
+            // apply genome
+            Matter.Body.setDensity(me, genome.density)
+            me.accelMag = genome.speed
+            // apply vertex offset
+            for (let i = 0; i < me.vertices.length; i++) {
+                const vertex = me.vertices[i]
+                const offset = genome.vertexOffset[i]
+                if (!offset) console.log(genome, me)
+                vertex.x += offset.x
+                vertex.y += offset.y
+            }
+
+            me.stroke = 'transparent'
+            Matter.Body.setDensity(me, 0.00001) //normal is 0.001
+            // increased if the orb done things that are deemed successful
+            me.score = 30
+            me.timeLeft = 9001 / 9
+            me.accelMag = 0.00017 * simulation.accelScale //* (0.8 + 0.4 * Math.random())
+            me.frictionAir = 0.01
+            me.restitution = 0.5
+            me.leaveBody = false
+            me.isDropPowerUp = false
+            me.isBadTarget = true
+            me.isMobBullet = true
+            me.showHealthBar = false
+            me.collisionFilter.category = cat.mobBullet
+            me.collisionFilter.mask = cat.player | cat.map | cat.body | cat.bullet
+            me.do = function () {
+                this.alwaysSeePlayer()
+                this.attraction()
+                this.timeLimit()
+
+                if (Matter.Query.collides(this, map).length > 0) {
+                    // colliding with the map gives a score reduction, 0.5 per tick
+                    this.score -= 0.5
+                }
+                // default score is slowly reduced every tick to give mobs that reached the player faster a benefit
+                this.score -= 0.05
+                if (this.score < 0) {
+                    this.alive = false // no point continuing if this orb is that bad! Silent death
+                }
+                // give a bonus if some projectile is nearby or the mouse position is close (like laser pointing)
+                // if a mob survives this for long, then it gets a score benefit.
+                const bulletCloseToOrb = bullet.some(it => dist2(this.position, it.position) < 10000 /* 100 ^ 2 */)
+                // player shoots and aims close
+                const mouseCloseToOrb = dist2(this.position, simulation.mouseInGame) < 10000 && input.fire
+                if (bulletCloseToOrb || mouseCloseToOrb) {
+                    this.score += 1
+                }
+                // die if too far from the boss... It would be incredibly difficult to dodge otherwise
+                if (dist2(this.position, parentBoss.position) > 2000 * 2000) {
+                    this.alive = false
+                }
+                // DEBUG score printer
+                // ctx.font = '48px sans-serif'
+                // ctx.fillStyle = 'rgba(252, 0, 143, 1)'
+                // ctx.fillText(~~this.score, this.position.x - this.radius, this.position.y - this.radius)
+            }
+            me.onHit = function () {
+                // hitting the player gives a 50 points score bonus
+                this.score += 50
+                this.score += this.mass * 2 // bigger mass = bigger damage, add that too
+                // a marker for later
+                this.hitPlayer = true
+                this.explode(this.mass)
+            }
+            me.onDeath = function () {
+                if (!this.hitPlayer) {
+                    // if it didn't hit the player, give it a score based on its distance
+                    this.score += 10000 / this.distanceToPlayer()
+                }
+                // 3% chance to drop ammo
+                if (Math.random() > 0.97) {
+                    powerUps.spawn(this.position.x, this.position.y, 'ammo', true)
+                }
+                parentBoss.deadOrbs.push({
+                    genome: genome,
+                    score: this.score
+                })
+            }
+        }
+
+        function geneticBoss(x, y, radius = 130, spawnBossPowerUp = true) {
+            // a modified orb shooting boss that evolves its orbs.
+            // the way this boss works is different from the regular orb shooting boss,
+            // because the orbs have evolving properties via a "machine learning" scoring algorithm.
+            const MAX_BEACONS = Math.round(3 + Math.random() * simulation.difficulty / 3)
+            mobs.spawn(x, y, 8, radius, 'rgb(83, 32, 58)')
+            let me = mob[mob.length - 1]
+            me.isBoss = true
+
+            me.accelMag = 0.0001 * simulation.accelScale
+            me.fireFreq = Math.floor((330 * simulation.CDScale) / simulation.difficulty)
+            me.frictionStatic = 0
+            me.friction = 0
+            me.frictionAir = 0.02
+            me.memory = (420 / 69) * 42 // 🧌
+            me.repulsionRange = 1000000
+            me.energyBeacons = []
+            me.activeBalls = 0
+            // starts by random, or by the stored genomes if they exist
+            const init = () => ({
+                genome: generateGenome(),
+                score: 0
+            })
+            me.fittestOrbs = (localStorage && localStorage.genome) ? JSON.parse(localStorage.genome) : [init(), init(), init()] // best genomes so far. Size of three
+            // when an orb died it's moved here. When a new spawn cycle starts, their scores get calculated
+            // and they get put in the fittest orbs array, if they are better than the old ones.
+            me.deadOrbs = []
+            me.energy = 1
+            // this boss has no orbitals, because it's not meant to ever attack on its own
+            me.damageReduction = 0.25
+            // has a shield and sustains that shield
+            spawn.shield(me, x, y, Infinity)
+            me.fireFreq = 30
+            me.ionizeFreq = 20
+            me.ionized = []
+            me.laserRange = radius * 4
+
+            Matter.Body.setDensity(me, 0.0022 * 4 + 0.0002 * Math.sqrt(simulation.difficulty)) //extra dense //normal is 0.001 //makes effective life much larger
+            me.onDeath = function () {
+                if (spawnBossPowerUp) {
+                    powerUps.spawnBossPowerUp(this.position.x, this.position.y)
+                    const amount = ~~(5 * Math.random() * simulation.difficulty / 10) * 2
+                    for (let i = 0; i < amount; i++) {
+                        powerUps.spawn(this.position.x, this.position.y, 'ammo', true)
+                        if (Math.random() > 0.7) {
+                            powerUps.spawn(this.position.x, this.position.y, 'heal', true)
+                        }
+                    }
+                }
+                // keep the best genome and use it next fight...
+                if (localStorage) {
+                    localStorage.setItem("genome", JSON.stringify(this.fittestOrbs))
+                }
+
+                // stop spawning barrels
+                bossInit = false
+            }
+            me.onDamage = function () { }
+            me.spawnBeacon = function () {
+                // the vertex to spawn the beacon from
+                const vert = this.vertices[~~(Math.random() * this.vertices.length)]
+                // the position should be a little to the side to prevent crashing into the boss
+                // TODO check for collisions with the wall
+                const spawnPos = Vector.add(vert, Vector.mult(Vector.normalise(Vector.sub(this.position, vert)), -60))
+                // some velocity
+                const velocity = Vector.mult(Vector.normalise(Vector.sub(this.position, vert)), -5)
+                energyBeacon(spawnPos.x, spawnPos.y, this) // spawn the beacon, a bit ahead
+                const beacon = mob[mob.length - 1]
+                this.energyBeacons.push(beacon)
+                Matter.Body.setVelocity(beacon, {
+                    x: this.velocity.x + velocity.x,
+                    y: this.velocity.y + velocity.y
+                })
+            }
+            me.spawnOrbs = function () {
+                Matter.Body.setAngularVelocity(this, 0.11)
+                // sort the vertices by the distance to the player
+                const sorted = [...this.vertices].sort(dist2)
+                // spawn the bullets based on how close they are to the player.
+                // the way it works is it picks the fittest three orbs and clones them.
+                // but start by taking old mobs and checking if they are better than the new ones
+                let next
+                while ((next = this.deadOrbs.pop())) {
+                    // material costs are calculated as a contra to the score
+                    const cost = calculateGenomeCost(next.genome) * 500 // normalize via multiplication
+                    const totalScore = next.score - cost
+                    // try to insert itself into the best orbs, if it can
+                    for (let i = 0; i < this.fittestOrbs.length; i++) {
+                        const fitEntry = this.fittestOrbs[i]
+                        if (fitEntry.score < totalScore) {
+                            this.fittestOrbs[i] = next
+                            break
+                        }
+                    }
+                }
+                // finally sort them using their score
+                this.fittestOrbs.sort((a, b) => a.score - b.score)
+                // only take the genome, the score doesn't matter here
+                const bestOrbs = this.fittestOrbs.map(it => it.genome)
+                for (let vertex of sorted) {
+                    // pick a random fit orb and try to spawn it. If the cost is too high, it'll attempt
+                    // to generate a new random orb instead. If that orb is too expensive too, just ignore this vertex.
+                    // the evolution part comes here, as the genome is mutated first.
+                    let randGenome = mutateGenome(bestOrbs[~~(Math.random() * bestOrbs.length)])
+                    const cost = calculateGenomeCost(randGenome) * 2
+                    if (this.energy - cost < 0) {
+                        // okay this orb is too expensive for the boss to spawn,
+                        // make a new orb from scratch
+                        randGenome = generateGenome()
+                        const secondCost = calculateGenomeCost(randGenome)
+                        if (this.energy - secondCost < 0) {
+                            // that was too expensive too, heh
+                            continue
+                        }
+                    } else {
+                        // alright the boss can afford that
+                        this.energy -= Math.abs(cost) // TODO: Fix this, why the heck can it even be negative??
+                    }
+
+                    geneticSeeker(vertex.x, vertex.y, randGenome, this)
+                    // give the bullet a rotational velocity as if they were attached to a vertex
+                    const velocity = Vector.mult(
+                        Vector.perp(Vector.normalise(Vector.sub(this.position, vertex))),
+                        -10
+                    )
+                    Matter.Body.setVelocity(mob[mob.length - 1], {
+                        x: this.velocity.x + velocity.x,
+                        y: this.velocity.y + velocity.y
+                    })
+                }
+            }
+            me.do = function () {
+                this.seePlayerCheck()
+                this.checkStatus()
+                this.attraction()
+                this.repulsion()
+                // draw laser arcs if it sees the player
+                this.harmZone()
+                // 
+                const regularChance = Math.random() > 0.99
+                const biggerChance = Math.random() > 0.95 && this.energy > 0.25
+                // start by making sure there is always at least one beacon
+                if (this.energyBeacons.length === 0) {
+                    this.spawnBeacon()
+                }
+                // then, spawn some energy beacons if there are less than the maximum.
+                // small chance if there's no energy, bigger chance if there is at least 10% (which is drained)
+                if ((this.energyBeacons.length < MAX_BEACONS && biggerChance) || regularChance) {
+                    if (biggerChance) {
+                        // if the spawn was a selection of bigger chance, reduce 10% energy
+                        this.energy -= 0.10
+                    }
+                    this.spawnBeacon()
+                }
+                // then, spawn genetic seekers
+                if (this.seePlayer.recall && !(simulation.cycle % this.fireFreq)) {
+                    // fire a bullet from each vertex if there's enough energy
+                    if (this.energy > 0.15) {
+                        this.spawnOrbs()
+                    }
+                }
+
+                if (this.energy > 1) {
+                    // clean excess energy
+                    this.energy -= 0.003
+                } else {
+                    // or slowly generate energy
+                    this.energy += 0.001
+                }
+                // the boss will ionize every bullet in its radius, but that will cause its energy to deplete
+                if (!(simulation.cycle % this.ionizeFreq)) {
+                    for (let i = 0; i < bullet.length; i++) {
+                        const it = bullet[i]
+                        // if it's not a bot and it's close
+                        if (!it.botType && dist(this.position, it.position) < this.laserRange) {
+                            // add it to the ionized list
+                            this.ionized.push({
+                                target: it,
+                                ticks: 0
+                            })
+                        }
+                    }
+                }
+
+                for (let i = 0; i < this.ionized.length; i++) {
+                    const entry = this.ionized[i]
+
+                    // skip if there's not enough energy
+                    if (this.energy <= 0) break
+
+                    // terminate if it's no longer in the radius
+                    if (dist(this.position, entry.target.position) > this.laserRange) {
+                        this.ionized.splice(i, 1)
+                        continue
+                    }
+                    // terminate after some ticks
+                    if (++entry.ticks === 10) {
+                        entry.target.endCycle = 0
+                        // draw nice popping graphics
+                        simulation.drawList.push({
+                            x: entry.target.position.x,
+                            y: entry.target.position.y,
+                            radius: 5,
+                            color: '#f24',
+                            time: ~~(Math.random() * 20 + 10)
+                        })
+                        // and remove
+                        this.ionized.splice(i, 1)
+                        continue
+                    }
+                    // draw line
+                    ctx.beginPath()
+                    ctx.moveTo(this.position.x, this.position.y)
+                    ctx.lineTo(entry.target.position.x, entry.target.position.y)
+                    ctx.lineWidth = 7
+                    ctx.strokeStyle = `rgb(${60 - entry.ticks * 2}, 50, 50)`
+                    ctx.stroke()
+                    // reduce energy, as it's hard to ionize
+                    this.energy -= entry.target.mass / 25
+                }
+
+                // if it has energy, shield itself and drain energy
+                if (!this.isShielded && this.energy > 0.5) {
+                    spawn.shield(this, this.position.x, this.position.y, Infinity)
+                    this.energy -= 0.25
+                }
+                drawEnergyBar(this)
+                // change fill color
+                this.fill = `rgb(${((Math.sin(simulation.cycle / 100) + 1) / 2) * 100}, 32, 58)`
+            }
+            // start by spawning several beacons to gain initial energy
+            const amount = Math.ceil(2 + Math.random() * simulation.difficulty / 5)
+            for (let i = 0; i < amount; i++)
+                me.spawnBeacon()
+        }
+
+        // LEVEL SETUP
+        spawn.mapRect(level.enter.x, level.enter.y + 20, 100, 20) //don't change this
+
+        level.exit.x = 5700 //you exit at x
+        level.exit.y = -130 //you exit at y
+        spawn.mapRect(5800, -110, -100, 10)
+
+        level.defaultZoom = 2000 //how far out you want the image to be zoomed at (lower = zoom in, higher = zoom out)
+        simulation.zoomTransition(level.defaultZoom) //makes the level transition to have the zoom at the start of a level
+        document.body.style.backgroundColor = 'hsl(138, 3%, 74%)' //sets background color
+
+        //LEVEL STRUCTURE
+        spawn.mapRect(-3100, -100, 9200, 100)
+        spawn.mapRect(-3100, -600, 100, 500)
+        spawn.mapRect(-3100, -600, 1100, 100)
+        spawn.mapRect(-2100, -3100, 100, 2700)
+        spawn.mapRect(4800, -3100, 100, 2600)
+        spawn.mapRect(4800, -600, 1300, 100)
+        spawn.mapRect(6000, -600, 100, 600)
+
+        spawn.mapRect(400, -200, 2000, 100)
+        spawn.mapRect(600, -300, 1600, 100)
+        spawn.mapRect(800, -400, 1200, 100)
+        spawn.mapRect(1000, -500, 800, 100)
+        spawn.mapRect(1200, -600, 400, 100)
+        // roof
+        spawn.mapRect(-2100, -4350, 650, 1250)
+        spawn.mapRect(-1300, -4350, 1250, 1250)
+        spawn.mapRect(100, -4350, 1225, 1250)
+        spawn.mapRect(1475, -4350, 1325, 1250)
+        spawn.mapRect(2950, -4350, 1325, 1250)
+        spawn.mapRect(4425, -4350, 475, 1250)
+
+        // arc
+        // spawn.mapVertex(1400, -892, '700, -800, 700, -900, 1000, -1000, 1800, -1000, 2100, -900, 2100, -800')
+
+
+        //PLATFORMS
+        platformShadow(-1200, -500, 300, 100, shadows)
+        platformShadow(-400, -700, 300, 100, shadows)
+        platformShadow(400, -900, 300, 100, shadows)
+        platformShadow(-2000, -800, 300, 100, shadows)
+        platformShadow(-1000, -1000, 300, 100, shadows)
+        platformShadow(-400, -1300, 300, 100, shadows)
+        platformShadow(-1600, -1300, 300, 100, shadows)
+        platformShadow(-1300, -1600, 300, 100, shadows)
+        platformShadow(-2000, -1700, 300, 100, shadows)
+        platformShadow(-700, -1800, 300, 100, shadows)
+        platformShadow(-1500, -2100, 300, 100, shadows)
+        platformShadow(-600, -2200, 300, 100, shadows)
+        platformShadow(-2000, -2500, 300, 100, shadows)
+        platformShadow(-1100, -2400, 300, 100, shadows)
+        platformShadow(-500, -2700, 300, 100, shadows)
+        platformShadow(100, -2400, 300, 100, shadows)
+        platformShadow(700, -2700, 300, 100, shadows)
+
+        platformShadow(3700, -500, 300, 100, shadows)
+        platformShadow(2900, -700, 300, 100, shadows)
+        platformShadow(2100, -900, 300, 100, shadows)
+        platformShadow(4500, -800, 300, 100, shadows)
+        platformShadow(3500, -1000, 300, 100, shadows)
+        platformShadow(4100, -1300, 300, 100, shadows)
+        platformShadow(2900, -1300, 300, 100, shadows)
+        platformShadow(3800, -1600, 300, 100, shadows)
+        platformShadow(4500, -1700, 300, 100, shadows)
+        platformShadow(3200, -1800, 300, 100, shadows)
+        platformShadow(4000, -2100, 300, 100, shadows)
+        platformShadow(3100, -2200, 300, 100, shadows)
+        platformShadow(4500, -2500, 300, 100, shadows)
+        platformShadow(3600, -2400, 300, 100, shadows)
+        platformShadow(3000, -2700, 300, 100, shadows)
+        platformShadow(2400, -2400, 300, 100, shadows)
+        platformShadow(1800, -2700, 300, 100, shadows)
+
+        // cages
+        cage(-1492, -1200, 100, cages)
+        cage(-875, -2300, 300, cages)
+        cage(-1600, -3100, 1000, cages)
+        cage(225, -2300, 1000, cages)
+        cage(-750, -3100, 700, cages)
+        cage(-625, -1700, 1200, cages)
+        cage(2200, -3100, 500, cages)
+        cage(3275, -1700, 500, cages)
+        cage(3650, -900, 300, cages)
+        cage(2500, -2300, 300, cages)
+        cage(3625, -2300, 300, cages)
+        cage(3875, -1500, 300, cages)
+        cage(4025, -3100, 300, cages)
+
+        // boss cage
+        platformShadow(1275, -2150, 250, 100, shadows)
+        cage(1400, -2050, 500, cages, 'starter', true)
+        map[map.length] = Bodies.trapezoid(1400, -2193, 250, 100, 0.5)
+        //DEBRIS
+        //idk just put the debris wherever you want
+        spawn.debris(-550, -225, 100)
+        spawn.debris(-1150, -1725, 75)
+        spawn.debris(-275, -1400, 50)
+        spawn.debris(2850, -2075, 150)
+        spawn.debris(4250, -2250, 150)
+        //BOSS
+        // geneticBoss(1400, -3800)
+        anotherBoss(0, 0) //will only spawn historyBoss if there is an additional boss
+    },
+    stereoMadness() {
+        simulation.makeTextLog(`<strong>stereoMadness</strong> by <span class='color-var'>Richard0820</span>`);
+        let totalCoin = 0;
+        const hunter = function (x, y, radius = 30) { //doesn't stop chasing until past 105000
+            mobs.spawn(x, y, 6, radius, "black");
+            let me = mob[mob.length - 1];
+            me.stroke = "transparent";
+            me.collisionFilter.mask = cat.player | cat.bullet;
+            me.accelMag = 0.0006 * Math.min(simulation.difficulty + 1, 4);
+            me.showHealthBar = false;
+            me.isUnblockable = true;
+            me.isShielded = true;
+            me.memory = Infinity;
+            me.seeAtDistance2 = Infinity;
+            Matter.Body.setDensity(me, 1)
+            simulation.makeTextLog(`<b style="color: #3498DB;">Ω:</b><em style="color: #141414;"><b> Intruder Detected</b></em>`);
+            me.boost = 10;
+            me.do = function () {
+                if (me.boost == 1 && m.fieldMode == 3 || m.fieldMode == 9 && me.boost == 1) {
+                    me.accelMag *= 1.5;
+                    me.boost--;
+                }
+                this.attraction();
+                this.checkStatus();
+                this.repelBullets();
+                this.locatePlayer();
+                this.alwaysSeePlayer()
+                if (player.position.x > 105000) {
+                    this.death()
+                }
+            };
+            me.onHit = function () {
+                for (let i = 0; i < 10; i++) {
+                    spawn.spawns(this.position.x + Math.random() * 1000 - Math.random() * 1000, this.position.y - Math.random() * 1000)
+                }
+            }
+        }
+        const coin = function (x, y, radius = 50) {
+            mobs.spawn(x, y, 40, radius, "yellow");
+            let me = mob[mob.length - 1];
+            me.stroke = "#00000055"
+            me.isShielded = true;
+            me.leaveBody = false;
+            me.isBadTarget = true;
+            me.isUnblockable = true;
+            me.isDropPowerUp = false;
+            me.showHealthBar = false;
+            me.collisionFilter.category = 0;
+            Matter.Body.setDensity(me, 0.0045);
+            me.onDeath = function () {
+                totalCoin++;
+            };
+            me.damageReduction = 0.35
+            me.do = function () {
+                ctx.save()
+                ctx.translate(this.position.x, this.position.y)
+                ctx.rotate(Math.PI / 2 + 0.5)
+                ctx.strokeStyle = "#000000";
+                ctx.beginPath()
+                ctx.arc(0, 0, 30, -1, Math.PI, false)
+                ctx.moveTo(20, -5)
+                ctx.arc(0, 0, 20, -1, Math.PI, false)
+                ctx.lineWidth = 5;
+                ctx.stroke()
+                ctx.restore()
+                if (!simulation.isTimeSkipping) {
+                    const sine = Math.sin(simulation.cycle * 0.015)
+                    this.radius = 50 * (1 + 0.1 * sine)
+                    const sub = Vector.sub(player.position, this.position)
+                    const mag = Vector.magnitude(sub)
+                    const force = Vector.mult(Vector.normalise(sub), 0.000000003)
+                    if (mag < this.radius) { //heal player when inside radius
+                        if (m.health < 0.7) {
+                            m.damage(-0.001);
+                        } else if (m.health == 0.7 || m.health > 0.7) {
+                            this.death()
+                        }
+                        ctx.strokeStyle = "#00FFDD55";
+                        ctx.beginPath();
+                        ctx.arc(m.pos.x, m.pos.y, 34, 0, 2 * Math.PI);
+                        ctx.lineWidth = 6;
+                        ctx.stroke();
+                    }
+                    ctx.beginPath();
+                    ctx.arc(this.position.x, this.position.y, this.radius + 15, 0, 2 * Math.PI);
+                    ctx.strokeStyle = "#000"
+                    ctx.lineWidth = 1;
+                    ctx.stroke();
+                };
+            }
+        }
+        const spike = function (x, y, angle = Math.PI * 0.5, radius = 50) {
+            mobs.spawn(x, y, 3, radius, "#454545");
+            let me = mob[mob.length - 1];
+            me.stroke = "transparent";
+            me.isDropPowerUp = false;
+            me.showHealthBar = false;
+            Matter.Body.setDensity(me, 50)
+            me.collisionFilter.mask = cat.player | cat.mob | cat.bullet;
+            me.constraint = Constraint.create({
+                pointA: {
+                    x: me.position.x,
+                    y: me.position.y
+                },
+                bodyB: me,
+                stiffness: 0,
+                damping: 0
+            });
+            me.do = function () {
+                if (this.health < 1) {
+                    this.health += 0.001; //regen
+                    simulation.drawList.push({
+                        x: this.position.x,
+                        y: this.position.y,
+                        radius: this.radius / 1.5,
+                        color: `rgba(0, 255, 20, ${Math.random() * 0.1})`,
+                        time: simulation.drawTime
+                    });
+                }
+                this.checkStatus();
+                Matter.Body.setAngle(me, angle);
+            };
+            me.onHit = function () {
+                m.damage(0.01) //extra damage
+                me.collisionFilter.mask = 0;
+                setTimeout(() => {
+                    me.collisionFilter.mask = cat.player | cat.mob | cat.bullet;
+                }, 1000);
+            }
+            Composite.add(engine.world, me.constraint);
+        }
+
+        function drawStar(cx, cy, spikes, outerRadius, innerRadius) {
+            outerRadius *= (1 + 0.1 * Math.sin(simulation.cycle * 0.15));
+            innerRadius *= (1 + 0.1 * Math.sin(simulation.cycle * 0.15));
+            var rot = Math.PI / 2 * 3;
+            var xs = cx;
+            var y = cy;
+            var step = Math.PI / spikes;
+
+            ctx.strokeSyle = "#000";
+            ctx.beginPath();
+            ctx.moveTo(cx, cy - outerRadius)
+            for (i = 0; i < spikes; i++) {
+                xs = cx + Math.cos(rot) * outerRadius;
+                y = cy + Math.sin(rot) * outerRadius;
+                ctx.lineTo(xs, y)
+                rot += step
+
+                xs = cx + Math.cos(rot) * innerRadius;
+                y = cy + Math.sin(rot) * innerRadius;
+                ctx.lineTo(xs, y)
+                rot += step
+            }
+            ctx.lineTo(cx, cy - outerRadius)
+            ctx.closePath();
+            ctx.lineWidth = 5;
+            ctx.strokeStyle = 'red';
+            ctx.stroke();
+            ctx.fillStyle = 'darkred';
+            ctx.fill();
+
+        }
+        const slimePit1 = level.hazard(7475, -75, 475, 100, 0.01)
+        const slimePit2 = level.hazard(11275, -75, 1450, 100, 0.01)
+        const slimePit3 = level.hazard(13400, -150, 3500, 200, 0.1)
+        const slimePit4 = level.hazard(20275, -400, 3475, 450, 0.01)
+        const slimePit5 = level.hazard(25300, -800, 20000, 650, 0.003)
+        const slimePit6 = level.hazard(47725, -425, 2500, 475, 0.01)
+        const slimePit7 = level.hazard(50975, -575, 4050, 650, 0.01)
+        const slimePit8 = level.hazard(54950, -950, 6650, 1050, 0.01)
+        const slimePit9 = level.hazard(63550, -75, 2150, 100, 0.01)
+        const slimePit10 = level.hazard(70875, -75, 1200, 100, 0.01)
+        const slimePit11 = level.hazard(72075, -50, 900, 75, 1)
+        const slimePit12 = level.hazard(75900, -75, 2575, 100, 0.01)
+        const slimePit13 = level.hazard(78475, -35, 2300, 70, 0.01)
+        const slimePit14 = level.hazard(82875, -75, 5100, 100, 0.1)
+
+        const drip1 = level.drip(32474, -2165, -800, 100);
+        const drip2 = level.drip(37750, -2165, -800, 100);
+        const drip3 = level.drip(43525, -2165, -800, 100);
+        const drip4 = level.drip(20475, -830, -375, 100);
+        const drip5 = level.drip(49960, -2315, -423, 200)
+        let textlogOne = 0;
+        let textlogTwo = 0;
+        let barThere = true;
+        let bar = document.createElement("div");
+        bar.style.cssText = `position: absolute; top: 80px; background-color: black; width: 80vw; z-index: 1; border-radius: 10px; height: 20px; left: 5em; right: 5em;`;
+        bar.innerHTML += `<div id="innerBar" style="height: 12px; border-radius: 10px; margin-top: 3px; margin-left: 4px; border: 1px solid gray;"></div>`
+        document.body.appendChild(bar);
+        let innerBar = document.getElementById("innerBar");
+        level.custom = () => {
+            level.exit.drawAndCheck();
+            if (barThere == true) {
+                innerBar.style.width = "calc(" + `${Math.max(0, Math.min(player.position.x / 1310, 80))}` + "vw - 10px)";
+                innerBar.style.backgroundColor = m.eyeFillColor;
+            }
+            if (m.pos.x > 25360 && textlogOne == 0) {
+                simulation.makeTextLog(`<div><em>A stong force pushes you forward...</em></div>`)
+                textlogOne++;
+            }
+            if (m.pos.x < -3000) {
+                Matter.Body.setVelocity(player, {
+                    x: 99,
+                    y: 19
+                });
+
+                if (textlogTwo == 0)
+                    simulation.makeTextLog(`<div><em>A strong force pushes you away...</em></div>`);
+                textlogTwo++;
+            }
+            if (m.pos.y > 1055) {
+                Matter.Body.setPosition(player, { x: 0, y: -150 });
+                simulation.makeTextLog(`<div><em>There is nowhere to run...</em></div>`);
+                m.damage(0.1 * simulation.difficultyMode);
+            }
+            if (m.alive == false && barThere == true) {
+                document.body.removeChild(bar);
+                barThere = false;
+            }
+            ctx.beginPath()
+            ctx.lineWidth = 5;
+            ctx.strokeStyle = "#000000";
+            ctx.moveTo(40, -1000)
+            ctx.arc(0, -1000, 40, 0, 2 * Math.PI)
+            ctx.stroke()
+            ctx.fillStyle = "#FF00FF55"
+            ctx.fillRect(89750, -1300, 800, 200)
+            ctx.fillRect(89750, -200, 800, 200)
+            ctx.fillRect(92050, -200, 800, 200)
+            ctx.fillRect(92050, -1675, 800, 575)
+            ctx.fillRect(93950, -350, 200, 350);
+            ctx.fillRect(95100, -1350, 150, 375);
+            ctx.fillRect(100900, -1325, 1175, 250);
+            ctx.fillRect(100900, -225, 1200, 250);
+            ctx.fillRect(98725, -1325, 450, 150);
+            ctx.fillRect(98725, -125, 450, 150);
+            ctx.beginPath()
+            //lines!
+            ctx.lineWidth = 10;
+            ctx.strokeStyle = "#000000";
+            ctx.moveTo(7462.5, -250)
+            ctx.lineTo(7462.5, -170)
+            ctx.moveTo(7710, -330)
+            ctx.lineTo(7710, -250)
+            ctx.moveTo(7960, -420)
+            ctx.lineTo(7960, -320)
+            ctx.moveTo(13725, -250)
+            ctx.lineTo(13725, -180)
+            ctx.moveTo(14025, -350)
+            ctx.lineTo(14025, -280)
+            ctx.moveTo(14325, -450)
+            ctx.lineTo(14325, -380)
+            ctx.moveTo(14625, -550)
+            ctx.lineTo(14625, -480)
+            ctx.moveTo(14925, -650)
+            ctx.lineTo(14925, -580)
+            ctx.moveTo(15225, -750)
+            ctx.lineTo(15225, -680)
+            ctx.moveTo(15525, -850)
+            ctx.lineTo(15525, -780)
+            ctx.moveTo(15825, -950)
+            ctx.lineTo(15825, -880)
+            ctx.moveTo(16125, -1050)
+            ctx.lineTo(16125, -980)
+            ctx.moveTo(16425, -1150)
+            ctx.lineTo(16425, -1080)
+            ctx.moveTo(22600, -650)
+            ctx.lineTo(22600, -580)
+            ctx.moveTo(22800, -750)
+            ctx.lineTo(22800, -680)
+            ctx.moveTo(23000, -850)
+            ctx.lineTo(23000, -780)
+            ctx.moveTo(23200, -950)
+            ctx.lineTo(23200, -880)
+            ctx.moveTo(23400, -1050)
+            ctx.lineTo(23400, -980)
+            ctx.moveTo(23600, -1150)
+            ctx.lineTo(23600, -1080)
+            ctx.moveTo(29550, -1625)
+            ctx.lineTo(29550, -1425)
+            ctx.moveTo(32275, -2125)
+            ctx.lineTo(32275, -1925)
+            ctx.moveTo(33775, -2125)
+            ctx.lineTo(33775, -1925)
+            ctx.moveTo(32275, -350)
+            ctx.lineTo(32275, -550)
+            ctx.moveTo(33775, -350)
+            ctx.lineTo(33775, -550)
+            ctx.moveTo(35475, -650)
+            ctx.lineTo(35475, -450)
+            ctx.moveTo(37650, -2000)
+            ctx.lineTo(37650, -1800)
+            ctx.moveTo(39675, -400)
+            ctx.lineTo(39675, -600)
+            ctx.moveTo(40375, -500)
+            ctx.lineTo(40375, -700)
+            ctx.moveTo(41075, -600)
+            ctx.lineTo(41075, -800)
+            ctx.moveTo(43625, -1925)
+            ctx.lineTo(43625, -1725)
+            ctx.moveTo(50975, -1125)
+            ctx.lineTo(50975, -925)
+            ctx.moveTo(51387.5, -1325)
+            ctx.lineTo(51387.5, -1125)
+            ctx.moveTo(51787.5, -1525)
+            ctx.lineTo(51787.5, -1325)
+            ctx.moveTo(52187.5, -1725)
+            ctx.lineTo(52187.5, -1525)
+            ctx.moveTo(52587.5, -1725)
+            ctx.lineTo(52587.5, -1925)
+            ctx.moveTo(52987.5, -2125)
+            ctx.lineTo(52987.5, -1925)
+            ctx.moveTo(53387.5, -2325)
+            ctx.lineTo(53387.5, -2125)
+            ctx.moveTo(53787.5, -2525)
+            ctx.lineTo(53787.5, -2325)
+            ctx.moveTo(54187.5, -2725)
+            ctx.lineTo(54187.5, -2525)
+            ctx.moveTo(54587.5, -2925)
+            ctx.lineTo(54587.5, -2725)
+            ctx.moveTo(54987.5, -3125)
+            ctx.lineTo(54987.5, -2925)
+            ctx.moveTo(57500, -1925)
+            ctx.lineTo(57650, -1925)
+            ctx.moveTo(57520, -1845)
+            ctx.lineTo(57650, -1845)
+            ctx.moveTo(57500, -1925)
+            ctx.lineTo(57895 + 300, -1925)
+            ctx.moveTo(57520, -1845)
+            ctx.lineTo(57895 + 300, -1845)
+            ctx.moveTo(58525, -1725)
+            ctx.lineTo(58525 + 125, -1725)
+            ctx.moveTo(58525, -1625)
+            ctx.lineTo(58525 + 125, -1625)
+            ctx.moveTo(59000, -1725)
+            ctx.lineTo(59150, -1725)
+            ctx.moveTo(59150, -1625)
+            ctx.lineTo(59000, -1625)
+            ctx.moveTo(70875, -200)
+            ctx.lineTo(70875, -100)
+            ctx.moveTo(63700, -200)
+            ctx.lineTo(63800, -200)
+            ctx.moveTo(64000, -200)
+            ctx.lineTo(64100, -200)
+            ctx.moveTo(64675, -200)
+            ctx.lineTo(64575, -200)
+            ctx.moveTo(64875, -200)
+            ctx.lineTo(64975, -200)
+            ctx.moveTo(65025, -300)
+            ctx.lineTo(64925, -300)
+            ctx.moveTo(65225, -300)
+            ctx.lineTo(65325, -300)
+            ctx.moveTo(71275, -200)
+            ctx.lineTo(71275, -300)
+            ctx.moveTo(71675, -300)
+            ctx.lineTo(71675, -400)
+            ctx.moveTo(72075, -400)
+            ctx.lineTo(72075, -500)
+            ctx.moveTo(72425, -325)
+            ctx.lineTo(72425, -425)
+            ctx.moveTo(72675, -200)
+            ctx.lineTo(72675, -300)
+            ctx.moveTo(72925, -75)
+            ctx.lineTo(72925, -175)
+            ctx.moveTo(75225, -100)
+            ctx.lineTo(75225, -200)
+            ctx.moveTo(76600, -125)
+            ctx.lineTo(76600, -225)
+            ctx.moveTo(76900, -200)
+            ctx.lineTo(76900, -300)
+            ctx.moveTo(77175, -275)
+            ctx.lineTo(77175, -375)
+            ctx.moveTo(77475, -350)
+            ctx.lineTo(77475, -450)
+            ctx.moveTo(85575, -275)
+            ctx.lineTo(85575, -375)
+            ctx.moveTo(86000, -275)
+            ctx.lineTo(86000, -375)
+            ctx.moveTo(86275, -275)
+            ctx.lineTo(86275, -375)
+            ctx.moveTo(86950, -425)
+            ctx.lineTo(86950, -525)
+            ctx.moveTo(89700, -175)
+            ctx.lineTo(89700, -75)
+            ctx.moveTo(89700, -1125)
+            ctx.lineTo(89700, -1225)
+            ctx.moveTo(90600, -1225)
+            ctx.lineTo(90600, -1125)
+            ctx.moveTo(90600, -100)
+            ctx.lineTo(90600, -175)
+            ctx.moveTo(92000, -100)
+            ctx.lineTo(92000, -175)
+            ctx.moveTo(92900, -100)
+            ctx.lineTo(92900, -175)
+            ctx.moveTo(92900, -1225)
+            ctx.lineTo(92900, -1125)
+            ctx.moveTo(94500, -1475)
+            ctx.lineTo(94500, -1575)
+            ctx.moveTo(94700, -1475)
+            ctx.lineTo(94700, -1575)
+            ctx.moveTo(94900, -1475)
+            ctx.lineTo(94900, -1575)
+            ctx.moveTo(96125, -1500)
+            ctx.lineTo(96125, -1575)
+            ctx.moveTo(96550, -1575)
+            ctx.lineTo(96550, -1500)
+            ctx.moveTo(97000, -1475)
+            ctx.lineTo(97000, -1575)
+
+            ctx.stroke()
+            ctx.beginPath()
+            ctx.strokeStyle = "#FFFFFF";
+            ctx.fillStyle = document.body.style.backgroundColor;
+            let cycles = Math.sin(simulation.cycle * 0.15)
+            ctx.moveTo(7482.5, -270)
+            ctx.arc(7462.5, -270, 20 * (1 + 0.1 * cycles), 0, 2 * Math.PI);
+            ctx.moveTo(7730, -350)
+            ctx.arc(7710, -350, 20 * (1 + 0.1 * cycles), 0, 2 * Math.PI);
+            ctx.moveTo(7980, -420)
+            ctx.arc(7960, -420, 20 * (1 + 0.1 * cycles), 0, 2 * Math.PI)
+            ctx.moveTo(13745, -180)
+            ctx.arc(13725, -180, 20 * (1 + 0.1 * cycles), 0, 2 * Math.PI)
+            ctx.moveTo(14045, -280)
+            ctx.arc(14025, -280, 20 * (1 + 0.1 * cycles), 0, 2 * Math.PI)
+            ctx.moveTo(14345, -380)
+            ctx.arc(14325, -380, 20 * (1 + 0.1 * cycles), 0, 2 * Math.PI)
+            ctx.moveTo(14645, -480)
+            ctx.arc(14625, -480, 20 * (1 + 0.1 * cycles), 0, 2 * Math.PI)
+            ctx.moveTo(14945, -580)
+            ctx.arc(14925, -580, 20 * (1 + 0.1 * cycles), 0, 2 * Math.PI)
+            ctx.moveTo(15245, -680)
+            ctx.arc(15225, -680, 20 * (1 + 0.1 * cycles), 0, 2 * Math.PI)
+            ctx.moveTo(15545, -780)
+            ctx.arc(15525, -780, 20 * (1 + 0.1 * cycles), 0, 2 * Math.PI)
+            ctx.moveTo(15845, -880)
+            ctx.arc(15825, -880, 20 * (1 + 0.1 * cycles), 0, 2 * Math.PI)
+            ctx.moveTo(16145, -980)
+            ctx.arc(16125, -980, 20 * (1 + 0.1 * cycles), 0, 2 * Math.PI)
+            ctx.moveTo(16445, -1080)
+            ctx.arc(16425, -1080, 20 * (1 + 0.1 * cycles), 0, 2 * Math.PI)
+            ctx.moveTo(22620, -580);
+            ctx.arc(22600, -580, 20 * (1 + 0.1 * cycles), 0, 2 * Math.PI)
+            ctx.moveTo(22820, -680);
+            ctx.arc(22800, -680, 20 * (1 + 0.1 * cycles), 0, 2 * Math.PI)
+            ctx.moveTo(23020, -780);
+            ctx.arc(23000, -780, 20 * (1 + 0.1 * cycles), 0, 2 * Math.PI)
+            ctx.moveTo(23220, -880);
+            ctx.arc(23200, -880, 20 * (1 + 0.1 * cycles), 0, 2 * Math.PI)
+            ctx.moveTo(23420, -980);
+            ctx.arc(23400, -980, 20 * (1 + 0.1 * cycles), 0, 2 * Math.PI)
+            ctx.moveTo(23620, -1080);
+            ctx.arc(23600, -1080, 20 * (1 + 0.1 * cycles), 0, 2 * Math.PI)
+            ctx.moveTo(29570, -1425)
+            ctx.arc(29550, -1425, 20 * (1 + 0.1 * cycles), 0, 2 * Math.PI)
+            ctx.moveTo(32295, -1925)
+            ctx.arc(32275, -1925, 20 * (1 + 0.1 * cycles), 0, 2 * Math.PI)
+            ctx.moveTo(33795, -1925)
+            ctx.arc(33775, -1925, 20 * (1 + 0.1 * cycles), 0, 2 * Math.PI)
+            ctx.moveTo(32295, -550)
+            ctx.arc(32275, -550, 20 * (1 + 0.1 * cycles), 0, 2 * Math.PI)
+            ctx.moveTo(33795, -550)
+            ctx.arc(33775, -550, 20 * (1 + 0.1 * cycles), 0, 2 * Math.PI)
+            ctx.moveTo(35495, -650)
+            ctx.arc(35475, -650, 20 * (1 + 0.1 * cycles), 0, 2 * Math.PI)
+            ctx.moveTo(37670, -1800)
+            ctx.arc(37650, -1800, 20 * (1 + 0.1 * cycles), 0, 2 * Math.PI)
+            ctx.moveTo(39695, -600)
+            ctx.arc(39675, -600, 20 * (1 + 0.1 * cycles), 0, 2 * Math.PI)
+            ctx.moveTo(40395, -700)
+            ctx.arc(40375, -700, 20 * (1 + 0.1 * cycles), 0, 2 * Math.PI)
+            ctx.moveTo(41095, -800)
+            ctx.arc(41075, -800, 20 * (1 + 0.1 * cycles), 0, 2 * Math.PI)
+            ctx.moveTo(43645, -1725)
+            ctx.arc(43625, -1725, 20 * (1 + 0.1 * cycles), 0, 2 * Math.PI)
+            ctx.moveTo(50995, -1125)
+            ctx.arc(50975, -1125, 20 * (1 + 0.1 * cycles), 0, 2 * Math.PI)
+            ctx.moveTo(51407.5, -1325)
+            ctx.arc(51387.5, -1325, 20 * (1 + 0.1 * cycles), 0, 2 * Math.PI)
+            ctx.moveTo(51807.5, -1525)
+            ctx.arc(51787.5, -1525, 20 * (1 + 0.1 * cycles), 0, 2 * Math.PI)
+            ctx.moveTo(52207.5, -1725)
+            ctx.arc(52187.5, -1725, 20 * (1 + 0.1 * cycles), 0, 2 * Math.PI)
+            ctx.moveTo(52607.5, -1925)
+            ctx.arc(52587.5, -1925, 20 * (1 + 0.1 * cycles), 0, 2 * Math.PI)
+            ctx.moveTo(53007.5, -2125)
+            ctx.arc(52987.5, -2125, 20 * (1 + 0.1 * cycles), 0, 2 * Math.PI)
+            ctx.moveTo(53407.5, -2325)
+            ctx.arc(53387.5, -2325, 20 * (1 + 0.1 * cycles), 0, 2 * Math.PI)
+            ctx.moveTo(53807.5, -2525)
+            ctx.arc(53787.5, -2525, 20 * (1 + 0.1 * cycles), 0, 2 * Math.PI)
+            ctx.moveTo(54207.5, -2725)
+            ctx.arc(54187.5, -2725, 20 * (1 + 0.1 * cycles), 0, 2 * Math.PI)
+            ctx.moveTo(54607.5, -2925)
+            ctx.arc(54587.5, -2925, 20 * (1 + 0.1 * cycles), 0, 2 * Math.PI)
+            ctx.moveTo(55007.5, -3125)
+            ctx.arc(54987.5, -3125, 20 * (1 + 0.1 * cycles), 0, 2 * Math.PI)
+            ctx.moveTo(57520, -1925)
+            ctx.arc(57500, -1925, 20 * (1 + 0.1 * cycles), 0, 2 * Math.PI)
+            ctx.moveTo(57520, -1845)
+            ctx.arc(57500, -1845, 20 * (1 + 0.1 * cycles), 0, 2 * Math.PI)
+            ctx.moveTo(58525, -1725)
+            ctx.arc(58505, -1725, 20 * (1 + 0.1 * cycles), 0, 2 * Math.PI)
+            ctx.moveTo(57895 + 300, -1925)
+            ctx.arc(57875 + 300, -1925, 20 * (1 + 0.1 * cycles), 0, 2 * Math.PI)
+            ctx.moveTo(57895 + 300, -1845)
+            ctx.arc(57875 + 300, -1845, 20 * (1 + 0.1 * cycles), 0, 2 * Math.PI)
+            ctx.moveTo(58525, -1625)
+            ctx.arc(58505, -1625, 20 * (1 + 0.1 * cycles), 0, 2 * Math.PI)
+            ctx.moveTo(58690 + 375 + 125, -1625)
+            ctx.arc(58670 + 375 + 125, -1625, 20 * (1 + 0.1 * cycles), 0, 2 * Math.PI)
+            ctx.moveTo(59190, -1725)
+            ctx.arc(59170, -1725, 20 * (1 + 0.1 * cycles), 0, 2 * Math.PI)
+            ctx.moveTo(70895, -200)
+            ctx.arc(70875, -200, 20 * (1 + 0.1 * cycles), 0, 2 * Math.PI)
+            ctx.moveTo(63720, -200)
+            ctx.arc(63700, -200, 20 * (1 + 0.1 * cycles), 0, 2 * Math.PI)
+            ctx.moveTo(64120, -200)
+            ctx.arc(64100, -200, 20 * (1 + 0.1 * cycles), 0, 2 * Math.PI)
+            ctx.moveTo(64595, -200)
+            ctx.arc(64575, -200, 20 * (1 + 0.1 * cycles), 0, 2 * Math.PI)
+            ctx.moveTo(64995, -200)
+            ctx.arc(64975, -200, 20 * (1 + 0.1 * cycles), 0, 2 * Math.PI)
+            ctx.moveTo(64945, -300)
+            ctx.arc(64925, -300, 20 * (1 + 0.1 * cycles), 0, 2 * Math.PI)
+            ctx.moveTo(65345, -300)
+            ctx.arc(65325, -300, 20 * (1 + 0.1 * cycles), 0, 2 * Math.PI)
+            ctx.moveTo(71295, -300)
+            ctx.arc(71275, -300, 20 * (1 + 0.1 * cycles), 0, 2 * Math.PI)
+            ctx.moveTo(71695, -400)
+            ctx.arc(71675, -400, 20 * (1 + 0.1 * cycles), 0, 2 * Math.PI)
+            ctx.moveTo(72095, -500)
+            ctx.arc(72075, -500, 20 * (1 + 0.1 * cycles), 0, 2 * Math.PI)
+            ctx.moveTo(72445, -425)
+            ctx.arc(72425, -425, 20 * (1 + 0.1 * cycles), 0, 2 * Math.PI)
+            ctx.moveTo(72695, -300)
+            ctx.arc(72675, -300, 20 * (1 + 0.1 * cycles), 0, 2 * Math.PI)
+            ctx.moveTo(72945, -175)
+            ctx.arc(72925, -175, 20 * (1 + 0.1 * cycles), 0, 2 * Math.PI)
+            ctx.moveTo(75245, -200)
+            ctx.arc(75225, -200, 20 * (1 + 0.1 * cycles), 0, 2 * Math.PI)
+            ctx.moveTo(76620, -125)
+            ctx.arc(76600, -125, 20 * (1 + 0.1 * cycles), 0, 2 * Math.PI)
+            ctx.moveTo(76920, -200)
+            ctx.arc(76900, -200, 20 * (1 + 0.1 * cycles), 0, 2 * Math.PI)
+            ctx.moveTo(77195, -275)
+            ctx.arc(77175, -275, 20 * (1 + 0.1 * cycles), 0, 2 * Math.PI)
+            ctx.moveTo(77495, -350)
+            ctx.arc(77475, -350, 20 * (1 + 0.1 * cycles), 0, 2 * Math.PI)
+            ctx.moveTo(85595, -375)
+            ctx.arc(85575, -375, 20 * (1 + 0.1 * cycles), 0, 2 * Math.PI)
+            ctx.moveTo(86020, -375)
+            ctx.arc(86000, -375, 20 * (1 + 0.1 * cycles), 0, 2 * Math.PI)
+            ctx.moveTo(86295, -375)
+            ctx.arc(86275, -375, 20 * (1 + 0.1 * cycles), 0, 2 * Math.PI)
+            ctx.moveTo(86970, -525)
+            ctx.arc(86950, -525, 20 * (1 + 0.1 * cycles), 0, 2 * Math.PI)
+            ctx.moveTo(89720, -175)
+            ctx.arc(89700, -175, 20 * (1 + 0.1 * cycles), 0, 2 * Math.PI)
+            ctx.moveTo(89720, -1125)
+            ctx.arc(89700, -1125, 20 * (1 + 0.1 * cycles), 0, 2 * Math.PI)
+            ctx.moveTo(90620, -1125)
+            ctx.arc(90600, -1125, 20 * (1 + 0.1 * cycles), 0, 2 * Math.PI)
+            ctx.moveTo(90620, -175)
+            ctx.arc(90600, -175, 20 * (1 + 0.1 * cycles), 0, 2 * Math.PI)
+            ctx.moveTo(92020, -175)
+            ctx.arc(92000, -175, 20 * (1 + 0.1 * cycles), 0, 2 * Math.PI)
+            ctx.moveTo(92920, -175)
+            ctx.arc(92900, -175, 20 * (1 + 0.1 * cycles), 0, 2 * Math.PI)
+            ctx.moveTo(92920, -1125)
+            ctx.arc(92900, -1125, 20 * (1 + 0.1 * cycles), 0, 2 * Math.PI)
+            ctx.moveTo(94520, -1575)
+            ctx.arc(94500, -1575, 20 * (1 + 0.1 * cycles), 0, 2 * Math.PI)
+            ctx.moveTo(94720, -1575)
+            ctx.arc(94700, -1575, 20 * (1 + 0.1 * cycles), 0, 2 * Math.PI)
+            ctx.moveTo(94920, -1575)
+            ctx.arc(94900, -1575, 20 * (1 + 0.1 * cycles), 0, 2 * Math.PI)
+            ctx.moveTo(96145, -1575)
+            ctx.arc(96125, -1575, 20 * (1 + 0.1 * cycles), 0, 2 * Math.PI)
+            ctx.moveTo(96570, -1500)
+            ctx.arc(96550, -1500, 20 * (1 + 0.1 * cycles), 0, 2 * Math.PI)
+            ctx.moveTo(97020, -1575)
+            ctx.arc(97000, -1575, 20 * (1 + 0.1 * cycles), 0, 2 * Math.PI)
+            ctx.fill()
+            ctx.stroke()
+            slimePit1.query()
+            slimePit2.query()
+            slimePit3.query()
+            slimePit4.query()
+            slimePit5.query()
+            slimePit5.query()
+            slimePit6.query()
+            slimePit7.query()
+            slimePit8.query()
+            slimePit9.query()
+            slimePit10.query()
+            slimePit11.query()
+            slimePit12.query()
+            slimePit13.query()
+            slimePit14.query()
+            drip1.draw()
+            drip2.draw()
+            drip3.draw()
+            drip4.draw()
+            drip5.draw()
+
+            ctx.fillStyle = "rgba(0,255,255,0.9)"
+            ctx.fillRect(25325, -1375, 75, 400)
+            ctx.fillRect(46425, -1350, 100, 500)
+            ctx.fillRect(87925, -725, 75, 450)
+
+            /*
+                if (player.position.x < 46470) {
+                    document.body.style.backgroundColor = "#DD00DD";
+                }
+            */
+            if (player.position.x > 25360 && player.position.x < 46470) {
+                Matter.Body.setVelocity(player, {
+                    x: player.velocity.x, //+ 0.2,
+                    y: player.velocity.y,
+                });
+                if (input.up) {
+                    Matter.Body.setVelocity(player, {
+                        x: player.velocity.x,
+                        y: player.velocity.y, //- 1,
+                    });
+                }
+                document.body.style.backgroundColor = "#fb3310"
+            } else if (player.position.x > 46470 && player.position.x < 61675) {
+                document.body.style.backgroundColor = "#7704FF"
+            } else if (player.position.x > 9700 && player.position.x < 46470) {
+                document.body.style.backgroundColor = "#7704FF"
+            } else if (player.position.x > 61675 && player.position.x < 87950) {
+                document.body.style.backgroundColor = "#DD1111"
+            } else if (player.position.x > 87950) {
+                document.body.style.backgroundColor = "#7704FF"
+            }
+
+            if (m.pos.y > -200 && 20350 < m.pos.x && m.pos.x < 23635) {
+                Matter.Body.setVelocity(player, {
+                    x: 0,
+                    y: 0
+                });
+                Matter.Body.setPosition(player, {
+                    x: 20250,
+                    y: -1000
+                });
+                // move bots
+                for (let i = 0; i < bullet.length; i++) {
+                    if (bullet[i].botType) {
+                        Matter.Body.setPosition(bullet[i], Vector.add(player.position, {
+                            x: 250 * (Math.random() - 0.5),
+                            y: 250 * (Math.random() - 0.5)
+                        }));
+                        Matter.Body.setVelocity(bullet[i], {
+                            x: 0,
+                            y: 0
+                        });
+                    }
+                }
+                m.damage(0.1 * simulation.difficultyMode)
+                m.energy -= 0.1 * simulation.difficultyMode
+            }
+            if (m.pos.y > -150 && m.pos.x > 47770 && m.pos.x < 50130) {
+                Matter.Body.setVelocity(player, {
+                    x: 0,
+                    y: 0
+                });
+                Matter.Body.setPosition(player, {
+                    x: 47640,
+                    y: -900
+                });
+                // move bots
+                for (let i = 0; i < bullet.length; i++) {
+                    if (bullet[i].botType) {
+                        Matter.Body.setPosition(bullet[i], Vector.add(player.position, {
+                            x: 250 * (Math.random() - 0.5),
+                            y: 250 * (Math.random() - 0.5)
+                        }));
+                        Matter.Body.setVelocity(bullet[i], {
+                            x: 0,
+                            y: 0
+                        });
+                    }
+                }
+                m.damage(0.1 * simulation.difficultyMode)
+                m.energy -= 0.1 * simulation.difficultyMode
+            }
+            if (m.pos.y > -150 && 50975 < m.pos.x && m.pos.x < 54925) {
+                Matter.Body.setVelocity(player, {
+                    x: 0,
+                    y: 0
+                });
+                Matter.Body.setPosition(player, {
+                    x: 50965,
+                    y: -1100
+                });
+                // move bots
+                for (let i = 0; i < bullet.length; i++) {
+                    if (bullet[i].botType) {
+                        Matter.Body.setPosition(bullet[i], Vector.add(player.position, {
+                            x: 250 * (Math.random() - 0.5),
+                            y: 250 * (Math.random() - 0.5)
+                        }));
+                        Matter.Body.setVelocity(bullet[i], {
+                            x: 0,
+                            y: 0
+                        });
+                    }
+                }
+                m.damage(0.1 * simulation.difficultyMode)
+                m.energy -= 0.1 * simulation.difficultyMode
+            }
+            if (m.pos.y > -150 && 55025 < m.pos.x && m.pos.x < 57675) {
+                Matter.Body.setVelocity(player, {
+                    x: 0,
+                    y: 0
+                });
+                Matter.Body.setPosition(player, {
+                    x: 55148,
+                    y: -3072
+                });
+                // move bots
+                for (let i = 0; i < bullet.length; i++) {
+                    if (bullet[i].botType) {
+                        Matter.Body.setPosition(bullet[i], Vector.add(player.position, {
+                            x: 250 * (Math.random() - 0.5),
+                            y: 250 * (Math.random() - 0.5)
+                        }));
+                        Matter.Body.setVelocity(bullet[i], {
+                            x: 0,
+                            y: 0
+                        });
+                    }
+                }
+                m.damage(0.1 * simulation.difficultyMode)
+                m.energy -= 0.1 * simulation.difficultyMode
+            }
+            if (m.pos.y > -150 && 57875 < m.pos.x && m.pos.x < 58700) {
+                Matter.Body.setVelocity(player, {
+                    x: 0,
+                    y: 0
+                });
+                Matter.Body.setPosition(player, {
+                    x: 57800,
+                    y: -2200
+
+                });
+                // move bots
+                for (let i = 0; i < bullet.length; i++) {
+                    if (bullet[i].botType) {
+                        Matter.Body.setPosition(bullet[i], Vector.add(player.position, {
+                            x: 250 * (Math.random() - 0.5),
+                            y: 250 * (Math.random() - 0.5)
+                        }));
+                        Matter.Body.setVelocity(bullet[i], {
+                            x: 0,
+                            y: 0
+                        });
+                    }
+                }
+                m.damage(0.1 * simulation.difficultyMode)
+                m.energy -= 0.1 * simulation.difficultyMode
+            }
+            if (m.pos.y > -150 && 58875 < m.pos.x && m.pos.x < 61650) {
+                Matter.Body.setVelocity(player, {
+                    x: 0,
+                    y: 0
+                });
+                Matter.Body.setPosition(player, {
+                    x: 58850,
+                    y: -2025
+
+                });
+                // move bots
+                for (let i = 0; i < bullet.length; i++) {
+                    if (bullet[i].botType) {
+                        Matter.Body.setPosition(bullet[i], Vector.add(player.position, {
+                            x: 250 * (Math.random() - 0.5),
+                            y: 250 * (Math.random() - 0.5)
+                        }));
+                        Matter.Body.setVelocity(bullet[i], {
+                            x: 0,
+                            y: 0
+                        });
+                    }
+                }
+                m.damage(0.1 * simulation.difficultyMode)
+                m.energy -= 0.1 * simulation.difficultyMode
+            }
+            if (m.pos.y > -1677 && 104650 < m.pos.x && m.pos.x < 105000 && barThere == true) {
+                Matter.Body.setVelocity(player, {
+                    x: 0,
+                    y: 0
+                });
+                Matter.Body.setPosition(player, {
+                    x: 132577,
+                    y: -300
+
+                });
+                // move bots
+                for (let i = 0; i < bullet.length; i++) {
+                    if (bullet[i].botType) {
+                        Matter.Body.setPosition(bullet[i], Vector.add(player.position, {
+                            x: 250 * (Math.random() - 0.5),
+                            y: 250 * (Math.random() - 0.5)
+                        }));
+                        Matter.Body.setVelocity(bullet[i], {
+                            x: 0,
+                            y: 0
+                        });
+                    }
+                }
+                document.body.style.transitionDuration = "0ms";
+                document.body.style.backgroundColor = "#696969";
+                simulation.makeTextLog(`<div><em>You have earned: </em><b>` + Math.min(3, totalCoin) + `</b><em> tech</em></div>`)
+                if (barThere == true) { //only runs once
+                    document.body.removeChild(bar);
+                    for (let i = 0, len = Math.min(3, totalCoin); i < len; i++) powerUps.directSpawn(player.position.x, player.position.y, "tech");
+                    barThere = false;
+
+
+                }
+            }
+            ctx.fillStyle = "#FFFFFF53"
+            ctx.fillRect(57645, -2055, 385, 85)
+            ctx.fillRect(58645, -1880, 385, 85)
+            //chains	
+            ctx.strokeStyle = "#FF0000"
+            ctx.strokeRect(66975, -725, 25, 50)
+            ctx.strokeRect(67050, -725, 25, 50)
+            ctx.strokeRect(66975 + 1150, -725, 25, 50)
+            ctx.strokeRect(67050 + 1250, -725, 25, 50)
+            ctx.strokeRect(69162, -725, 25, 50)
+            ctx.strokeRect(69862, -725, 25, 50)
+            ctx.strokeRect(74412.5, -412.5, 25, 50)
+            ctx.strokeRect(74612.5, -412.5, 25, 50)
+            ctx.strokeRect(77962.5, -900, 25, 50)
+            ctx.strokeRect(78212.5, -775, 25, 50)
+            ctx.strokeRect(78462.5, -650, 25, 50)
+            ctx.strokeRect(81587.5, -725, 25, 50)
+            ctx.strokeRect(81687.5, -725, 25, 50)
+            ctx.strokeRect(81787.5, -725, 25, 50)
+            ctx.strokeRect(83037.5, -215, 25, 50)
+            ctx.strokeRect(83362.5, -215, 25, 50)
+            ctx.strokeRect(83687.5, -215, 25, 50)
+            ctx.strokeRect(84187.5, -315, 25, 50)
+            ctx.strokeStyle = "#FF000088"
+            ctx.strokeRect(66975, -850, 25, 50)
+            ctx.strokeRect(67050, -850, 25, 50)
+            ctx.strokeRect(66975 + 1150, -850, 25, 50)
+            ctx.strokeRect(67050 + 1250, -850, 25, 50)
+            ctx.strokeRect(69162, -850, 25, 50)
+            ctx.strokeRect(69862, -850, 25, 50)
+            ctx.strokeRect(74412.5, -525, 25, 50)
+            ctx.strokeRect(74612.5, -525, 25, 50)
+            ctx.strokeRect(77962.5, -985, 25, 50)
+            ctx.strokeRect(78212.5, -860, 25, 50)
+            ctx.strokeRect(78462.5, -735, 25, 50)
+            ctx.strokeRect(81587.5, -850, 25, 50)
+            ctx.strokeRect(81687.5, -850, 25, 50)
+            ctx.strokeRect(81787.5, -850, 25, 50)
+            ctx.strokeRect(83037.5, -315, 25, 50)
+            ctx.strokeRect(83362.5, -315, 25, 50)
+            ctx.strokeRect(83687.5, -315, 25, 50)
+            ctx.strokeRect(84187.5, -415, 25, 50)
+            ctx.strokeStyle = "#FF000044"
+            ctx.strokeRect(66975, -975, 25, 50)
+            ctx.strokeRect(67050, -975, 25, 50)
+            ctx.strokeRect(66975 + 1150, -975, 25, 50)
+            ctx.strokeRect(67050 + 1250, -975, 25, 50)
+            ctx.strokeRect(69162, -975, 25, 50)
+            ctx.strokeRect(69862, -975, 25, 50)
+            ctx.strokeRect(74412.5, -633, 25, 50)
+            ctx.strokeRect(74612.5, -633, 25, 50)
+            ctx.strokeRect(77962.5, -1075, 25, 50)
+            ctx.strokeRect(78212.5, -950, 25, 50)
+            ctx.strokeRect(78462.5, -825, 25, 50)
+            ctx.strokeRect(81587.5, -975, 25, 50)
+            ctx.strokeRect(81687.5, -975, 25, 50)
+            ctx.strokeRect(81787.5, -975, 25, 50)
+            ctx.strokeRect(83037.5, -415, 25, 50)
+            ctx.strokeRect(83362.5, -415, 25, 50)
+            ctx.strokeRect(83687.5, -415, 25, 50)
+            ctx.strokeRect(84187.5, -515, 25, 50)
+            ctx.strokeStyle = "#FF000011"
+            ctx.strokeRect(66975, -1100, 25, 50)
+            ctx.strokeRect(67050, -1100, 25, 50)
+            ctx.strokeRect(66975 + 1150, -1100, 25, 50)
+            ctx.strokeRect(67050 + 1250, -1100, 25, 50)
+            ctx.strokeRect(69162, -1100, 25, 50)
+            ctx.strokeRect(69862, -1100, 25, 50)
+            ctx.strokeRect(74412.5, -741, 25, 50)
+            ctx.strokeRect(74612.5, -741, 25, 50)
+            ctx.strokeRect(77962.5, -1165, 25, 50)
+            ctx.strokeRect(78212.5, -1040, 25, 50)
+            ctx.strokeRect(78462.5, -915, 25, 50)
+            ctx.strokeRect(81587.5, -1100, 25, 50)
+            ctx.strokeRect(81687.5, -1100, 25, 50)
+            ctx.strokeRect(81787.5, -1100, 25, 50)
+            ctx.strokeRect(83037.5, -515, 25, 50)
+            ctx.strokeRect(83362.5, -515, 25, 50)
+            ctx.strokeRect(83687.5, -515, 25, 50)
+            ctx.strokeRect(84187.5, -615, 25, 50)
+            ctx.stroke()
+            ctx.beginPath()
+            ctx.strokeStyle = "#FF0000"
+            ctx.moveTo(66987.5, -680)
+            ctx.lineTo(66987.5, -625)
+            ctx.moveTo(67062.5, -680)
+            ctx.lineTo(67062.5, -625)
+            ctx.moveTo(66987.5 + 1150, -680)
+            ctx.lineTo(66987.5 + 1150, -625)
+            ctx.moveTo(67062.5 + 1250, -680)
+            ctx.lineTo(67062.5 + 1250, -625)
+            ctx.moveTo(69175, -680)
+            ctx.lineTo(69175, -625)
+            ctx.moveTo(69875, -680)
+            ctx.lineTo(69875, -625)
+            ctx.moveTo(74425, -290)
+            ctx.lineTo(74425, -370)
+            ctx.moveTo(74625, -290)
+            ctx.lineTo(74625, -370)
+            ctx.moveTo(77975, -790)
+            ctx.lineTo(77975, -855)
+            ctx.moveTo(78225, -665)
+            ctx.lineTo(78225, -730)
+            ctx.moveTo(78475, -540)
+            ctx.lineTo(78475, -605)
+            ctx.moveTo(81600, -680)
+            ctx.lineTo(81600, -625)
+            ctx.moveTo(81700, -680)
+            ctx.lineTo(81700, -625)
+            ctx.moveTo(81800, -680)
+            ctx.lineTo(81800, -625)
+            ctx.moveTo(83050, -100)
+            ctx.lineTo(83050, -170)
+            ctx.moveTo(83375, -100)
+            ctx.lineTo(83375, -170)
+            ctx.moveTo(83700, -100)
+            ctx.lineTo(83700, -170)
+            ctx.moveTo(84200, -200)
+            ctx.lineTo(84200, -270)
+            ctx.stroke()
+            ctx.strokeStyle = "#FF000099"
+            ctx.moveTo(66987.5, -810)
+            ctx.lineTo(66987.5, -715)
+            ctx.moveTo(67062.5, -810)
+            ctx.lineTo(67062.5, -715)
+            ctx.moveTo(66987.5 + 1150, -810)
+            ctx.lineTo(66987.5 + 1150, -715)
+            ctx.moveTo(67062.5 + 1250, -810)
+            ctx.lineTo(67062.5 + 1250, -715)
+            ctx.moveTo(69175, -810)
+            ctx.lineTo(69175, -715)
+            ctx.moveTo(69875, -810)
+            ctx.lineTo(69875, -715)
+            ctx.moveTo(74425, -405)
+            ctx.lineTo(74425, -480)
+            ctx.moveTo(74625, -405)
+            ctx.lineTo(74625, -480)
+            ctx.moveTo(77975, -890)
+            ctx.lineTo(77975, -940)
+            ctx.moveTo(78225, -765)
+            ctx.lineTo(78225, -815)
+            ctx.moveTo(78475, -640)
+            ctx.lineTo(78475, -690)
+            ctx.moveTo(81600, -810)
+            ctx.lineTo(81600, -715)
+            ctx.moveTo(81700, -810)
+            ctx.lineTo(81700, -715)
+            ctx.moveTo(81800, -810)
+            ctx.lineTo(81800, -715)
+            ctx.moveTo(83050, -210)
+            ctx.lineTo(83050, -270)
+            ctx.moveTo(83375, -210)
+            ctx.lineTo(83375, -270)
+            ctx.moveTo(83700, -210)
+            ctx.lineTo(83700, -270)
+            ctx.moveTo(84200, -310)
+            ctx.lineTo(84200, -370)
+            ctx.stroke()
+            ctx.strokeStyle = "#FF000044"
+            ctx.moveTo(66987.5, -930)
+            ctx.lineTo(66987.5, -845)
+            ctx.moveTo(67062.5, -930)
+            ctx.lineTo(67062.5, -845)
+            ctx.moveTo(66987.5 + 1150, -930)
+            ctx.lineTo(66987.5 + 1150, -845)
+            ctx.moveTo(67062.5 + 1250, -930)
+            ctx.lineTo(67062.5 + 1250, -845)
+            ctx.moveTo(69175, -930)
+            ctx.lineTo(69175, -845)
+            ctx.moveTo(69875, -930)
+            ctx.lineTo(69875, -845)
+            ctx.moveTo(74425, -515)
+            ctx.lineTo(74425, -590)
+            ctx.moveTo(74625, -515)
+            ctx.lineTo(74625, -590)
+            ctx.moveTo(77975, -975)
+            ctx.lineTo(77975, -1040)
+            ctx.moveTo(78225, -850)
+            ctx.lineTo(78225, -915)
+            ctx.moveTo(78475, -725)
+            ctx.lineTo(78475, -790)
+            ctx.moveTo(81600, -930)
+            ctx.lineTo(81600, -845)
+            ctx.moveTo(81700, -930)
+            ctx.lineTo(81700, -845)
+            ctx.moveTo(81800, -930)
+            ctx.lineTo(81800, -845)
+            ctx.moveTo(83050, -305)
+            ctx.lineTo(83050, -370)
+            ctx.moveTo(83375, -305)
+            ctx.lineTo(83375, -370)
+            ctx.moveTo(83700, -305)
+            ctx.lineTo(83700, -370)
+            ctx.moveTo(84200, -405)
+            ctx.lineTo(84200, -470)
+            ctx.stroke()
+            ctx.strokeStyle = "#FF000022"
+            ctx.moveTo(66987.5, -1060)
+            ctx.lineTo(66987.5, -965)
+            ctx.moveTo(67062.5, -1060)
+            ctx.lineTo(67062.5, -965)
+            ctx.moveTo(66987.5 + 1150, -1060)
+            ctx.lineTo(66987.5 + 1150, -965)
+            ctx.moveTo(67062.5 + 1250, -1060)
+            ctx.lineTo(67062.5 + 1250, -965)
+            ctx.moveTo(69175, -1060)
+            ctx.lineTo(69175, -965)
+            ctx.moveTo(69875, -1060)
+            ctx.lineTo(69875, -965)
+            ctx.moveTo(74425, -620)
+            ctx.lineTo(74425, -712.5)
+            ctx.moveTo(74625, -620)
+            ctx.lineTo(74625, -712.5)
+            ctx.moveTo(77975, -1075)
+            ctx.lineTo(77975, -1120)
+            ctx.moveTo(78225, -950)
+            ctx.lineTo(78225, -995)
+            ctx.moveTo(78475, -825)
+            ctx.lineTo(78475, -870)
+            ctx.moveTo(81600, -1060)
+            ctx.lineTo(81600, -965)
+            ctx.moveTo(81700, -1060)
+            ctx.lineTo(81700, -965)
+            ctx.moveTo(81800, -1060)
+            ctx.lineTo(81800, -965)
+            ctx.moveTo(83050, -405)
+            ctx.lineTo(83050, -470)
+            ctx.moveTo(83375, -405)
+            ctx.lineTo(83375, -470)
+            ctx.moveTo(83700, -405)
+            ctx.lineTo(83700, -470)
+            ctx.moveTo(84200, -505)
+            ctx.lineTo(84200, -570)
+            ctx.stroke()
+            let star = 95525;
+            for (let i = 0; i < 3; i++) {
+                drawStar(star, -1540, 5, 40, 15);
+                star += 200;
+            }
+            drawStar(97375, -1540, 5, 25, 10)
+            drawStar(97675, -1540, 5, 25, 10)
+            drawStar(97975, -1540, 5, 25, 10)
+            drawStar(98275, -1540, 5, 25, 10)
+            drawStar(98575, -1540, 5, 25, 10)
+
+        };
+        var gradient = ctx.createLinearGradient(0, 0, 175, 0);
+        gradient.addColorStop(0, "#7704FF00");
+        gradient.addColorStop(1, "#00FFFF");
+        level.customTopLayer = () => {
+            if (player.position.x > 25360 && player.position.x < 46470 && player.position.y > -2348 || player.position.x > 87995 && player.position.x < 103950 && player.position.y > -1350) {
+                player.force.x += 0.0045
+                m.airControl = () => {
+                    if (input.up) {
+                        player.force.y -= 0.02
+                    }
+                }
+                /*m.draw = () => {
+                    ctx.save();
+                    ctx.globalAlpha = (m.immuneCycle < m.cycle) ? 1 : 0.5
+                    ctx.translate(player.position.x, player.position.y);
+                    ctx.rotate(player.angle);
+                    if (input.up) { //forward thrust drawing
+                        ctx.rotate(`${Math.max(-0.5, Math.min(m.angle, 0.5))}`)
+                    } else {
+                        ctx.rotate(`${Math.max(0.5, Math.min(m.angle, -0.5))}`)
+                    }
+                    ctx.beginPath();
+                    ctx.arc(0, 0, 30, 0, 2 * Math.PI);
+                    ctx.fillStyle = m.bodyGradient
+                    ctx.fill();
+                    ctx.arc(15, 0, 4, 0, 2 * Math.PI);
+                    ctx.strokeStyle = "#333";
+                    ctx.lineWidth = 2;
+                    ctx.stroke();
+                    ctx.beginPath()
+                    ctx.moveTo(30, 0)
+                    ctx.lineTo(60, 10)
+                    ctx.lineTo(60, 30)
+                    ctx.lineTo(20, 40)
+                    ctx.lineTo(0, 40)
+                    ctx.lineTo(-50, 60)
+                    ctx.lineTo(-50, 0)
+                    ctx.lineTo(-40, -40)
+                    ctx.lineTo(-40, -40)
+                    ctx.lineTo(-30, 10)
+                    ctx.lineTo(30, 10)
+                    ctx.lineTo(30, 0)
+                    ctx.fill();
+                    ctx.moveTo(-50, 30)
+                    ctx.lineTo(-60, 30)
+                    ctx.lineTo(-60, 0)
+                    ctx.lineTo(-50, 0)
+                    ctx.fill()
+                    ctx.stroke()
+                    ctx.restore();
+                }*/
+            } else {
+                //m.resetSkin()
+                m.airControl = () => {
+                    if (input.up && m.buttonCD_jump + 20 < m.cycle && m.yOffWhen.stand > 23 && m.lastOnGroundCycle + 5 > m.cycle) m.jump()
+                    if (m.buttonCD_jump + 60 > m.cycle && !(input.up) && m.Vy < 0) {
+                        Matter.Body.setVelocity(player, {
+                            x: player.velocity.x,
+                            y: player.velocity.y * 0.94
+                        });
+                    }
+                    if (input.left) {
+                        if (player.velocity.x > -m.airSpeedLimit / player.mass / player.mass) player.force.x -= m.FxAir; // move player   left / a
+                    } else if (input.right) {
+                        if (player.velocity.x < m.airSpeedLimit / player.mass / player.mass) player.force.x += m.FxAir; //move player  right / d
+                    }
+                }
+            }
+            ctx.fillStyle = `rgba(68, 68, 68, ${Math.max(0.1, Math.min((-1400 - m.pos.y) / -100, 0.99))})`;
+            ctx.fillRect(91900, -1675, 12050, 375)
+            ctx.save()
+            ctx.translate(104700, -1675);
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0, 0, 175, 1675)
+            ctx.restore()
+        };
+        level.setPosToSpawn(0, -150); //spawn     
+        level.defaultZoom = 1800 //default I think
+        simulation.zoomTransition(level.defaultZoom)
+        document.body.style.backgroundColor = "#0150FF";
+        document.body.style.transitionDuration = "1500ms"; //smoother transitions, so that people don't complain
+        level.exit.x = 133150;
+        level.exit.y = -260;
+        spawn.mapRect(level.exit.x, level.exit.y + 25, 100, 20);
+        //ground? I forgot
+        spawn.mapRect(-5000, 0, 110000, 1000);
+        //*mountains to prevent player from running away*
+        spawn.mapVertex(-5775, -1330, "0 0 1000 7000 -1000 7000");
+        spawn.mapVertex(-7000, -330, "0 0 1000 4000 -1000 4000");
+        spawn.mapVertex(-10000, -330, "0 0 1000 4000 -1000 4000");
+        spawn.mapVertex(-9000, -330, "0 0 1000 4000 -1000 4000");
+        spawn.mapVertex(-7500, -330, "0 0 1000 4000 -1000 4000");
+        spawn.mapRect(-10000, 0, 3500, 1000);
+        //spawn.mapRect(-10000, -10000, 1000, 11000);
+        //hunter(-600, -150) 
+        //stage one --> 0%
+        //spikes
+        spike(3000, -30);
+        spike(5000, -30);
+        spike(4925, 0);
+        spike(7275, -30);
+        spike(7375, -30);
+        spike(9806, -30);
+        spike(9900, -30);
+        spike(12000, -130);
+        spike(13050, -255);
+        spike(17300, -1105);
+        spike(17400, -1105);
+        spike(17200, -1105);
+        spike(17500, -1105);
+        spike(18200, -1105);
+        spike(18100, -1105);
+        spike(18300, -1105);
+        spike(18400, -1105);
+        spike(19875, -1108);
+        spike(19975, -930);
+        spike(21000, -930);
+        spike(21725, -780);
+        spike(23600, -1230);
+        spawn.mapVertex(62000, -300, "0 1000 1000 1000 0 0");
+        //upside down spikes
+        let u = Math.PI * 1.5;
+        spike(18825, -1170, u);
+        spike(18925, -1170, u);
+        spike(19025, -1170, u);
+        spike(19125, -1170, u);
+        spike(19225, -1170, u);
+        spike(19325, -1170, u);
+        spike(49962.5, -2370, u);
+        spike(50062.5, -2370, u);
+        spike(50162.5, -2370, u);
+        spike(50262.5, -2370, u);
+        spike(50362.5, -2370, u);
+        //bottom of the flying part
+        spike(32375, -280);
+        spike(32475, -280);
+        spike(32575, -280);
+        spike(32675, -280);
+        spike(32775, -280);
+        spike(32875, -280);
+        spike(32975, -280);
+        spike(33075, -280);
+        spike(33175, -280);
+        spike(33275, -280);
+        spike(33375, -280);
+        spike(33475, -280);
+        spike(33575, -280);
+        spike(33675, -280);
+        spike(35575, -280);
+        spike(35675, -280);
+        spike(35775, -280);
+        spike(35875, -280);
+        spike(39775, -280);
+        spike(39875, -280);
+        spike(39975, -280);
+        spike(40075, -280);
+        spike(40175, -280);
+        spike(40275, -280);
+        spike(40475, -280);
+        spike(40575, -280);
+        spike(40675, -280);
+        spike(40775, -280);
+        spike(40875, -280);
+        spike(40975, -280);
+        //top of the flying part
+        spike(32375, -2193, u);
+        spike(32475, -2193, u);
+        spike(32575, -2193, u);
+        spike(32675, -2193, u);
+        spike(32775, -2193, u);
+        spike(32875, -2193, u);
+        spike(32975, -2193, u);
+        spike(33075, -2193, u);
+        spike(33175, -2193, u);
+        spike(33275, -2193, u);
+        spike(33375, -2193, u);
+        spike(33475, -2193, u);
+        spike(33575, -2193, u);
+        spike(33675, -2193, u);
+        spike(37750, -2193, u);
+        spike(37850, -2193, u);
+        spike(37950, -2193, u);
+        spike(38050, -2193, u);
+        spike(43025, -2193, u);
+        spike(43125, -2193, u);
+        spike(43225, -2193, u);
+        spike(43325, -2193, u);
+        spike(43425, -2193, u);
+        spike(43525, -2193, u);
+        spike(43725, -2193, u);
+        spike(43825, -2193, u);
+        spike(43925, -2193, u);
+        spike(44025, -2193, u);
+        spike(44125, -2193, u);
+        spike(44225, -2193, u);
+        spike(44325, -2193, u);
+        spike(44425, -2193, u);
+        spike(44525, -2193, u);
+        spike(44625, -2193, u);
+        spike(44725, -2193, u);
+        spike(44825, -2193, u);
+        //about 55% of the map 
+        spike(63375, -30);
+        spike(63475, -30);
+        spike(65775, -30);
+        spike(65875, -30);
+        spike(66975, -30);
+        spike(67075, -30);
+        spike(66975, -500, u);
+        spike(67075, -500, u);
+        spike(68125, -30);
+        spike(68225, -30);
+        spike(68325, -30);
+        spike(68125, -500, u);
+        spike(68225, -500, u);
+        spike(68325, -500, u);
+        spike(69175, -500, u);
+        spike(69175, -30);
+        spike(69875, -500, u);
+        spike(69875, -30);
+        spike(70675, -30);
+        spike(70775, -30);
+        spike(73725, -30);
+        spike(73825, -30);
+        spike(74425, -195, u);
+        spike(74525, -195, u);
+        spike(74625, -195, u);
+        spike(75125, -30);
+        spawn.mapVertex(78725, -466, "0 50 100 50 50 0"); //ocd still triggers from -467
+        spike(79300, -180);
+        spike(80800, -30);
+        spike(80900, -30);
+        spike(81600, -30);
+        spike(81700, -30);
+        spike(81800, -30);
+        spike(81600, -500, u);
+        spike(81700, -500, u);
+        spike(81800, -500, u);
+        spike(93425, -1430);
+        spike(93525, -1430);
+        spike(85800, -305);
+        spike(86475, -305);
+        spike(87150, -455);
+        spike(94025, -1570, u);
+        spike(94125, -1570, u);
+        spike(94500, -1430);
+        spike(94700, -1430);
+        spike(94900, -1430);
+        spike(94600, -1400);
+        spike(94800, -1400);
+        spike(94212.5, -1675, u);
+        spike(94287.5, -1675, u);
+        //even more 90%
+        spike(95525, -1400)
+        spike(95525, -1675, u)
+        spike(95625, -1400)
+        spike(95625, -1675, u)
+        spike(95725, -1400)
+        spike(95725, -1675, u)
+        spike(95825, -1400)
+        spike(95825, -1675, u)
+        spike(95925, -1400)
+        spike(95925, -1675, u)
+        spike(96025, -1400)
+        spike(96225, -1400)
+        spike(96650, -1675, u)
+        spike(96900, -1400)
+        spike(97150, -1675, u)
+        spike(98900, -1400)
+        spike(96975, -155)
+        spike(97075, -155)
+        spike(97175, -155)
+        spike(97275, -155)
+        spike(97375, -155)
+        spike(97475, -155)
+        spike(96975, -1170, u)
+        spike(97075, -1170, u)
+        spike(97175, -1170, u)
+        spike(97275, -1170, u)
+        spike(97375, -1170, u)
+        spike(97475, -1170, u)
+        spike(98700, -1070, u)
+        spike(98800, -1070, u)
+        spike(98900, -1070, u)
+        spike(99000, -1070, u)
+        spike(99100, -1070, u)
+        spike(99200, -1070, u)
+        spike(98700, -230)
+        spike(98800, -230)
+        spike(98900, -230)
+        spike(99000, -230)
+        spike(99100, -230)
+        spike(99200, -230)
+        spike(98975, -1400)
+        spike(99375, -1675, u)
+        spike(99300, -1675, u)
+        spike(99575, -1675, u)
+        spike(100000, -1400)
+        //actual stuff
+        spawn.mapRect(7425, -175, 75, 175);
+        spawn.mapRect(7675, -250, 75, 250);
+        spawn.mapRect(7925, -325, 75, 325);
+        spawn.mapRect(10625, -100, 725, 100);
+        spawn.mapRect(11625, -100, 725, 100);
+        spawn.mapRect(12650, -225, 800, 225);
+        spawn.mapRect(13675, -300, 100, 50);
+        spawn.mapRect(13975, -400, 100, 50);
+        spawn.mapRect(14275, -500, 100, 50);
+        spawn.mapRect(14575, -600, 100, 50);
+        spawn.mapRect(14875, -700, 100, 50);
+        spawn.mapRect(15175, -800, 100, 50);
+        spawn.mapRect(15475, -900, 100, 50);
+        spawn.mapRect(15775, -1000, 100, 50);
+        spawn.mapRect(16075, -1100, 100, 50);
+        spawn.mapRect(16375, -1200, 100, 50);
+        spawn.mapRect(16625, -1075, 350, 100);
+        spawn.mapRect(16800, -1075, 1825, 1125);
+        spawn.mapRect(17250, -1225, 200, 50);
+        spawn.mapRect(18150, -1225, 200, 50);
+        spawn.mapRect(18550, -975, 1050, 1025);
+        spawn.mapRect(19525, -1075, 400, 1125);
+        spawn.mapRect(18775, -1275, 600, 75);
+        spawn.mapRect(19825, -900, 500, 950);
+        spawn.mapRect(20150, -900, 375, 125);
+        spawn.mapRect(20750, -900, 300, 50);
+        spawn.mapRect(21225, -750, 550, 50);
+        spawn.mapRect(21950, -625, 450, 50);
+        spawn.mapRect(22550, -700, 100, 50);
+        spawn.mapRect(22750, -800, 100, 50);
+        spawn.mapRect(22950, -900, 100, 50);
+        spawn.mapRect(23150, -1000, 100, 50);
+        spawn.mapRect(23350, -1100, 100, 50);
+        spawn.mapRect(23550, -1200, 100, 50);
+        spawn.mapRect(23525, -975, 400, 100);
+        spawn.mapRect(23650, -975, 1825, 1025);
+        spawn.mapRect(23750, -2500, 625, 1125);
+        spawn.mapRect(24000, -2500, 1200, 1300);
+        spawn.mapRect(24900, -2500, 575, 1125);
+        spawn.mapRect(25425, -2500, 20000, 275);
+        spawn.mapRect(25425, -250, 20000, 300);
+        spawn.mapRect(29450, -2300, 200, 675);
+        spawn.mapRect(32225, -2225, 100, 100);
+        spawn.mapRect(33725, -2225, 100, 100);
+        spawn.mapRect(32225, -350, 100, 100);
+        spawn.mapRect(33725, -350, 100, 100);
+        spawn.mapRect(37600, -2225, 100, 225);
+        spawn.mapRect(35425, -475, 100, 225);
+        spawn.mapRect(39625, -400, 100, 150);
+        spawn.mapRect(40325, -500, 100, 250);
+        spawn.mapRect(41025, -600, 100, 350);
+        spawn.mapRect(43575, -2225, 100, 300);
+        spawn.mapRect(44875, -2500, 1675, 1225);
+        spawn.mapRect(44875, -950, 1675, 1000);
+        spawn.mapRect(46425, -825, 1400, 875);
+        spawn.mapRect(48075, -1100, 175, 1150);
+        spawn.mapRect(48575, -1300, 175, 1375);
+        spawn.mapRect(49075, -1500, 175, 1550);
+        spawn.mapRect(49575, -1700, 175, 975);
+        spawn.mapRect(49575, -500, 175, 550);
+        spawn.mapRect(50075, -1900, 175, 700);
+        spawn.mapRect(50075, -1000, 1000, 1000);
+        spawn.mapRect(49912.5, -2525, 500, 125);
+        spawn.mapRect(51300, -1200, 175, 1225);
+        spawn.mapRect(51700, -1400, 175, 1425);
+        spawn.mapRect(52100, -1600, 175, 1625);
+        spawn.mapRect(52500, -1800, 175, 1825);
+        spawn.mapRect(52900, -2000, 175, 2025);
+        spawn.mapRect(53300, -2200, 175, 2225);
+        spawn.mapRect(53700, -2400, 175, 2425);
+        spawn.mapRect(54100, -2600, 175, 2625);
+        spawn.mapRect(54500, -2800, 175, 2825);
+        spawn.mapRect(54900, -3000, 175, 3025);
+        spawn.mapRect(55050, -3000, 175, 75);
+        spawn.mapRect(55475, -2875, 250, 75);
+        spawn.mapRect(55900, -2625, 250, 75);
+        spawn.mapRect(56500, -2400, 375, 75);
+        spawn.mapRect(57200, -2200, 250, 75);
+        spawn.mapRect(57650, -2050, 375, 75);
+        spawn.mapRect(57650, -1970, 375, 1975);
+        spawn.mapRect(58650, -1875, 375, 75);
+        spawn.mapRect(58650, -1795, 375, 1975);
+        spawn.mapRect(59525, -1750, 175, 75);
+        spawn.mapRect(60125, -1600, 175, 75);
+        spawn.mapRect(60750, -1425, 175, 75);
+        spawn.mapRect(61250, -1225, 175, 75);
+        spawn.mapRect(61550, -1025, 225, 1125);
+        spawn.mapRect(63525, -100, 100, 100);
+        spawn.mapRect(63800, -225, 200, 50);
+        spawn.mapRect(64175, -100, 100, 100);
+        spawn.mapRect(64275, -100, 100, 100);
+        spawn.mapRect(64375, -100, 100, 100);
+        spawn.mapRect(64675, -225, 200, 50);
+        spawn.mapRect(65025, -325, 200, 50);
+        spawn.mapRect(65425, -100, 300, 100);
+        spawn.mapRect(66925, -650, 200, 120);
+        spawn.mapRect(68075, -650, 300, 120);
+        spawn.mapRect(69125, -650, 100, 120);
+        spawn.mapRect(69825, -650, 100, 120);
+        spawn.mapRect(70825, -100, 100, 100);
+        spawn.mapRect(71225, -200, 100, 200);
+        spawn.mapRect(71625, -300, 100, 300);
+        spawn.mapRect(72025, -400, 100, 400);
+        spawn.mapRect(72125, -400, 100, 50);
+        spawn.mapRect(72375, -325, 100, 50);
+        spawn.mapRect(72625, -200, 100, 50);
+        spawn.mapRect(72875, -75, 100, 50);
+        spawn.mapRect(74375, -300, 300, 75);
+        spawn.mapRect(75175, -100, 100, 100);
+        spawn.mapRect(75900, -150, 400, 50);
+        spawn.mapRect(76550, -250, 100, 50);
+        spawn.mapRect(76850, -325, 100, 50);
+        spawn.mapRect(77125, -400, 100, 50);
+        spawn.mapRect(77425, -475, 300, 50);
+        spawn.mapRect(77925, -400, 100, 100);
+        spawn.mapRect(78175, -275, 100, 100);
+        spawn.mapRect(78425, -150, 100, 100);
+        spawn.mapRect(78675, -50, 100, 100);
+        spawn.mapRect(77925, -800, 100, 100);
+        spawn.mapRect(78175, -675, 100, 100);
+        spawn.mapRect(78425, -550, 100, 100);
+        spawn.mapRect(78675, -450, 100, 100);
+        spawn.mapRect(78450, -100, 50, 125);
+        spawn.mapRect(79025, -150, 100, 50);
+        spawn.mapRect(79250, -150, 100, 50);
+        spawn.mapRect(79475, -150, 100, 50);
+        spawn.mapRect(79800, -225, 300, 50);
+        spawn.mapRect(80250, -150, 100, 50);
+        spawn.mapRect(80450, -100, 300, 50);
+        spawn.mapRect(81550, -650, 300, 120);
+        spawn.mapRect(82800, -100, 100, 100);
+        spawn.mapRect(82900, -100, 200, 50);
+        spawn.mapRect(83325, -100, 100, 50);
+        spawn.mapRect(83650, -100, 200, 50);
+        spawn.mapRect(83850, -100, 100, 100);
+        spawn.mapRect(83950, -200, 100, 200);
+        spawn.mapRect(84050, -200, 200, 50);
+        spawn.mapRect(84500, -350, 100, 50);
+        spawn.mapRect(84725, -250, 100, 50);
+        spawn.mapRect(84950, -150, 300, 50);
+        spawn.mapRect(85525, -275, 100, 50);
+        spawn.mapRect(85750, -275, 100, 50);
+        spawn.mapRect(85950, -275, 375, 50);
+        spawn.mapRect(86425, -275, 100, 50);
+        spawn.mapRect(86625, -275, 100, 50);
+        spawn.mapRect(86900, -425, 300, 50);
+        spawn.mapRect(87375, -275, 300, 50);
+        spawn.mapRect(87900, -300, 125, 300);
+        spawn.mapRect(87900, -1850, 125, 1150);
+        spawn.mapRect(87900, -1850, 17000, 175);
+        spawn.mapRect(104875, -1850, 125, 2850); //Last part
+        spawn.mapRect(87900, -1850, 4000, 550);
+        spawn.mapRect(89650, -100, 100, 100);
+        spawn.mapRect(89750, -200, 100, 100);
+        spawn.mapRect(89850, -300, 600, 100);
+        spawn.mapRect(90450, -200, 100, 100);
+        spawn.mapRect(90550, -100, 100, 100);
+        spawn.mapRect(89650, -1300, 100, 100);
+        spawn.mapRect(89750, -1200, 100, 100);
+        spawn.mapRect(89850, -1100, 600, 100);
+        spawn.mapRect(90450, -1200, 100, 100);
+        spawn.mapRect(90550, -1300, 100, 100);
+        spawn.mapRect(91950, -100, 100, 100);
+        spawn.mapRect(92050, -200, 100, 100);
+        spawn.mapRect(92150, -300, 600, 100);
+        spawn.mapRect(92750, -200, 100, 100);
+        spawn.mapRect(92850, -100, 100, 100);
+        spawn.mapRect(92050, -1200, 100, 100);
+        spawn.mapRect(92150, -1100, 600, 100);
+        spawn.mapRect(92750, -1200, 100, 100);
+        spawn.mapRect(92850, -1300, 100, 100);
+        spawn.mapRect(92950, -1400, 11000, 100);
+        spawn.mapRect(93975, -1700, 200, 100);
+        spawn.mapRect(96075, -1500, 100, 100);
+        spawn.mapRect(96500, -1675, 100, 100);
+        spawn.mapRect(96950, -1490, 1900, 100);
+        spawn.mapRect(97200, -1685, 1650, 100);
+        spawn.mapRect(93900, -300, 100, 300);
+        spawn.mapRect(93900, -400, 300, 100);
+        spawn.mapRect(94100, -300, 100, 300);
+        spawn.mapRect(95025, -1300, 100, 300);
+        spawn.mapRect(95025, -1000, 300, 100);
+        spawn.mapRect(95225, -1300, 100, 300);
+        spawn.mapRect(96925, -1300, 600, 100);
+        spawn.mapRect(96925, -125, 600, 125);
+        spawn.mapRect(98650, -1300, 100, 200);
+        spawn.mapRect(98650, -1200, 600, 100);
+        spawn.mapRect(99150, -1300, 100, 200);
+        spawn.mapRect(98650, -200, 100, 200);
+        spawn.mapRect(99150, -200, 100, 200);
+        spawn.mapRect(98650, -200, 600, 100);
+        spawn.mapRect(100825, -1300, 100, 300);
+        spawn.mapRect(100825, -1100, 1325, 100);
+        spawn.mapRect(102050, -1300, 100, 300);
+        spawn.mapRect(100825, -300, 100, 300);
+        spawn.mapRect(100825, -300, 1350, 100);
+        spawn.mapRect(102075, -300, 100, 300);
+        spawn.mapRect(99425, -1675, 100, 125);
+        spawn.mapRect(100050, -1525, 100, 125);
+
+        spawn.mapRect(132025, -225, 2325, 525);
+        spawn.mapRect(132025, -1450, 500, 1750);
+        spawn.mapRect(133875, -1475, 475, 1775);
+        spawn.mapRect(132025, -1925, 2325, 475);
+
+        // simulation.enableConstructMode() //also remove when done
+        coin(50165.9, -1090)
+        coin(78725.4, -600)
+        coin(103830.0, -1473)
+        hunter(0, -1000)
+    },
+    yingYang() {
+        simulation.makeTextLog(`<strong>yingYang</strong> by <span class='color-var'>Richard0820</span>`);
+
+        let destroyed = false;
+        const lock = level.door(425, -1400, 50, 300, 300);
+        const core = function (x, y, radius = 100 + Math.ceil(Math.random() * 25)) {
+            radius = 9 + radius / 8; //extra small
+            mobs.spawn(x, y, 6, radius, "transparent");
+            let me = mob[mob.length - 1];
+            me.constraint = Constraint.create({
+                pointA: {
+                    x: me.position.x,
+                    y: me.position.y
+                },
+                bodyB: me,
+                stiffness: 1,
+                damping: 1
+            });
+            Composite.add(engine.world, me.constraint);
+            me.stroke = "transparent"; //used for drawSneaker
+            me.eventHorizon = radius * 40;
+            me.seeAtDistance2 = (me.eventHorizon + 400) * (me.eventHorizon + 400); //vision limit is event horizon
+            me.accelMag = 0.00012 * simulation.accelScale;
+            me.frictionAir = 0.025;
+            me.collisionFilter.mask = cat.player | cat.bullet //| cat.body
+            me.showHealthBar = false;
+            me.memory = Infinity;
+            me.isBoss = true;
+            Matter.Body.setDensity(me, 1); //extra dense //normal is 0.001 //makes effective life much larger
+            me.onDeath = function () {
+                destroyed = true;
+                powerUps.spawnBossPowerUp(this.position.x, this.position.y);
+            }
+            me.do = function () {
+                if (this.health < 1) {
+                    this.health += 0.001; //regen
+                    simulation.drawList.push({
+                        x: this.position.x,
+                        y: this.position.y,
+                        radius: this.radius / 1.5,
+                        color: `rgba(0, 255, 20, ${Math.random() * 0.1})`,
+                        time: simulation.drawTime
+                    });
+                }
+                this.curl()
+                this.repelBullets()
+                this.seePlayerCheckByDistance()
+                this.checkStatus();
+                const eventHorizon = this.eventHorizon * (0.93 + 0.17 * Math.sin(simulation.cycle * 0.011))
+                //draw darkness
+                ctx.beginPath();
+                ctx.arc(this.position.x, this.position.y, eventHorizon * 0.25, 0, 2 * Math.PI);
+                ctx.fillStyle = "rgba(250,250,250,0.9)";
+                ctx.fill();
+                ctx.beginPath();
+                ctx.arc(this.position.x, this.position.y, eventHorizon * 0.55, 0, 2 * Math.PI);
+                ctx.fillStyle = "rgba(250,250,250,0.5)";
+                ctx.fill();
+                ctx.beginPath();
+                ctx.arc(this.position.x, this.position.y, eventHorizon, 0, 2 * Math.PI);
+                ctx.fillStyle = "rgba(250,250,250,0.1)";
+                ctx.fill();
+                //when player is inside event horizon
+                if (Vector.magnitude(Vector.sub(this.position, player.position)) < eventHorizon) {
+                    if (m.immuneCycle < m.cycle) {
+                        if (m.energy > 0) m.energy -= 0.005
+                        if (m.energy < 0.1) m.damage(0.0001 * simulation.dmgScale);
+                    }
+                    const angle = Math.atan2(player.position.y - this.position.y, player.position.x - this.position.x);
+                    player.force.x += 0.00125 * player.mass * Math.cos(angle) * (m.onGround ? 1.8 : 1);
+                    player.force.y += 0.0001 * player.mass * Math.sin(angle);
+                    //draw line to player
+                    ctx.beginPath();
+                    ctx.moveTo(this.position.x, this.position.y);
+                    ctx.lineTo(m.pos.x, m.pos.y);
+                    ctx.lineWidth = Math.min(60, this.radius * 2);
+                    ctx.strokeStyle = "rgba(250,250,250,0.5)";
+                    ctx.stroke();
+                    ctx.beginPath();
+                    ctx.arc(m.pos.x, m.pos.y, 40, 0, 2 * Math.PI);
+                    ctx.fillStyle = "rgba(250,250,250,0.3)";
+                    ctx.fill();
+                }
+            }
+        }
+        const sniper = function (x, y, radius = 35 + Math.ceil(Math.random() * 30)) { //same, just white so that we can seen
+            mobs.spawn(x, y, 3, radius, "transparent"); //"rgb(25,0,50)")
+            let me = mob[mob.length - 1];
+            me.vertices = Matter.Vertices.rotate(me.vertices, Math.PI, me.position); //make the pointy side of triangle the front
+            me.isVerticesChange = true
+            // Matter.Body.rotate(me, Math.PI)
+            me.stroke = "transparent"; //used for drawSneaker
+            me.alpha = 1; //used in drawSneaker
+            me.showHealthBar = false;
+            me.frictionStatic = 0;
+            me.friction = 0;
+            me.canTouchPlayer = false; //used in drawSneaker
+            me.isBadTarget = true;
+            me.collisionFilter.mask = cat.map | cat.body | cat.bullet | cat.mob //can't touch player
+
+            me.memory = 30 //140;
+            me.fireFreq = 0.005 + Math.random() * 0.002 + 0.0005 * simulation.difficulty; //larger = fire more often
+            me.noseLength = 0;
+            me.fireAngle = 0;
+            me.accelMag = 0.0005 * simulation.accelScale;
+            me.frictionAir = 0.05;
+            me.torque = 0.0001 * me.inertia;
+            me.fireDir = {
+                x: 0,
+                y: 0
+            };
+            me.onDeath = function () { //helps collisions functions work better after vertex have been changed
+                // this.vertices = Matter.Vertices.hull(Matter.Vertices.clockwiseSort(this.vertices))
+            }
+            // spawn.shield(me, x, y);
+            me.do = function () {
+                // this.seePlayerByLookingAt();
+                this.seePlayerCheck();
+                this.checkStatus();
+
+                const setNoseShape = () => {
+                    const mag = this.radius + this.radius * this.noseLength;
+                    this.vertices[1].x = this.position.x + Math.cos(this.angle) * mag;
+                    this.vertices[1].y = this.position.y + Math.sin(this.angle) * mag;
+                };
+                //throw a mob/bullet at player
+                if (this.seePlayer.recall) {
+                    //set direction to turn to fire
+                    if (!(simulation.cycle % this.seePlayerFreq)) {
+                        this.fireDir = Vector.normalise(Vector.sub(this.seePlayer.position, this.position));
+                        // this.fireDir.y -= Math.abs(this.seePlayer.position.x - this.position.x) / 1600; //gives the bullet an arc
+                    }
+                    //rotate towards fireAngle
+                    const angle = this.angle + Math.PI / 2;
+                    // c = Math.cos(angle) * this.fireDir.x + Math.sin(angle) * this.fireDir.y;
+                    //rotate towards fireAngle
+                    const dot = Vector.dot({
+                        x: Math.cos(angle),
+                        y: Math.sin(angle)
+                    }, this.fireDir)
+                    const threshold = 0.03;
+                    if (dot > threshold) {
+                        this.torque += 0.000004 * this.inertia;
+                    } else if (dot < -threshold) {
+                        this.torque -= 0.000004 * this.inertia;
+                    } else if (this.noseLength > 1.5 && dot > -0.2 && dot < 0.2) {
+                        //fire
+                        spawn.sniperBullet(this.vertices[1].x, this.vertices[1].y, 7 + Math.ceil(this.radius / 15), 5);
+                        const v = 10 + 8 * simulation.accelScale;
+                        Matter.Body.setVelocity(mob[mob.length - 1], {
+                            x: this.velocity.x + this.fireDir.x * v + Math.random(),
+                            y: this.velocity.y + this.fireDir.y * v + Math.random()
+                        });
+                        this.noseLength = 0;
+                        // recoil
+                        this.force.x -= 0.005 * this.fireDir.x * this.mass;
+                        this.force.y -= 0.005 * this.fireDir.y * this.mass;
+                    }
+                    if (this.noseLength < 1.5) this.noseLength += this.fireFreq;
+                    setNoseShape();
+                } else if (this.noseLength > 0.1) {
+                    this.noseLength -= this.fireFreq / 2;
+                    setNoseShape();
+                }
+                // else if (this.noseLength < -0.1) {
+                //   this.noseLength += this.fireFreq / 4;
+                //   setNoseShape();
+                // }
+
+                if (this.seePlayer.recall) {
+                    if (this.alpha < 1) this.alpha += 0.01;
+                } else {
+                    if (this.alpha > 0) this.alpha -= 0.03;
+                }
+                //draw
+                if (this.alpha > 0) {
+                    if (this.alpha > 0.95) {
+                        this.healthBar();
+                        if (!this.canTouchPlayer) {
+                            this.canTouchPlayer = true;
+                            this.isBadTarget = false;
+                            this.collisionFilter.mask = cat.player | cat.map | cat.body | cat.bullet | cat.mob; //can touch player
+                        }
+                    }
+                    //draw body
+                    ctx.beginPath();
+                    const vertices = this.vertices;
+                    ctx.moveTo(vertices[0].x, vertices[0].y);
+                    for (let j = 1, len = vertices.length; j < len; ++j) {
+                        ctx.lineTo(vertices[j].x, vertices[j].y);
+                    }
+                    ctx.lineTo(vertices[0].x, vertices[0].y);
+                    ctx.fillStyle = `rgba(250,250,250,${this.alpha * this.alpha})`;
+                    ctx.fill();
+                } else if (this.canTouchPlayer) {
+                    this.canTouchPlayer = false;
+                    this.isBadTarget = true
+                    this.collisionFilter.mask = cat.map | cat.body | cat.bullet | cat.mob //can't touch player
+                }
+            };
+        }
+        const portal = level.portal({
+            x: 650,
+            y: -1000
+        }, Math.PI * 1.5, {
+            x: 525,
+            y: 2625
+        }, -Math.PI)
+        document.body.style.transition = '0ms'
+        document.body.style.backgroundColor = "#061026" //"#061026";
+
+        var yy = new Image();
+        yy.src = 'https://raw.githubusercontent.com/Whyisthisnotavalable/image-yy/main/Hotpot6.png';
+        color.map = "#FFFFFF11";
+        color.bullet = "#FFFFFF";
+        level.custom = () => {
+            level.enter.draw();
+            level.exit.drawAndCheck();
+            ctx.drawImage(yy, 0 - 500, 0 - 500, 1000, 1000)
+            portal[0].draw();
+            portal[1].draw();
+            portal[2].query();
+            portal[3].query();
+            if (destroyed == false) {
+                lock.isClosing = true;
+            } else {
+                lock.isClosing = false;
+            }
+            lock.openClose();
+
+        };
+        level.customTopLayer = () => {
+            lock.draw()
+            /*
+            ctx.beginPath()
+            ctx.strokeStyle = "transparent";
+            ctx.fillStyle = "#FFFFFF22"
+            ctx.arc(m.pos.x, m.pos.y, 500, 0, Math.PI * 2)
+            ctx.fill()
+            ctx.fillStyle = "#FFFFFF55"
+            ctx.arc(m.pos.x, m.pos.y, 1000, 0, Math.PI * 2)
+            ctx.fill();
+            ctx.stroke(); */
+            ctx.beginPath();
+            ctx.moveTo(m.pos.x, m.pos.y)
+            const arc = Math.PI / 4
+            ctx.arc(m.pos.x, m.pos.y, 100, m.angle + arc, m.angle - arc)
+            ctx.arc(m.pos.x, m.pos.y, 4000, m.angle - arc, m.angle + arc)
+            ctx.fillStyle = "rgba(255,255,255,0.7)";
+            ctx.globalCompositeOperation = "destination-in";
+            ctx.fill();
+            ctx.globalCompositeOperation = "source-over";
+            ctx.clip();
+        };
+        level.setPosToSpawn(0, -50);
+        level.exit.x = -275;
+        level.exit.y = 2900;
+        level.defaultZoom = 1800
+        simulation.zoomTransition(level.defaultZoom)
+        //map
+        spawn.mapRect(-125, -325, 225, 25);
+        spawn.mapRect(300, -150, 25, 325);
+        spawn.mapRect(-325, -125, 25, 300);
+        spawn.mapRect(-150, 300, 275, 25);
+        spawn.mapRect(125, -300, 25, 25);
+        spawn.mapRect(175, -275, 25, 25);
+        spawn.mapRect(225, -250, 25, 25);
+        spawn.mapRect(250, -200, 25, 25);
+        spawn.mapRect(-175, -300, 25, 25);
+        spawn.mapRect(-225, -275, 25, 25);
+        spawn.mapRect(-300, -200, 25, 25);
+        spawn.mapRect(150, 275, 25, 25);
+        spawn.mapRect(200, 225, 25, 25);
+        spawn.mapRect(250, 200, 25, 25);
+        spawn.mapRect(250, -225, 25, 25);
+        spawn.mapRect(275, -175, 25, 25);
+        spawn.mapRect(200, -275, 25, 25);
+        spawn.mapRect(150, -300, 25, 25);
+        spawn.mapRect(100, -325, 25, 25);
+        spawn.mapRect(-150, -300, 25, 25);
+        spawn.mapRect(-200, -300, 25, 25);
+        spawn.mapRect(-250, -250, 25, 25);
+        spawn.mapRect(-275, -225, 25, 25);
+        spawn.mapRect(-300, -175, 25, 50);
+        spawn.mapRect(275, 175, 25, 25);
+        spawn.mapRect(250, 200, 25, 25);
+        spawn.mapRect(225, 225, 25, 25);
+        spawn.mapRect(175, 250, 25, 25);
+        spawn.mapRect(125, 300, 25, 25);
+        spawn.mapRect(-300, 325, 200, 150);
+        spawn.mapRect(-400, 425, 225, 150);
+        spawn.mapRect(-4450, 2900, 1550, 150);
+        spawn.mapRect(-4500, 2525, 150, 525);
+        spawn.mapRect(-4800, 2150, 150, 400);
+        spawn.mapRect(-4400, 2025, 650, 150);
+        spawn.mapRect(-2425, 50, 2125, 150);
+        spawn.mapRect(-2425, 50, 150, 1300);
+        spawn.mapRect(-4600, 1175, 2325, 175);
+        spawn.mapRect(-5075, 1650, 450, 150);
+        spawn.mapRect(-4650, 1225, 75, 125);
+        spawn.mapRect(-4700, 1275, 75, 75);
+        spawn.mapRect(-425, 2925, 425, 125);
+        spawn.mapRect(-450, 2375, 450, 100);
+        spawn.mapRect(-3050, 550, 150, 450);
+        spawn.mapRect(-2925, 825, 100, 175);
+        spawn.mapRect(-2650, 375, 275, 125);
+        spawn.mapRect(-75, 2950, 300, 100);
+        spawn.mapRect(-625, -500, 125, 575);
+        spawn.mapRect(-1050, -325, 275, 100);
+        spawn.mapRect(-1075, -775, 100, 550);
+        spawn.mapRect(-1075, -775, 300, 100);
+        spawn.mapRect(-525, -1100, 1025, 625);
+        spawn.mapRect(450, -1000, 450, 1500);
+        spawn.mapRect(-300, 500, 1200, 75);
+        spawn.mapRect(-200, 425, 725, 100);
+        spawn.mapRect(525, 2450, 275, 600);
+        spawn.mapRect(-25, 2375, 825, 125);
+        spawn.mapRect(400, -1500, 500, 100);
+        spawn.mapRect(800, -1500, 100, 525);
+        spawn.mapRect(-400, 500, 1250, 1900);
+        spawn.mapRect(-300, 2910, 150, 25);
+        spawn.mapRect(-625, -1000, 125, 175);
+        spawn.spawnStairs(-400, 3000, 25, 2500, 2500, 250);
+        spawn.spawnStairs(500, 3000, 5, 250, 250, 250);
+        spawn.debris(-1550, -250, 100);
+        spawn.debris(-1100, 850, 100);
+        spawn.debris(-3700, 1025, 100);
+        spawn.debris(-3525, 2725, 100);
+        spawn.debris(-4750, 2050, 100);
+        spawn.debris(-4000, 1900, 100);
+        spawn.debris(225, -1225, 100);
+
+        //mobs
+        spawn.sneaker(-1350, 1350);
+        spawn.sneaker(-2275, 2275);
+        sniper(-3050 + Math.floor(Math.random() * 100) - Math.floor(Math.random() * 100), 1475 + Math.floor(Math.random() * 100) - Math.floor(Math.random() * 100));
+        sniper(-2925 + Math.floor(Math.random() * 100) - Math.floor(Math.random() * 100), 1775 + Math.floor(Math.random() * 100) - Math.floor(Math.random() * 100));
+        sniper(-3075 + Math.floor(Math.random() * 100) - Math.floor(Math.random() * 100), 1600 + Math.floor(Math.random() * 100) - Math.floor(Math.random() * 100));
+        sniper(-3100 + Math.floor(Math.random() * 100) - Math.floor(Math.random() * 100), 1975 + Math.floor(Math.random() * 100) - Math.floor(Math.random() * 100));
+        sniper(-3075 + Math.floor(Math.random() * 100) - Math.floor(Math.random() * 100), 1750 + Math.floor(Math.random() * 100) - Math.floor(Math.random() * 100));
+        sniper(-3350, 425);
+        sniper(-3550, 600);
+        sniper(-3325, 775);
+        sniper(-5525, 1975);
+        sniper(-50, -1300);
+        for (let i = 0; i < 10 + simulation.difficulty; i++) {
+            spawn.ghoster(0 + Math.floor(Math.random() * 5000) - Math.floor(Math.random() * 5000), 0 + Math.floor(Math.random() * 5000) - Math.floor(Math.random() * 5000))
+        }
+        core(-2000, -1000);
+        powerUps.spawnStartingPowerUps(0, 0)
+        powerUps.addResearchToLevel()
+    },
+    staircase() {
+        simulation.makeTextLog(`<strong>staircase</strong> by <span class='color-var'>ryanbear</span>`);
+
+        level.custom = () => {
+            level.exit.drawAndCheck();
+            level.enter.draw();
+        };
+        level.customTopLayer = () => {
+            aaa.query();
+            bbb.query();
+            ccc.query();
+            ddd.move();
+            eee.query();
+            fff.query();
+            ggg.query();
+            hhh.query();
+            iii.query();
+            jjj.query();
+            kk.query();
+            lll.query();
+            mmm.query();
+            nnn.query();
+            ooo.query();
+            ppp.query();
+        };
+        level.setPosToSpawn(0, -50); //normal spawn
+        level.exit.x = 7300;
+        level.exit.y = -5154;
+        //        spawn.mapRect(level.enter.x, level.enter.y + 20, 100, 20);
+        level.defaultZoom = 1800
+        simulation.zoomTransition(level.defaultZoom)
+        document.body.style.backgroundColor = "#d8dadf";
+        // powerUps.spawnStartingPowerUps(1475, -1175);
+        // spawn.debris(750, -2200, 3700, 16); //16 debris per level
+
+        spawn.mapRect(-100, 0, 2100, 100);
+        spawn.mapRect(1984, 17, 100, 500);
+        spawn.mapRect(2013, 522, 1618, 100);
+        spawn.bodyRect(2090, 328, 100, 100);
+
+        spawn.mapRect(3619, 14, 100, 500)
+        var aaa = level.hazard(1999, 10, 1618, 500);
+        var bbb = level.vanish(2320, -345, 234, 20);
+        var ccc = level.vanish(2862, -324, 234, 20);
+        var eee = level.vanish(3002, -1100, 234, 20);
+        var ddd = level.elevator(3399, -420, 200, 200, -950, 0.003, { up: 0.1, down: 0.2 }) //x, y, width, height, maxHeight, force = 0.003, friction = { up: 0.01, down: 0.2 }) {
+        var fff = level.vanish(3359, -1300, 234, 20);
+        var ggg = level.boost(3020, -1600, 700);
+        var hhh = level.vanish(2700, -1940, 1147, 20);
+        var iii = level.boost(5038, -2000, 700);
+        var jjj = level.vanish(5092, -3498, 100, 100);
+        var kk = level.boost(5092, -3772, 700);
+        var lll = level.boost(5372, -2824, 700);
+        var mmm = level.vanish(5112, -3000, 100, 100);
+        var nnn = level.vanish(5367, -3000, 100, 100);
+        var ooo = level.boost(4810, -3161, 700);
+        var ppp = level.vanish(5383, -3485, 100, 100);
+        spawn.mapRect(5377, -4198, 1000, 100);
+        spawn.mapRect(6390, -4359, 200, 200);
+        spawn.mapRect(6605, -4563, 200, 200);
+        spawn.mapRect(6809, -4758, 200, 200);
+        spawn.mapRect(7014, -4962, 200, 200);
+        spawn.mapRect(7212, -5158, 200, 200);
+
+
+
+        spawn.mapRect(4156, -1898, 1000, 100);
+        // spawn.bodyRect(1540, -1110, 300, 25, 0.9); 
+        // spawn.randomSmallMob(1300, -70);
+        spawn.randomMob(590, -315);
+        spawn.randomMob(1343, -757);
+        spawn.randomMob(4037, -926);
+        spawn.randomMob(3621, -2376);
+        spawn.randomMob(5026, -2441);
+        spawn.randomMob(4253, -2863);
+        spawn.randomMob(4355, -2430);
+        spawn.randomMob(5316, -3265);
+        spawn.randomMob(5885, -4427);
+        spawn.randomMob(6666, -4979);
+
+
+
+        spawn.laserBoss(6128, -4905);
+
+        // spawn.randomGroup(1700, -900, 0.4);
+        // if (simulation.difficulty > 1) spawn.randomLevelBoss(2200, -1300);
+        powerUps.addResearchToLevel() //needs to run after mobs are spawned
+    },
+    fortress() {
+        simulation.makeTextLog(`<strong>fortress</strong> by <span class='color-var'>Desboot</span>`);
+        const boost1 = level.boost(3600, -250, 1000)
+        const boost2 = level.boost(60, -604, 1000)
+        const boost3 = level.boost(2160, -1260, 1000)
+        powerUps.spawnStartingPowerUps(1033.3, -121.4)
+        level.custom = () => {
+            boost1.query();
+            boost2.query();
+            boost3.query();
+            level.exit.drawAndCheck();
+            level.enter.draw();
+        };
+        level.setPosToSpawn(0, -50); //normal spawn
+        level.exit.x = 3586; //3586.5, -1464.0
+        level.exit.y = -1494;
+        spawn.mapRect(level.enter.x, level.enter.y + 20, 100, 20);
+        level.defaultZoom = 1800
+        simulation.zoomTransition(level.defaultZoom)
+        document.body.style.backgroundColor = "#d8dadf";
+        level.customTopLayer = () => {
+            ctx.fillStyle = "rgba(0,0,0,0.3)"
+            ctx.fillRect(-272, -580, 1700, 600)
+            ctx.fillRect(1427.5, -487, 1280, 600)
+            ctx.fillRect(2707.3, -580, 1200, 600)
+            ctx.fillStyle = "rgba(0,0,0,0.2)"
+            ctx.fillRect(2752, -1744, 1075, 1164)
+            ctx.fillRect(937, -1590, 339, 550)
+            ctx.fillRect(1158, -1040, 118, 550)
+            ctx.fillRect(3049, -1063, 339, 500)
+            ctx.fillRect(1439, -1281, 297, 800)
+            ctx.fillRect(2130, -1182, 167, 800)
+            ctx.fillRect(1892, -2073, 238, 1593)
+            ctx.fillRect(2297, -2073, 238, 1593)
+            ctx.fillStyle = "rgba(0,0,0,0.15)"
+            ctx.fillRect(483, -1277, 350, 700)
+            ctx.fillRect(833, -1000, 325, 450)
+            ctx.fillStyle = "rgba(64,64,64,0.97)" //hidden section
+            ctx.fillRect(2800, -1712, 730, 300)
+        };
+
+        spawn.debris(2700, -120, 180, 3);
+        spawn.debris(1350, -100, 280, 3);
+        spawn.debris(2300, -700, 380, 5);
+        spawn.debris(976, -775, 38, 5);
+        spawn.debris(840, -1424, 3080, 5);
+        spawn.debris(2300, -700, 3080, 5);
+
+        spawn.mapRect(-272, 0, 4198, 123);
+        spawn.mapRect(-272, -581, 132, 581);
+        spawn.mapRect(-272, -581, 572, 326);
+        spawn.mapRect(1462, -229, 92, 229);
+        spawn.mapRect(1462, -229, 352, 57);
+        spawn.mapRect(2872, -220, 1056, 330);
+        spawn.mapRect(170, -260, 484, 80);
+        spawn.mapRect(476, -581, 1162, 75);
+        spawn.mapRect(951, -519, 1760, 132);
+        spawn.mapRect(1747, -492, 506, 66);
+        spawn.mapRect(2462, -581, 1074, 75);
+        spawn.mapRect(1136, -616, 510, 100);
+        spawn.mapRect(3815.6, -1461, 114, 1300); //far right wall
+        spawn.mapRect(480, -1456, 106, 651); //far left wall
+        spawn.mapRect(1426, -906, 106, 400);
+        spawn.mapRect(480, -1302, 374, 57);
+        spawn.mapRect(788, -1302, 75, 308);
+        spawn.mapRect(788, -1055, 370, 62);
+        spawn.mapRect(3049, -1170, 471, 106);
+        spawn.mapRect(3348, -1170, 188, 663);
+        spawn.mapRect(2751, -1461, 1088, 53); //roof under the exit
+        spawn.mapRect(2751, -1743, 92, 915); //wall on left or far right side
+        spawn.mapRect(937, -1667, 339, 84); //upper left platform
+        spawn.mapRect(1135, -3239, 119, 1450);
+        spawn.mapRect(1440, -1346, 295, 66); //center left platform
+        spawn.mapRect(2090, -1240, 242, 57); //center righ platform
+        spawn.mapRect(1892, -2214, 88, 220); //vertical part of left L
+        spawn.mapRect(1892, -2073, 238, 84); //flat part of left L
+        spawn.mapRect(2447, -2214, 88, 220); //vertical part of right L
+        spawn.mapRect(2297, -2073, 238, 84); //flat part of right L
+        spawn.mapRect(2751, -1743, 1078, 57); //exit roof //3587.2, -1470.0
+        spawn.mapRect(3584, -1470, 103, 57); //wall below door3689
+        spawn.mapRect(3428, -1735, 103, 173); //wall covering secret
+
+        spawn.mapRect(-11000, -1000, 100, 10); //SAL
+        spawn.mapRect(-11000, -1000, 10, 100); //SAL
+        spawn.mapRect(-10900, -900, 10, 100); //SAL
+        spawn.mapRect(-11000, -900, 100, 10); //SAL
+        spawn.mapRect(-11000, -800, 100, 10); //SAL
+        spawn.mapRect(-10800, -1000, 10, 200); //SAL
+        spawn.mapRect(-10700, -1000, 10, 200); //SAL
+        spawn.mapRect(-10800, -1000, 100, 10); //SAL
+        spawn.mapRect(-10800, -900, 100, 10); //SAL
+        spawn.mapRect(-10600, -1000, 10, 200); //SAL
+        spawn.mapRect(-10600, -800, 100, 10); //SAL
+
+        spawn.mapRect(-11000, -91000, 100, 10); //SAL
+        spawn.mapRect(-11000, -91000, 10, 100); //SAL
+        spawn.mapRect(-10900, -90900, 10, 100); //SAL
+        spawn.mapRect(-11000, -90900, 100, 10); //SAL
+        spawn.mapRect(-11000, -90800, 100, 10); //SAL
+        spawn.mapRect(-10800, -91000, 10, 200); //SAL
+        spawn.mapRect(-10700, -91000, 10, 200); //SAL
+        spawn.mapRect(-10800, -91000, 100, 10); //SAL
+        spawn.mapRect(-10800, -90900, 100, 10); //SAL
+        spawn.mapRect(-10600, -91000, 10, 200); //SAL
+        spawn.mapRect(-10600, -90800, 100, 10); //SAL
+        //mobs
+        spawn.randomMob(3104.9, -1284.9, 0.2);
+        spawn.randomMob(1784.7, -95.9, 0.2);
+        spawn.randomMob(3474.2, -406.7, 0.1);
+        spawn.randomMob(1603.2, -1493.5, 0.4);
+        spawn.randomMob(772.4, -1505.2, 0.2);
+        spawn.randomMob(824.6, -781.3, 0.2);
+        spawn.randomMob(818.8, -1468.9, 0.2);
+        spawn.randomMob(-124.7, -853, 0.2);
+        spawn.randomMob(3011.1, -1978.0, -0.2);
+        spawn.randomMob(2428.0, -236.8, 0.1);
+        spawn.randomSmallMob(694.3, -385.3);
+        spawn.randomSmallMob(1142.0, -808.4);
+        spawn.randomSmallMob(791.5, -803.7);
+        spawn.randomSmallMob(3175.8, -830.8);
+        spawn.randomSmallMob(1558.5, -1940.8);
+        spawn.randomSmallMob(2700, -475);
+        spawn.randomSmallMob(2700, -475);
+        spawn.pulsar(1762.9, -2768.3)
+        spawn.pulsar(3821.5, -2373.9)
+        let randomBoss = Math.floor(Math.random() * 5);
+        spawn[["laserBoss", "blinkBoss", "shooterBoss", "launcherBoss", "pulsarBoss", "beetleBoss", "slashBoss", "revolutionBoss", "dragonFlyBoss", "spiderBoss"][randomBoss]](2058.5, -711.4);
+
+        //spawn powerups
+        // powerUps.spawn(3167.6, -1300, "tech")
+        powerUps.spawn(3125.8, -1543.4, "tech")
+        powerUps.spawn(3125.8, -1543.4, "heal")
+        powerUps.spawn(3125.8, -1543.4, "ammo")
+        powerUps.spawn(3125.8, -1543.4, "ammo")
+        powerUps.spawn(3137.6, -1300, "ammo")
+        powerUps.spawn(1605.2, -1436.9, "heal")
+        powerUps.spawn(2912.9, -1940.9, "ammo")
+        powerUps.spawn(3167.6, -1300, "heal")
+        powerUps.spawn(1, 1, "ammo")
+        powerUps.addResearchToLevel() //needs to run after mobs are spawned
+    },
+    commandeer() {
+        simulation.makeTextLog(`<strong>commandeer</strong> by <span class='color-var'>Desboot</span>`);
+
+        let waterFallWidth = 400
+        let waterFallX = 15900
+        let waterFallSmoothX = 0
+        const elevator = level.elevator(-80.4, -931.6, 180, 50, -1550)
+        15900 && player.position.x < 16300 && player.position.y > -960.2
+        //const slime = level.hazard(15900, -960, 400, 6000);
+        const slime2 = level.hazard(15147.2, -1782.4, 2000, 822);
+        const boost1 = level.boost(5950, -20, 700)
+        const boost2 = level.boost(21088, -1672, 700)
+        const boost3 = level.boost(19390, -31, 1700)
+        const boost4 = level.boost(19390, -31, 1700)
+        const boost5 = level.boost(17274, -1242, 1000)
+        const portal = level.portal({ x: 443, y: -1636 }, Math.PI, { x: 21391.9, y: -1806.3 }, -Math.PI)
+        const portal2 = level.portal({ x: 16838.3, y: -626.7 }, Math.PI, { x: 16882.8, y: -2566.5 }, -Math.PI)
+        const buttonDoor = level.button(21889, -10)
+        const door = level.door(19119, -2133, 110, 510, 480)
+        const buttonDoor2 = level.button(18711, -2210)
+        const door2 = level.door(17041, -412, 110, 510, 480)
+        const buttonDoor3 = level.button(20456.6, -1636.2)
+        const door3 = level.door(20238, -781.4, 88, 452, 412)
+        const hazard2 = level.hazard(2550, -150, 10, 0.4)               //y=-1485
+
+        level.setPosToSpawn(0, -50); //normal spawn
+        level.exit.x = 15316;
+        level.exit.y = -30;
+        spawn.mapRect(level.enter.x, level.enter.y + 20, 100, 20); //bump for level entrance
+        spawn.mapRect(level.exit.x, level.exit.y + 20, 100, 20); //bump for level exit
+        level.defaultZoom = 1800
+        simulation.zoomTransition(level.defaultZoom)
+        document.body.style.backgroundColor = "#001738";
+        color.map = "#444" //custom map color
+
+
+
+        level.custom = () => {
+            //spawn.mapRect(22330, -2688.75, 400, 800);
+            //spawn.mapRect(22330, -1793.5, 400, 800);//-46.25*2=-92.5
+            //spawn.mapRect(22330, -804.25, 400, 800);//-46.25*3
+
+
+            ctx.fillStyle = "rgba(250,250,250,0.8)"//lights
+            ctx.beginPath()
+            ctx.moveTo(1124, -628)
+            ctx.lineTo(496, 0)
+            ctx.lineTo(1852, 0)
+            ctx.lineTo(1224, -628)
+            ctx.fill()
+
+            ctx.beginPath()
+            ctx.moveTo(906, -1365)
+            ctx.lineTo(206, -690)
+            ctx.lineTo(1706, -690)
+            ctx.lineTo(1006, -1365)
+            ctx.fill()
+
+            ctx.beginPath()
+            ctx.moveTo(3330, -1905)//-700
+            ctx.lineTo(2815.6, -1405.8)
+            ctx.lineTo(2815.6, -1230)
+            ctx.lineTo(4022.9, -1283.9)
+            ctx.lineTo(4023.5, -1405.8)
+            ctx.lineTo(3430, -1905)
+
+            ctx.fill()
+
+
+
+
+            ctx.fillStyle = "rgba(63,247,251,0.8)"
+            ctx.fillRect(22330, -2713.75, 550, 700)//15845.0, -1262.2
+            ctx.fillRect(22330, -1743.5, 550, 700)
+            ctx.fillRect(22330, -754.25, 550, 700)
+
+            ctx.fillRect(6237, -1830.7, 550, 700)
+            ctx.fillRect(6237, -840.4, 550, 700)
+            ctx.fillStyle = "rgba(200,200,200,0.8)"
+            ctx.fillRect(-192, -1973, 6484, 2071)
+            ctx.fillStyle = "rgba(240,240,240,0.8)"
+
+            ctx.fillRect(15109.5, -2867.5, 7284, 2971)
+            ctx.fillStyle = "rgba(35,35,35,0.8)"
+            ctx.fillRect(15145.9, -960, 200, 25)
+
+
+
+
+            ctx.fillStyle = "rgba(255,255,255,0.9)"
+
+
+
+
+
+            buttonDoor.query();
+            buttonDoor.draw();
+            buttonDoor2.query();
+            buttonDoor2.draw();
+            buttonDoor3.query();
+            buttonDoor3.draw();
+
+
+            //slime.query();
+            slime2.query();
+
+
+            if (buttonDoor.isUp) {
+                door.isClosing = true
+            } else {
+                door.isClosing = false
+            }
+            if (buttonDoor2.isUp) {
+                door2.isClosing = true
+            } else {
+                door2.isClosing = false
+            }
+            if (buttonDoor3.isUp) {
+                door3.isClosing = true
+            } else {
+                door3.isClosing = false
+            }
+            door.openClose();
+            door2.openClose();
+            door3.openClose();
+            portal[2].query()
+            portal[3].query()
+            portal2[2].query()
+            portal2[3].query()
+
+            boost1.query();
+            boost2.query();
+            boost3.query();
+            boost4.query();
+            boost5.query();
+            level.exit.drawAndCheck();
+            level.enter.draw();
+            ctx.fillStyle = "rgba(0,0,0,0.2)"//shadows
+            ctx.fillRect(2773, -682, 469, 500)
+            ctx.fillRect(3947, -851, 469, 700)
+            ctx.fillRect(4818, -1006, 400, 400)
+            ctx.fillRect(5313, -1309, 1000, 700)
+
+            ctx.fillRect(16705, -2831, 40, 700)
+            ctx.fillRect(16140, -2812, 40, 400)
+            ctx.fillRect(15559, -2855, 40, 800)
+            ctx.fillRect(16530, -2855, 30, 200)
+
+
+            ctx.beginPath()
+            ctx.moveTo(18254.7, -2194.1)
+            ctx.lineTo(18554.6, -1952.7)
+            ctx.lineTo(18554.6, -1992.7)
+            ctx.lineTo(18294.7, -2194.1)
+            ctx.fill()
+            ctx.beginPath()
+            ctx.moveTo(18154.7, -1004.1)
+            ctx.lineTo(18554.6, -762.7)
+            ctx.lineTo(18554.6, -802.7)
+            ctx.lineTo(18214.7, -1004.1)
+            ctx.fill()
+
+            ctx.beginPath()
+            ctx.moveTo(17585.2, -1123.8)
+            ctx.lineTo(17151.2, -781.7)
+            ctx.lineTo(17151.2, -741.7)
+            ctx.lineTo(17625.2, -1123.8)
+            ctx.fill()
+
+
+            ctx.fillRect(20540, -1103, 610, 300)
+            ctx.fillRect(20820, -243, 410, 300)
+            ctx.fillRect(5772, -609, 469, 700)
+            ctx.fillRect(5772, -609, 469, 700)
+
+            ctx.fillStyle = "rgba(48,184,140,255)"
+            ctx.fillRect(waterFallX, -960, waterFallWidth, 6000)
+            ctx.fillStyle = `hsla(160, 100%, 43%,${0.3 + 0.07 * Math.random()})`
+            ctx.fillRect(waterFallX + waterFallWidth * Math.random(), -900 - Math.random() * 400, Math.random() * 5 + 8, 6000)
+            ctx.fillRect(waterFallX + waterFallWidth * Math.random(), -900 - Math.random() * 400, Math.random() * 5 + 5, 6000)
+            waterFallWidth = 0.995 * waterFallWidth + 4 * Math.random()//4.7
+            waterFalSmoothlX = 0.96 * waterFallSmoothX + 20 * Math.random()//3.5
+            waterFallX = waterFallSmoothX + 15900
+
+
+            ctx.fillStyle = "rgba(0,0,0,0.4)"//wires
+            ctx.fillRect(20990, -2672, 20, 112)
+            ctx.fillRect(21090, -2506, 72, 20)
+            ctx.fillRect(21090, -1970, 72, 20)
+
+
+
+            ctx.fillRect(16901.8, -2497.7, 25, 100)
+            ctx.fillRect(16901.8, -2397.7, 50, 25)
+            ctx.fillRect(16951.8, -2397.7, 25, 1640)
+            ctx.fillRect(16901.8, -782.7, 50, 25)
+            ctx.fillRect(16901.8, -757.7, 25, 100)
+
+
+            ctx.fillRect(20900, -2666, 500, 9)
+            ctx.fillRect(20900, -2651, 1315, 9)
+            ctx.fillRect(20900, -2636, 1300, 9)
+            ctx.fillRect(20900, -2621, 245, 9)
+            ctx.fillRect(20900, -2606, 230, 9)
+            ctx.fillRect(20900, -2591, 215, 9)
+            ctx.fillRect(20900, -2576, 200, 9)
+
+            ctx.fillRect(21145, -2621, 9, 700)
+            ctx.fillRect(21130, -2606, 9, 1000)
+            ctx.fillRect(21115, -2591, 9, 1000)
+            ctx.fillRect(21100, -2576, 9, 850)
+
+            ctx.fillRect(21400, -3066, 9, 409)
+
+
+            ctx.fillRect(20900, -1726, 209, 9)
+            ctx.fillRect(21145, -1921, 270, 9)
+            ctx.fillRect(21415, -1921, 9, 50)
+
+            ctx.fillRect(22200, -2636, 9, 1300)
+            ctx.fillRect(22215, -2651, 9, 300)
+
+            ctx.fillRect(22200, -1336, 300, 9)
+            ctx.fillRect(22215, -2351, 300, 9)
+
+
+            //943.9, -1698.0
+
+            ctx.fillRect(916.5, -1725, 80, 80)//+55 // 55/2=27.5
+            ctx.fillRect(1204, -1706, 25, 40)//179
+            ctx.fillRect(1354, -1706, 25, 40)
+            ctx.fillRect(1504, -1885, 25, 40)
+            ctx.fillRect(3504, -1885, 25, 40)
+            ctx.fillRect(5504, -1885, 25, 40)
+
+
+            ctx.fillRect(1019, -1718, 9, 20)
+            ctx.fillRect(1019, -1674, 9, 20)
+
+            ctx.fillRect(996, -1718, 23, 9)
+            ctx.fillRect(996, -1663, 23, 9)
+
+
+
+
+            ctx.fillRect(1019, -1698, 425, 9)
+            ctx.fillRect(1444, -1868, 9, 179)
+            ctx.fillRect(1444, -1877, 4700, 9)
+
+            ctx.fillRect(1019, -1683, 440, 9)
+            ctx.fillRect(1459, -1853, 9, 179)
+            ctx.fillRect(1459, -1862, 4670, 9)
+
+            ctx.fillRect(6144, -1877, 9, 100)
+            ctx.fillRect(6144, -1777, 100, 9)
+
+            ctx.fillRect(6129, -1862, 9, 1100)
+            ctx.fillRect(6129, -762, 150, 9)
+
+
+
+
+
+
+
+        };
+
+
+        level.customTopLayer = () => {
+
+
+
+            door.draw();
+            door2.draw();
+            door3.draw();
+
+            portal[0].draw();
+            portal[1].draw();
+            portal[2].draw();
+            portal[3].draw();
+            portal2[0].draw();
+            portal2[1].draw();
+            portal2[2].draw();
+            portal2[3].draw();
+            elevator.move()
+
+
+            // if (player.position.x > 15900 && player.position.x < 16300 && player.position.y > -1360.2) {
+            //     Matter.Body.setVelocity(player, {
+            //         x: player.velocity.x,
+            //         y: player.velocity.y + 10
+            //     });
+            // }else{
+            //     if (Math.abs(player.velocity.x) > 0.5){
+            //         if (m.onGround){
+            //     Matter.Body.setVelocity(player, {
+            //         x: player.velocity.x + (0.07 * (Math.abs(player.velocity.x) / player.velocity.x)),
+            //         y: player.velocity.y - 0.2
+
+            //     });  
+            //         }else{
+            //             Matter.Body.setVelocity(player, {
+            //                 x: player.velocity.x,
+            //                 y: player.velocity.y - 0.2   
+            //         });
+            //         }
+            //     }else{
+            //         Matter.Body.setVelocity(player, {
+            //             x: player.velocity.x,
+            //             y: player.velocity.y - 0.2   
+            //     });
+            //     }
+            // }
+
+            if (player.position.x > 15900 && player.position.x < 16300 && player.position.y > -1360.2) {
+                Matter.Body.setVelocity(player, {
+                    x: player.velocity.x,
+                    y: player.velocity.y + 2
+                });
+            } else {
+                if (Math.abs(player.velocity.x) > 0.5) {
+                    if (m.onGround) {
+                        Matter.Body.setVelocity(player, {
+                            x: player.velocity.x + (0.07 * (Math.abs(player.velocity.x) / player.velocity.x)),
+                            y: player.velocity.y - 0.2
+
+                        });
+                    } else {
+                        Matter.Body.setVelocity(player, {
+                            x: player.velocity.x,
+                            y: player.velocity.y - 0.2
+                        });
+                    }
+                } else {
+                    Matter.Body.setVelocity(player, {
+                        x: player.velocity.x,
+                        y: player.velocity.y - 0.2
+                    });
+                }
+            }
+            hazard2.opticalQuery();
+
+
+        };
+
+
+
+
+
+        //1273.2, -1404.7
+
+        spawn.mapRect(1124, -653, 100, 25);
+        spawn.mapRect(906, -1390, 100, 25);
+        spawn.mapRect(3330, -1930, 100, 25);
+
+
+        //first ship base
+        spawn.mapRect(-300, 0, 6684, 100);//lower floor
+        spawn.mapRect(-300, -2071, 154, 2071);//left right wall
+        spawn.mapRect(2511, -300, 1309, 308);//left big block
+        spawn.mapRect(3820, -184, 1309, 184);//right big block
+        spawn.mapRect(-300, -739, 2549, 100);//upper right floor
+        spawn.mapRect(2056, -1309, 2764, 169);//upper center floor
+        spawn.mapRect(2056, -1309, 193, 650);//upper left floor wall
+        spawn.mapRect(4636, -1309, 193, 793);//upper right floor wall
+        spawn.mapRect(4821, -654, 955, 138);//upper right floor
+        spawn.mapRect(6237, -2071, 147, 2071);//far right wall
+        spawn.mapRect(-300, -2071, 6684, 154);//roof
+
+        //first ship details
+        spawn.mapRect(245, -360, 70, 400);//start room wall
+        spawn.mapRect(500, -1929, 154, 462);
+        spawn.mapRect(185, -1517, 469, 77);
+        spawn.mapRect(2773, -682, 469, 77);//walls in 1st room
+        spawn.mapRect(3743, -566, 77, 469);
+        spawn.mapRect(3947, -851, 469, 77);
+        spawn.mapRect(5313, -1309, 1000, 70);//walls in second area
+        spawn.mapRect(4818, -1006, 400, 70);
+        spawn.mapRect(4768, -1626, 800, 70);
+        spawn.mapRect(4760, -1626, 70, 400);
+        spawn.mapRect(645.1, -1480.8, 700, 100);//room for shielding boss
+        spawn.mapVertex(515, -1447, "0 0   0 100   -400 0");
+        spawn.mapRect(1245.1, -1980.8, 100, 500);
+        spawn.mapRect(2346.9, -1658.8, 469, 77);
+        spawn.mapRect(4023.6, -1723.7, 469, 77);
+
+        //engines //y -2972 -> 0
+        spawn.mapRect(6237, -1880.7, 400, 800);
+        spawn.mapRect(6237, -890.4, 400, 800);
+
+
+        //first ship blocks/debris
+        spawn.debris(3267.6, -797.1, 700, 5); //16 debris per level
+        spawn.debris(1626.0, -372.5, 1700, 8); //16 debris per level
+        spawn.debris(1880.1, -1508.9, 3700, 16); //16 debris per level
+        spawn.debris(5335.3, -1431.6, 3700, 16); //16 debris per level
+        spawn.debris(1563.8, -1087.9, 700, 5); //16 debris per level
+        spawn.bodyRect(1540, -1110, 218, 125, 0.9);
+
+
+
+        //first ship mobs
+        spawn.randomSmallMob(893.5, -120.8);
+
+        // spawn.randomMob(2903.9, -754.5, 0.4);
+        // spawn.randomMob(5577.0, -217.0, 0.2);
+        // spawn.randomMob(765.8, -1029.7, 0.5);
+        // spawn.randomMob(2680.1, -1779.2, 0.6);
+        // spawn.randomMob(20079.4, -2219.7, 0.4);
+        // spawn.randomMob(3924.9, -1504.1, 0.5);
+        // spawn.randomMob(21284.2, -983.1, 0.3);
+        // spawn.randomMob(20381.0, -254.2, 0.5);
+        // spawn.randomMob(18375.6, -1574.4, 0.6);
+        // spawn.randomMob(19448.2, -1323.3, 0.3);
+        // spawn.randomMob(18397.7, -711.2, 0.3);
+        // spawn.randomMob(15547.2, -2249.6, 0.5);
+        // spawn.randomSmallMob(16114.6, -2524.2);
+        // spawn.randomSmallMob(15378.9, -2549.6);
+
+        // spawn.randomSmallMob(3266.4, -1578.4);
+        // spawn.randomSmallMob(4386.2, -439.6);
+        // spawn.randomSmallMob(5667.0, -847.8);
+        // spawn.randomSmallMob(3158.5, -1581.8);
+        // spawn.randomSmallMob(3866.7, -1483.2);
+        // spawn.randomSmallMob(4652.3, -1729.4);
+        // spawn.randomSmallMob(1068.7, -106.1);
+        // spawn.randomSmallMob(3382.5, -1590.6);//3545.0, -413.0
+        // spawn.randomSmallMob(5099.7, -1204.2);
+        // spawn.randomSmallMob(1456.4, -1014.8);
+        // spawn.randomSmallMob(20432.4, -1374.3);
+        // spawn.randomSmallMob(20381.0, -254.2);
+        // spawn.randomSmallMob(3505.1, -1531.1);
+        // spawn.randomSmallMob(20648.1, -136.8);
+        // spawn.randomSmallMob(17502.8, -1520.6);
+        // spawn.randomSmallMob(17438.7, -876.7);
+
+        spawn.randomMob(18375.6, -1574.4, 0.2);
+        spawn.randomSmallMob(15378.9, -2549.6);
+        spawn.randomSmallMob(5820.2, -1545.2);
+        spawn.randomMob(765.8, -1029.7, 0.2);
+        spawn.randomMob(21284.2, -983.1, 0.3);
+        spawn.randomSmallMob(3382.5, -1590.6);
+        spawn.randomSmallMob(3545.0, -413.0);
+        spawn.randomMob(20381.0, -254.2, 0.6);
+        spawn.randomSmallMob(20432.4, -1374.3);
+        spawn.randomSmallMob(5667.0, -847.8);
+        spawn.randomMob(2903.9, -754.5, 0.2);
+        spawn.randomSmallMob(3266.4, -1578.4);
+        spawn.randomSmallMob(20648.1, -136.8);
+        spawn.randomSmallMob(16114.6, -2524.2);
+        spawn.randomSmallMob(20381.0, -254.2);
+        spawn.randomMob(5577.0, -217.0, 0.3);
+        spawn.randomSmallMob(1456.4, -1014.8);
+        spawn.randomSmallMob(1068.7, -106.1);
+        spawn.randomSmallMob(5099.7, -1204.2);
+        spawn.randomSmallMob(17502.8, -1520.6);
+        spawn.randomMob(15547.2, -2249.6, 0.2);
+        spawn.randomMob(19448.2, -1323.3, 0.7);
+        spawn.randomSmallMob(3158.5, -1581.8);
+        spawn.randomSmallMob(17438.7, -876.7);
+        spawn.randomMob(20079.4, -2219.7, 0.2);
+        spawn.randomMob(2680.1, -1779.2, 0.6);
+        spawn.randomMob(3924.9, -1504.1, 0.3);
+        spawn.randomSmallMob(4652.3, -1729.4);
+        spawn.randomMob(18397.7, -711.2, 0.3);
+        spawn.randomSmallMob(4386.2, -439.6);
+
+        spawn.randomSmallMob(3505.1, -1531.1);
+        spawn.randomSmallMob(3866.7, -1483.2);
+
+
+
+
+        //second ship mobs
+        spawn.debris(17732.3, -550.0, 700, 5); //16 debris per level
+        spawn.debris(17827.2, -2357.1, 700, 5); //16 debris per level
+        spawn.debris(16108.6, -2621.1, 700, 5); //16 debris per level
+        spawn.debris(20823.6, -1332.1, 1300, 5); //16 debris per level
+        spawn.debris(21095.5, -423.4, 700, 5); //16 debris per level
+        spawn.debris(20534.5, -1282.1, 700, 5); //16 debris per level
+
+
+
+
+
+
+
+        spawn.randomSmallMob(1300, -70);
+        spawn.shieldingBoss(943.9, -1698.0)
+
+
+        //second ship base
+        spawn.mapRect(15000, 0, 515, 185);//lower floor 1
+        spawn.mapRect(17015, 0, 5500, 185);//lower floor 2
+        spawn.mapRect(15000, -2972, 185, 2972);//left wall
+        spawn.mapRect(15000, -2972, 7515, 185);//roof
+        spawn.mapRect(22330, -2972, 185, 2972);//right wall
+        spawn.mapRect(17002, -2972, 169, 2564);//left middle wall
+        spawn.mapRect(19089, -2972, 169, 855);//right middle wall upper
+        spawn.mapRect(19089, -1625, 169, 1800);//right middle wall lower
+        spawn.mapRect(20760, -2972, 169, 1350);//medium wall left of portal
+        spawn.mapRect(19720, -1625, 1725, 162);//right room upper floor
+        spawn.mapRect(21440, -2325, 169, 863);//medium wall right of portal
+        spawn.mapRect(19720, -855, 2725, 162);//right room lower floor
+
+        //engines //y -2972 -> 0
+        spawn.mapRect(22330, -2763.75, 400, 800);
+        spawn.mapRect(22330, -1793.5, 400, 800);
+        spawn.mapRect(22330, -804.25, 400, 800);
+
+
+
+        //second ship details
+        spawn.mapRect(19904, -1465, 85, 362);//upper L
+        spawn.mapRect(19542, -1191, 412, 88);//lower L
+        spawn.mapRect(18546, -2199, 600, 82);//2nd room enternce wall
+        spawn.mapRect(18546, -2499, 82, 2300);
+        spawn.mapRect(18108, -326, 500, 82);//walls/floors in middle room
+        spawn.mapRect(17750, -682, 300, 82);
+        spawn.mapRect(17156, -468, 500, 60);
+        spawn.mapRect(18022, -1082, 600, 82);
+        spawn.mapRect(17151, -1196, 500, 82);
+        spawn.mapRect(17453, -2060, 500, 82);
+        spawn.mapRect(18197, -2269, 400, 82);
+        spawn.mapRect(18108, -326, 500, 82);
+        spawn.mapRect(20542, -1191, 612, 88);
+        spawn.mapRect(20238, -1191, 88, 412);
+        spawn.mapRect(21520, -1468, 88, 412);
+        spawn.mapRect(20238, -330.2, 88, 412);
+        spawn.mapRect(20819, -328.3, 412, 88);
+        spawn.mapRect(21532, -708, 88, 412);
+        spawn.mapRect(15483.8, 12.5, 388, 30);//broken floor
+        spawn.mapRect(15487.6, 76.6, 488, 24);
+        spawn.mapRect(15506.5, 134.2, 288, 45);
+        spawn.mapVertex(16758.6, 135.3, "400 -30   -350 -40   -400 30   400 30");
+        spawn.mapVertex(16758.6, 55.3, "423 -30   -408 -20   -400 20   400 20");
+        //tank
+        spawn.mapRect(15310, -960, 600, 135);
+        spawn.mapRect(16290, -960, 800, 135);
+        //in tank
+        spawn.mapRect(16524.8, -2726.8, 40, 400);
+        spawn.mapRect(16524.8, -2130.9, 400, 40);
+        spawn.mapRect(16010.2, -2412.2, 300, 40);
+        spawn.mapRect(15379.2, -2055.1, 400, 40);
+
+        spawn.mapVertex(17626.3, -3035, "-245 0   -220 -110   -173 -173   -110 -220   0 -250   110 -220   173 -173   220 -110   245 0");
+        spawn.mapRect(17226.3, -3035, 400, 40);
+
+        spawn.mapVertex(17626.3, 225, "-245 0   -220 110   -173 173   -110 220   0 250   110 220   173 173   220 110   245 0");
+        spawn.mapRect(17226.3, 225, 400, 40);
+
+        spawn.mapVertex(19626.3, -3035, "-245 0   -220 -110   -173 -173   -110 -220   0 -250   110 -220   173 -173   220 -110   245 0");
+        spawn.mapRect(19226.3, -3035, 400, 40);
+
+        spawn.mapVertex(19626.3, 225, "-245 0   -220 110   -173 173   -110 220   0 250   110 220   173 173   220 110   245 0");
+        spawn.mapRect(19226.3, 225, 400, 40);
+
+        spawn.mapVertex(21626.3, -3035, "-245 0   -220 -110   -173 -173   -110 -220   0 -250   110 -220   173 -173   220 -110   245 0");
+        spawn.mapRect(21226.3, -3035, 400, 40);
+
+        spawn.mapVertex(21626.3, 225, "-245 0   -220 110   -173 173   -110 220   0 250   110 220   173 173   220 110   245 0");
+        spawn.mapRect(21226.3, 225, 400, 40);
+
+
+
+        //add fuel tanks in the last room
+
+
+        spawn.mapRect(21531.9, -707.8, 488, 8);
+
+        //22185.5, -114.8
+        spawn.mapVertex(22207.8, -103, "325 -200   100 -200   325 -300");
+        spawn.mapRect(22056.6, -70, 225, 212);
+
+        spawn.mapVertex(20723.1, -1734, "325 -200   100 -200   325 -300");
+        spawn.mapRect(20571.9, -1701.0, 225, 212);
+
+        spawn.mapVertex(22207.8, -103, "325 -200   100 -200   325 -300");
+        spawn.mapRect(22056.6, -70, 225, 212);
+        //spawn.mapVertex(x,y, "coordinates")
+        //the parts in quotes is "x y   x y   x y   x y   x y"  x and y need to be the coordinates of points that define the shape in a concave clockwise direction
+
+        //second ship blocks/debris
+        spawn.bodyRect(21525, -113, 50, 50, 9);//first button block 
+        spawn.bodyRect(18993, -2283, 50, 50, 9);//second button block
+        spawn.bodyRect(20303, -1736, 50, 50, 9);//third button block
+
+
+
+        // spawn.randomLevelBoss(17902, -1689, ["blinkBoss", "shooterBoss", "launcherBoss", "pulsarBoss", "blockBoss", "bladeBoss", "revolutionBoss", "spawnerBossCulture", "spiderBoss", "sneakBoss", "snakeSpitBoss"])
+        spawn.randomLevelBoss(17902, -1689, ["launcherBoss", "laserTargetingBoss", "blinkBoss", "streamBoss", "historyBoss", "grenadierBoss", "blockBoss", "revolutionBoss", "slashBoss"]);
+
+        // powerUps.spawnStartingPowerUps(1475, -1175);
+        // spawn.debris(750, -2200, 3700, 16); //16 debris per level
+        // spawn.bodyRect(1540, -1110, 300, 25, 0.9); 
+        // spawn.randomSmallMob(1300, -70);
+        // spawn.randomMob(2650, -975, 0.8);
+        // spawn.randomGroup(1700, -900, 0.4);
+        // if (simulation.difficulty > 1) spawn.randomLevelBoss(2200, -1300);
+        // spawn.secondaryBossChance(100, -1500)
+        powerUps.addResearchToLevel() //needs to run after mobs are spawned
+    },
+    clock() {
+        simulation.makeTextLog(`<strong>clock</strong> by <span class='color-var'>Cornbread 2100</span>`);
+
+        function drawBackgroundGear(x, y, r1, r2, rot, color, speed, numTeeth = 5, toothWidth = 75, linew = 2) {
+            var vertices = getGearVertices(x, y, r1, r2, numTeeth, simulation.cycle * speed + rot, toothWidth / 100);
+
+            // draw gear
+            ctx.beginPath();
+            ctx.moveTo(vertices[0].x, vertices[0].y);
+            for (var i = 1; i < vertices.length; i++) {
+                ctx.lineTo(vertices[i].x, vertices[i].y);
+            }
+            ctx.lineTo(vertices[0].x, vertices[0].y);
+            ctx.lineWidth = 2;
+            ctx.fillStyle = color;
+            ctx.fill();
+            ctx.strokeStyle = "#3a3f20";
+            ctx.lineWidth = linew;
+            ctx.stroke();
+        }
+
+        function drawFallingBackgroundGear(x, y, r1, r2, rot, color, speed, fallSpeed, startCycle, numTeeth = 5, linew = 2) {
+            rot *= speed;
+            numTeeth *= 2;
+
+            const gearInc = (2 * Math.PI) / numTeeth;
+            ctx.beginPath()
+            for (var i = 0; i <= numTeeth; i++) {
+                var gear_r = r2;
+                if (i % 2 == 1) gear_r = r1;
+                ctx.arc(x, y + (simulation.cycle - startCycle) * fallSpeed, gear_r, (i * gearInc) + rot, ((i + 1) * gearInc) + rot);
+            }
+            ctx.fillStyle = color;
+            ctx.fill();
+            ctx.strokeStyle = "#3a3f20";
+            ctx.lineWidth = linew;
+            ctx.stroke();
+        }
+
+        function getGearVertices(x, y, r1, r2, numTeeth, rot = 0, teethWidth = 0) {
+            if (teethWidth == 0) {
+                teethWidth = (2 * Math.PI) / (2 * numTeeth);
+            }
+            const gearInc = (2 * Math.PI) / numTeeth;
+            var vertices = [];
+
+            for (var i = 0; i < numTeeth; i++) {
+                //inner vertices of gear teeth
+                var distance = i * gearInc + rot;
+                var vX = Math.sin(distance + teethWidth / 2) * r1;
+                var vY = Math.cos(distance + teethWidth / 2) * r1;
+
+                var point1 = { x: vX, y: vY, point: 1 };
+
+                vX = Math.sin(distance - teethWidth / 2) * r1;
+                vY = Math.cos(distance - teethWidth / 2) * r1;
+
+                var point4 = { x: vX, y: vY, point: 4 };
+
+                vX = Math.sin(distance) * r1;
+                vY = Math.cos(distance) * r1;
+
+                if (vX == 0) {
+                    vX = 0.0001
+                }
+
+                var slope = vY / vX;
+
+                var angle = Math.atan2(vY, vX);
+
+                //outer vertices of gear teeth
+                var point2 = { x: point1.x, y: point1.y, point: 2 };
+                point2.x += Math.cos(angle) * (r2 - r1);
+                point2.y += Math.sin(angle) * (r2 - r1);
+
+                var point3 = { x: point4.x, y: point4.y, point: 3 };
+                point3.x += Math.cos(angle) * (r2 - r1);
+                point3.y += Math.sin(angle) * (r2 - r1);
+
+                vertices.push(point4);
+                vertices.push(point3);
+                vertices.push(point2);
+                vertices.push(point1);
+            }
+
+            for (var i = 0; i < vertices.length; i++) {
+                vertices[i].x += x;
+                vertices[i].y += y;
+            }
+
+            return vertices;
+        }
+
+        function getGearTeethVertices(x, y, r1, r2, numTeeth, toothIndex, teethWidth = 0) {
+            if (teethWidth == 0) {
+                teethWidth = (2 * Math.PI) / (2 * numTeeth);
+            }
+
+            const gearInc = (2 * Math.PI) / numTeeth;
+            var vertices = [];
+
+            for (var i = 0; i < numTeeth; i++) {
+                //inner vertices of gear teeth
+                var distance = i * gearInc;
+                var vX = Math.sin(distance + teethWidth / 2) * r1;
+                var vY = Math.cos(distance + teethWidth / 2) * r1;
+
+                var point1 = { x: vX, y: vY, point: 1 };
+
+                vX = Math.sin(distance - teethWidth / 2) * r1;
+                vY = Math.cos(distance - teethWidth / 2) * r1;
+
+                var point4 = { x: vX, y: vY, point: 4 };
+
+                vX = Math.sin(distance) * r1;
+                vY = Math.cos(distance) * r1;
+
+                if (vX == 0) {
+                    vX = 0.0001
+                }
+
+                var slope = vY / vX;
+
+                var angle = Math.atan2(vY, vX);
+
+                //outer vertices of gear teeth
+                var point2 = { x: point1.x, y: point1.y, point: 2 };
+                point2.x += Math.cos(angle) * (r2 - r1);
+                point2.y += Math.sin(angle) * (r2 - r1);
+
+                var point3 = { x: point4.x, y: point4.y, point: 3 };
+                point3.x += Math.cos(angle) * (r2 - r1);
+                point3.y += Math.sin(angle) * (r2 - r1);
+
+                if (i == toothIndex) {
+                    vertices.push(point4);
+                    vertices.push(point3);
+                    vertices.push(point2);
+                    vertices.push(point1);
+                }
+            }
+
+            for (var i = 0; i < vertices.length; i++) {
+                vertices[i].x += x;
+                vertices[i].y += y;
+            }
+
+            return vertices;
+        }
+
+        function mapGear(x, y, r1, r2, rot, speed, numTeeth = 5, toothWidth = 50, additionalCircleRadius = 10) {
+            const part1 = body[body.length] = Bodies.polygon(x, y, 0, r1 + additionalCircleRadius, {
+                collisionFilter: {
+                    category: cat.body,
+                    mask: cat.player | cat.body | cat.bullet | cat.powerUp | cat.mob | cat.mobBullet
+                },
+                isNotHoldable: true,
+                frictionAir: 0,
+                friction: 1,
+                frictionStatic: 1,
+                restitution: 0
+            });
+
+            var parts = [part1];
+
+            for (var i = 0; i < numTeeth; i++) {
+                var toothVertices = getGearTeethVertices(0, 0, r2 - r1, toothWidth + r2 - r1, numTeeth, i, 70); // for some reason the teeth are sideways
+
+                var center = { // the center of the inner line of the gear
+                    x: toothVertices[3].x - toothVertices[0].x,
+                    y: toothVertices[3].y - toothVertices[0].y
+                };
+
+                distanceToCenter = Math.sqrt((center.x ** 2) + (center.y ** 2));
+
+                var radiusScale = (r1 + ((r2 - r1) / 2)) / distanceToCenter;
+
+                gearToothSlope = center.y / center.x;
+
+                var newPart = body[body.length] = Bodies.fromVertices(x + center.x * radiusScale, y + center.y * radiusScale, toothVertices, {
+                    collisionFilter: {
+                        category: cat.body,
+                        mask: cat.player | cat.body | cat.bullet | cat.powerUp | cat.mob | cat.mobBullet
+                    },
+                    isNotHoldable: true,
+                    frictionAir: 0.01,
+                    friction: 1,
+                    frictionStatic: 1,
+                    restitution: 0
+                });
+
+                parts.push(newPart);
+            }
+
+            const who = Body.create({
+                parts: parts
+            });
+
+            Composite.add(engine.world, who);
+            composite[composite.length] = who;
+            who.collisionFilter.category = cat.body;
+            who.collisionFilter.mask = cat.body | cat.player | cat.bullet | cat.mob | cat.mobBullet | cat.map
+
+            const constraint = Constraint.create({
+                pointA: {
+                    x: x,
+                    y: y
+                },
+                bodyB: who,
+                stiffness: 1,
+                damping: 1
+            });
+
+
+            Matter.Body.setDensity(who, 0.0001)
+            Composite.add(engine.world, constraint);
+            Matter.Body.setAngle(who, 0)
+            Matter.Body.setAngularVelocity(who, 0);
+            who.center = { x: x, y: y }
+
+            who.rotate = function () {
+                var rotation = simulation.cycle * speed + rot;
+                Matter.Body.setAngle(who, rotation);
+            }
+
+            who.gearSettings = {
+                x: x,
+                y: y,
+                r1: r1,
+                r2: r2,
+                rot: rot,
+                speed: speed,
+                numTeeth: numTeeth,
+                toothWidth: toothWidth
+            }
+
+            return who;
+        }
+
+        function clockHand(x, y, width, height, speed = 15 * Math.PI / 180, angle = 0, density = 0.001) {
+            var who1 = body[body.length] = Bodies.rectangle(x, y + height / 2, width, height, {
+                collisionFilter: {
+                    category: cat.body,
+                    mask: cat.player | cat.body | cat.bullet | cat.powerUp | cat.mob | cat.mobBullet
+                },
+                isNotHoldable: true,
+                friction: 1,
+                frictionStatic: 1,
+                restitution: 0
+            });
+
+            const who = Body.create({
+                parts: [who1],
+                handRotation: 0
+            });
+
+            Composite.add(engine.world, who);
+            composite[composite.length] = who;
+            who.collisionFilter.category = cat.body;
+            who.collisionFilter.mask = cat.body | cat.player | cat.bullet | cat.mob | cat.mobBullet | cat.map
+
+            who.position.y = y;
+
+            const constraint = Constraint.create({
+                pointA: {
+                    x: who.position.x,
+                    y: who.position.y
+                },
+                bodyB: who,
+                stiffness: 1,
+                damping: 1
+            });
+
+            Matter.Body.setDensity(who, density)
+            Composite.add(engine.world, constraint);
+            who.center = { x: who.position.x, y: who.position.y }
+
+            who.rotate = function () {
+                if (simulation.cycle % 60 == 0) {
+                    who.handRotation += speed;
+                    if (Math.abs(who.handRotation % (Math.PI * 2) - Math.PI) < 0.2) {
+                        // spawn random mob at exit door
+                        const pick = spawn.fullPickList[Math.floor(Math.random() * spawn.fullPickList.length)];
+                        spawn[pick](300, 600);
+                    }
+                    if (Matter.Query.collides(player, [this]).length != 0) {
+                        var playerAngle = Math.atan((m.pos.y - y) / (m.pos.x - x));
+                        if (m.pos.x - x < 0) playerAngle += Math.PI;
+                        const playerDistance = Math.sqrt((m.pos.x - x) ** 2 + (m.pos.y - y) ** 2);
+                        Matter.Body.setPosition(player, {
+                            x: x + Math.cos(playerAngle + speed) * playerDistance,
+                            y: y + Math.sin(playerAngle + speed) * playerDistance
+                        })
+                    }
+                }
+                Matter.Body.setAngle(who, who.handRotation + angle);
+            }
+
+            return who
+        }
+
+        function pendulum(x, y, width, height, swingTime = 50, swingDistanceMultiplier = 0.5, bobSides = 0, bobRadius = 200, density = 100, angle = 0, frictionAir = 0, angularVelocity = 0) {
+            const who1 = body[body.length] = Bodies.rectangle(x, y + height / 2, width, height, {
+                collisionFilter: {
+                    category: cat.body,
+                    mask: cat.player | cat.body | cat.bullet | cat.powerUp | cat.mob | cat.mobBullet
+                },
+                isNotHoldable: true,
+                frictionAir: frictionAir,
+                friction: 1,
+                frictionStatic: 1,
+                restitution: 0
+            });
+
+            const who2 = body[body.length] = Bodies.polygon(x, y + height, bobSides, bobRadius, {
+                collisionFilter: {
+                    category: cat.body,
+                    mask: cat.player | cat.body | cat.bullet | cat.powerUp | cat.mob | cat.mobBullet
+                },
+                isNotHoldable: true,
+                frictionAir: 0.01,
+                friction: 1,
+                frictionStatic: 1,
+                restitution: 0
+            });
+
+            const who = Body.create({
+                parts: [who1, who2],
+            });
+
+            Composite.add(engine.world, who);
+            composite[composite.length] = who;
+            who.collisionFilter.category = cat.body;
+            who.collisionFilter.mask = cat.body | cat.player | cat.bullet | cat.mob | cat.mobBullet | cat.map
+
+            who.position.y = y;
+
+            const constraint = Constraint.create({
+                pointA: {
+                    x: x,
+                    y: y
+                },
+                bodyB: who,
+                stiffness: 1,
+                damping: 1
+            });
+
+
+            Matter.Body.setDensity(who, density)
+            Composite.add(engine.world, constraint);
+            Matter.Body.setAngle(who, angle)
+            Matter.Body.setAngularVelocity(who, angularVelocity);
+            who.center = { x: x, y: y + height / 2 }
+
+            who.rotate = function () {
+                var rotation = Math.sin(simulation.cycle / swingTime) * swingDistanceMultiplier;
+
+                if (Matter.Query.collides(player, [this]).length != 0) {
+                    var playerAngle = Math.atan((player.position.y - y) / (player.position.x - x)) + rotation - Math.sin((simulation.cycle - 1) / swingTime) * swingDistanceMultiplier;
+                    if (player.position.x - x < 0) playerAngle += Math.PI;
+                    const playerDistance = Math.sqrt((player.position.x - x) ** 2 + (player.position.y - y) ** 2);
+                    Matter.Body.setPosition(player, {
+                        x: x + Math.cos(playerAngle) * playerDistance,
+                        y: y + Math.sin(playerAngle) * playerDistance
+                    })
+                }
+
+                Matter.Body.setAngle(who, rotation);
+            }
+
+            return who;
+        }
+
+        function gearMob(x, y, leaveBody = true, autoFindPlayer = false, radius = Math.floor(25 + 40 * Math.random()), teethRadius = 0) {
+            if (teethRadius == 0) {
+                teethRadius = radius + 15 + Math.floor(Math.random() * 20);
+            }
+
+            mobs.spawn(x, y, 0, teethRadius, "transparent");
+            let me = mob[mob.length - 1];
+            me.stroke = "transparent";
+
+            me.delay = 100 + 40 * simulation.CDScale;
+            me.accelMag = Math.PI / 10000;
+            me.memory = 120;
+            me.seeAtDistance2 = 2000000; // 140
+            Matter.Body.setDensity(me, 0.001);
+
+            me.leaveBody = leaveBody;
+
+            const numTeeth = Math.round(5 + Math.random() * 3);
+
+            me.gearRotation = 0;
+            me.gearSpeed = Math.round(-0.1 + Math.random() * 0.2);
+            me.gearAccelerating = true;
+
+            me.do = function () {
+                if (autoFindPlayer) {
+                    me.locatePlayer();
+                }
+
+                this.seePlayerByLookingAt();
+                this.checkStatus();
+                this.attraction();
+
+                if (me.gearAccelerating && (Math.random() > 0.99 || me.gearSpeed >= 0.1)) {
+                    me.gearAccelerating = false;
+                } else if (!me.gearAccelerating && (Math.random() > 0.99 || me.gearSpeed <= -0.1)) {
+                    me.gearAccelerating = true;
+                }
+
+                if (me.gearAccelerating) {
+                    me.gearSpeed += 0.001;
+                } else {
+                    me.gearSpeed -= 0.001;
+                }
+
+                me.gearRotation += me.gearSpeed;
+
+                var newVertices = getGearVertices(me.position.x, me.position.y, radius, teethRadius, numTeeth, me.gearRotation);
+                // draw body
+                ctx.beginPath();
+                ctx.moveTo(newVertices[0].x, newVertices[0].y);
+                for (let i = 1; i < newVertices.length; i++) {
+                    ctx.lineTo(newVertices[i].x, newVertices[i].y);
+                }
+                ctx.lineTo(newVertices[0].x, newVertices[0].y);
+                ctx.fillStyle = "#7b3f00";
+                ctx.fill();
+                ctx.strokeStyle = "#000";
+                ctx.lineWidth = 2;
+                ctx.stroke();
+            }
+        }
+
+        function customDoor(x, y, width, height) {
+            x = x + width / 2
+            y = y + height / 2
+            const doorBlock = body[body.length] = Bodies.rectangle(x, y, width, height, {
+                collisionFilter: {
+                    category: cat.map,
+                    mask: cat.player | cat.body | cat.bullet | cat.powerUp | cat.mob | cat.mobBullet //cat.player | cat.map | cat.body | cat.bullet | cat.powerUp | cat.mob | cat.mobBullet
+                },
+                inertia: Infinity, //prevents rotation
+                isNotHoldable: true,
+                friction: 1,
+                frictionStatic: 1,
+                restitution: 0,
+                isClosing: false,
+                setPos(x, y) {
+                    if (y - this.position.y <= 0 || ( // only move down if clear of stuff
+                        Matter.Query.ray([player], Matter.Vector.create(this.position.x - width / 2, this.position.y + height / 2), Matter.Vector.create(this.position.x + width / 2, this.position.y + height / 2), 5).length === 0 &&
+                        Matter.Query.ray(body, Matter.Vector.create(this.position.x - width / 2, this.position.y + height / 2), Matter.Vector.create(this.position.x + width / 2, this.position.y + height / 2), 5).length <= 1 &&
+                        Matter.Query.ray(mob, Matter.Vector.create(this.position.x - width / 2, this.position.y + height / 2), Matter.Vector.create(this.position.x + width / 2, this.position.y + height / 2), 5).length === 0)
+                    ) {
+                        const position = {
+                            x: x,
+                            y: y
+                        }
+                        Matter.Body.setPosition(this, position);
+                    }
+                },
+                draw() {
+                    ctx.fillStyle = "#555"
+                    ctx.beginPath();
+                    const v = this.vertices;
+                    ctx.moveTo(v[0].x, v[0].y);
+                    for (let i = 1; i < v.length; ++i) {
+                        ctx.lineTo(v[i].x, v[i].y);
+                    }
+                    ctx.lineTo(v[0].x, v[0].y);
+                    ctx.fill();
+                }
+            });
+            Matter.Body.setStatic(doorBlock, true); //make static
+            doorBlock.classType = "body"
+            return doorBlock
+        }
+
+        function horizontalDoor(x, y, width, height, distance, speed = 1) {
+            x = x + width / 2
+            y = y + height / 2
+            const doorBlock = body[body.length] = Bodies.rectangle(x, y, width, height, {
+                collisionFilter: {
+                    category: cat.map,
+                    mask: cat.player | cat.body | cat.bullet | cat.powerUp | cat.mob | cat.mobBullet //cat.player | cat.map | cat.body | cat.bullet | cat.powerUp | cat.mob | cat.mobBullet
+                },
+                inertia: Infinity, //prevents rotation
+                isNotHoldable: true,
+                friction: 1,
+                frictionStatic: 1,
+                restitution: 0,
+                isClosing: false,
+                openClose() {
+                    if (!m.isBodiesAsleep) {
+                        if (this.isClosing) {
+                            if (this.position.x > x) { //try to close
+                                if ( //if clear of stuff
+                                    Matter.Query.collides(this, [player]).length === 0 &&
+                                    Matter.Query.collides(this, body).length < 2 &&
+                                    Matter.Query.collides(this, mob).length === 0
+                                ) {
+                                    const position = {
+                                        x: this.position.x - speed,
+                                        y: this.position.y
+                                    }
+                                    Matter.Body.setPosition(this, position)
+                                }
+                            }
+                        } else {
+                            if (this.position.x < x + distance) { //try to open 
+                                const position = {
+                                    x: this.position.x + speed,
+                                    y: this.position.y
+                                }
+                                Matter.Body.setPosition(this, position)
+                            }
+                        }
+                    }
+                },
+                isClosed() {
+                    return this.position.x < x + 1
+                },
+                draw() {
+                    ctx.fillStyle = "#555"
+                    ctx.beginPath();
+                    const v = this.vertices;
+                    ctx.moveTo(v[0].x, v[0].y);
+                    for (let i = 1; i < v.length; ++i) {
+                        ctx.lineTo(v[i].x, v[i].y);
+                    }
+                    ctx.lineTo(v[0].x, v[0].y);
+                    ctx.fill();
+                }
+            });
+            Matter.Body.setStatic(doorBlock, true); //make static
+            doorBlock.classType = "body"
+            return doorBlock
+        }
+
+        function drawBelt(circle1, circle2) {
+            // circle 1
+            const distance = Math.sqrt((circle2.x - circle1.x) ** 2 + (circle2.y - circle1.y) ** 2);
+            const distanceToIntersection = (-circle1.radius * distance) / (-circle1.radius + circle2.radius);
+            const slopeAngle = Math.atan((circle2.y - circle1.y) / (circle2.x - circle1.x));
+            const angleToTangent = Math.acos(-circle1.radius / distanceToIntersection);
+            const tangentIntersection = {
+                x: Math.cos(slopeAngle) * distanceToIntersection + circle1.x,
+                y: Math.sin(slopeAngle) * distanceToIntersection + circle1.y
+            }
+            const tangentPoint = {
+                x: Math.cos(angleToTangent + slopeAngle) * -circle1.radius + circle1.x,
+                y: Math.sin(angleToTangent + slopeAngle) * -circle1.radius + circle1.y
+            }
+            const invertedTangentPoint = {
+                x: Math.cos(-angleToTangent + slopeAngle) * -circle1.radius + circle1.x,
+                y: Math.sin(-angleToTangent + slopeAngle) * -circle1.radius + circle1.y
+            }
+
+            // circle 2
+            const tangentPoint2 = {
+                x: Math.cos(angleToTangent + slopeAngle) * -circle2.radius + circle2.x,
+                y: Math.sin(angleToTangent + slopeAngle) * -circle2.radius + circle2.y
+            }
+            const invertedTangentPoint2 = {
+                x: Math.cos(-angleToTangent + slopeAngle) * -circle2.radius + circle2.x,
+                y: Math.sin(-angleToTangent + slopeAngle) * -circle2.radius + circle2.y
+            }
+
+            // draw
+            ctx.beginPath();
+            ctx.moveTo(tangentPoint.x, tangentPoint.y);
+            ctx.lineTo(tangentPoint2.x, tangentPoint2.y);
+            const newAngle = Math.atan((tangentPoint2.y - circle2.y) / (tangentPoint2.x - circle2.x));
+            const newAngle2 = Math.atan((invertedTangentPoint2.y - circle2.y) / (invertedTangentPoint2.x - circle2.x));
+            ctx.arc(circle2.x, circle2.y, circle2.radius, newAngle, newAngle2 + Math.PI);
+            ctx.lineTo(invertedTangentPoint.x, invertedTangentPoint.y);
+            const newAngle3 = Math.atan((invertedTangentPoint.y - circle1.y) / (invertedTangentPoint.x - circle1.x));
+            const newAngle4 = Math.atan((tangentPoint.y - circle1.y) / (tangentPoint.x - circle1.x));
+            ctx.arc(circle1.x, circle1.y, circle1.radius, newAngle3 + Math.PI, newAngle4);
+            ctx.strokeStyle = '#000';
+            ctx.lineWidth = 5;
+            ctx.stroke();
+        }
+
+        function drawDiagonalBelt(circle1, circle2) {
+            // circle 1
+            const distance = Math.sqrt((circle2.x - circle1.x) ** 2 + (circle2.y - circle1.y) ** 2);
+            const distanceToIntersection = (circle1.radius * distance) / (circle1.radius + circle2.radius);
+            const slopeAngle = Math.atan((circle2.y - circle1.y) / (circle2.x - circle1.x));
+            const angleToTangent = Math.acos(circle1.radius / distanceToIntersection);
+            const tangentIntersection = {
+                x: Math.cos(slopeAngle) * distanceToIntersection + circle1.x,
+                y: Math.sin(slopeAngle) * distanceToIntersection + circle1.y
+            }
+            const tangentPoint = {
+                x: Math.cos(angleToTangent + slopeAngle) * circle1.radius + circle1.x,
+                y: Math.sin(angleToTangent + slopeAngle) * circle1.radius + circle1.y
+            }
+            const invertedTangentPoint = {
+                x: Math.cos(-angleToTangent + slopeAngle) * circle1.radius + circle1.x,
+                y: Math.sin(-angleToTangent + slopeAngle) * circle1.radius + circle1.y
+            }
+
+            // circle 2
+            const tangentPoint2 = {
+                x: Math.cos(angleToTangent + slopeAngle) * -circle2.radius + circle2.x,
+                y: Math.sin(angleToTangent + slopeAngle) * -circle2.radius + circle2.y
+            }
+            const invertedTangentPoint2 = {
+                x: Math.cos(-angleToTangent + slopeAngle) * -circle2.radius + circle2.x,
+                y: Math.sin(-angleToTangent + slopeAngle) * -circle2.radius + circle2.y
+            }
+
+            // draw
+            ctx.beginPath();
+            ctx.moveTo(tangentPoint.x, tangentPoint.y);
+            ctx.lineTo(tangentPoint2.x, tangentPoint2.y);
+            const newAngle = Math.atan((tangentPoint2.y - circle2.y) / (tangentPoint2.x - circle2.x));
+            const newAngle2 = Math.atan((invertedTangentPoint2.y - circle2.y) / (invertedTangentPoint2.x - circle2.x));
+            ctx.arc(circle2.x, circle2.y, circle2.radius, newAngle, newAngle2 + Math.PI);
+            ctx.lineTo(invertedTangentPoint.x, invertedTangentPoint.y);
+            const newAngle3 = Math.atan((invertedTangentPoint.y - circle1.y) / (invertedTangentPoint.x - circle1.x));
+            const newAngle4 = Math.atan((tangentPoint.y - circle1.y) / (tangentPoint.x - circle1.x));
+            ctx.arc(circle1.x, circle1.y, circle1.radius, newAngle3, newAngle4 + Math.PI, true);
+            ctx.strokeStyle = '#000';
+            ctx.lineWidth = 5;
+            ctx.stroke();
+        }
+
+        function getIntersection(v1, v1End, domain) {
+            const intersections = getIntersections(v1, v1End, domain);
+
+            var best = {
+                x: v1End.x,
+                y: v1End.y,
+                dist: Math.sqrt((v1End.x - v1.x) ** 2 + (v1End.y - v1.y) ** 2)
+            }
+            for (const intersection of intersections) {
+                const dist = Math.sqrt((intersection.x - v1.x) ** 2 + (intersection.y - v1.y) ** 2);
+                if (dist < best.dist) {
+                    best = {
+                        x: intersection.x,
+                        y: intersection.y,
+                        dist: dist
+                    };
+                }
+            }
+
+            return best;
+        }
+
+        function getIntersections(v1, v1End, domain) {
+            const intersections = [];
+
+            for (const obj of domain) {
+                for (var i = 0; i < obj.vertices.length - 1; i++) {
+                    results = simulation.checkLineIntersection(v1, v1End, obj.vertices[i], obj.vertices[i + 1]);
+                    if (results.onLine1 && results.onLine2) intersections.push({ x: results.x, y: results.y });
+                }
+                results = simulation.checkLineIntersection(v1, v1End, obj.vertices[obj.vertices.length - 1], obj.vertices[0]);
+                if (results.onLine1 && results.onLine2) intersections.push({ x: results.x, y: results.y });
+            }
+
+            return intersections;
+        }
+
+        function circleLoS(pos, radius, domain) {
+
+            function allCircleLineCollisions(c, radius, domain) {
+                var lines = [];
+                for (const obj of domain) {
+                    //const obj = domain[0]
+                    for (var i = 0; i < obj.vertices.length - 1; i++) {
+                        lines.push(circleLineCollisions(obj.vertices[i], obj.vertices[i + 1], c, radius));
+                    }
+                    lines.push(circleLineCollisions(obj.vertices[obj.vertices.length - 1], obj.vertices[0], c, radius));
+                }
+
+                const collisionLines = [];
+                for (const line of lines) {
+                    if (line.length == 2) {
+                        const distance1 = Math.sqrt((line[0].x - c.x) ** 2 + (line[0].y - c.y) ** 2)
+                        const angle1 = Math.atan2(line[0].y - c.y, line[0].x - c.x);
+                        const queryPoint1 = {
+                            x: Math.cos(angle1) * (distance1 - 1) + c.x,
+                            y: Math.sin(angle1) * (distance1 - 1) + c.y
+                        }
+                        const distance2 = Math.sqrt((line[1].x - c.x) ** 2 + (line[1].y - c.y) ** 2)
+                        const angle2 = Math.atan2(line[1].y - c.y, line[1].x - c.x);
+                        const queryPoint2 = {
+                            x: Math.cos(angle2) * (distance2 - 1) + c.x,
+                            y: Math.sin(angle2) * (distance2 - 1) + c.y
+                        }
+
+                        collisionLines.push(line)
+                    }
+                }
+
+                return collisionLines;
+            }
+
+            function circleLineCollisions(a, b, c, radius) {
+                // calculate distances
+                const angleOffset = Math.atan2(b.y - a.y, b.x - a.x);
+                const sideB = Math.sqrt((a.x - c.x) ** 2 + (a.y - c.y) ** 2);
+                const sideC = Math.sqrt((b.x - a.x) ** 2 + (b.y - a.y) ** 2);
+                const sideA = Math.sqrt((c.x - b.x) ** 2 + (c.y - b.y) ** 2);
+
+                // calculate the closest point on line AB to point C
+                const angleA = Math.acos((sideB ** 2 + sideC ** 2 - sideA ** 2) / (2 * sideB * sideC)) * (a.x - c.x) / -Math.abs(a.x - c.x)
+                const sideAD = Math.cos(angleA) * sideB;
+                const d = { // closest point
+                    x: Math.cos(angleOffset) * sideAD + a.x,
+                    y: Math.sin(angleOffset) * sideAD + a.y
+                }
+                const distance = Math.sqrt((d.x - c.x) ** 2 + (d.y - c.y) ** 2);
+                if (distance == radius) {
+                    // tangent
+                    return [d];
+                } else if (distance < radius) {
+                    // secant
+                    const angleOffset = Math.atan2(d.y - c.y, d.x - c.x);
+                    const innerAngle = Math.acos(distance / radius);
+                    const intersection1 = {
+                        x: Math.cos(angleOffset + innerAngle) * radius + c.x,
+                        y: Math.sin(angleOffset + innerAngle) * radius + c.y
+                    }
+
+                    const intersection2 = {
+                        x: Math.cos(angleOffset - innerAngle) * radius + c.x,
+                        y: Math.sin(angleOffset - innerAngle) * radius + c.y
+                    }
+
+                    const distance1 = {
+                        a: Math.sqrt((intersection1.x - a.x) ** 2 + (intersection1.y - a.y) ** 2),
+                        b: Math.sqrt((intersection1.x - b.x) ** 2 + (intersection1.y - b.y) ** 2)
+                    }
+                    const distance2 = {
+                        a: Math.sqrt((intersection2.x - a.x) ** 2 + (intersection2.y - a.y) ** 2),
+                        b: Math.sqrt((intersection2.x - b.x) ** 2 + (intersection2.y - b.y) ** 2)
+                    }
+                    const result = [];
+                    if (Math.abs(sideC - (distance1.a + distance1.b)) < 0.01) {
+                        result.push(intersection1);
+                    } else {
+                        if (distance1.a < distance1.b) {
+                            if (sideB <= radius) result.push(a);
+                        } else {
+                            if (sideA <= radius) result.push(b)
+                        }
+                    }
+                    if (Math.abs(sideC - (distance2.a + distance2.b)) < 0.01) {
+                        result.push(intersection2);
+                    } else {
+                        if (distance2.a <= distance2.b) {
+                            if (sideB <= radius) result.push(a);
+                        } else {
+                            if (sideA <= radius) result.push(b)
+                        }
+                    }
+
+                    return result;
+                } else {
+                    // no intersection
+                    return [];
+                }
+            }
+
+            var vertices = [];
+            for (const obj of losDomain) {
+                for (var i = 0; i < obj.vertices.length; i++) {
+                    const vertex = obj.vertices[i];
+                    const angleToVertex = Math.atan2(vertex.y - pos.y, vertex.x - pos.x);
+                    const queryPoint = {
+                        x: Math.cos(angleToVertex + Math.PI) + vertex.x,
+                        y: Math.sin(angleToVertex + Math.PI) + vertex.y
+                    }
+
+                    if (Matter.Query.ray(domain, pos, queryPoint).length == 0) {
+                        var distance = Math.sqrt((vertex.x - pos.x) ** 2 + (vertex.y - pos.y) ** 2);
+                        var endPoint = {
+                            x: vertex.x,
+                            y: vertex.y
+                        }
+
+                        if (distance > radius) {
+                            const angle = Math.atan2(vertex.y - pos.y, vertex.x - pos.x);
+                            endPoint = {
+                                x: Math.cos(angle) * radius + pos.x,
+                                y: Math.sin(angle) * radius + pos.y
+                            }
+
+                            distance = radius
+                        }
+
+                        var best = getIntersection(pos, endPoint, domain);
+
+                        if (best.dist >= distance) {
+                            best = {
+                                x: endPoint.x,
+                                y: endPoint.y,
+                                dist: distance
+                            }
+                        }
+                        vertices.push(best)
+
+
+                        var angle = Math.atan2(vertex.y - pos.y, vertex.x - pos.x);
+                        endPoint = {
+                            x: Math.cos(angle + 0.001) * radius + pos.x,
+                            y: Math.sin(angle + 0.001) * radius + pos.y
+                        }
+
+                        best = getIntersection(pos, endPoint, domain);
+
+                        if (best.dist >= radius) {
+                            best = {
+                                x: endPoint.x,
+                                y: endPoint.y,
+                                dist: radius
+                            }
+                        }
+                        vertices.push(best)
+
+
+                        angle = Math.atan2(vertex.y - pos.y, vertex.x - pos.x);
+                        endPoint = {
+                            x: Math.cos(angle - 0.001) * radius + pos.x,
+                            y: Math.sin(angle - 0.001) * radius + pos.y
+                        }
+
+                        best = getIntersection(pos, endPoint, domain);
+
+                        if (best.dist >= radius) {
+                            best = {
+                                x: endPoint.x,
+                                y: endPoint.y,
+                                dist: radius
+                            }
+                        }
+                        vertices.push(best)
+                    }
+                }
+            }
+
+            const outerCollisions = allCircleLineCollisions(pos, radius, domain);
+            const circleCollisions = [];
+            for (const line of outerCollisions) {
+                for (const vertex of line) {
+                    const distance = Math.sqrt((vertex.x - pos.x) ** 2 + (vertex.y - pos.y) ** 2)
+                    const angle = Math.atan2(vertex.y - pos.y, vertex.x - pos.x);
+                    const queryPoint = {
+                        x: Math.cos(angle) * (distance - 1) + pos.x,
+                        y: Math.sin(angle) * (distance - 1) + pos.y
+                    }
+                    if (Math.abs(distance - radius) < 1 && Matter.Query.ray(domain, pos, queryPoint).length == 0) circleCollisions.push(vertex)
+                }
+            }
+
+            for (var i = 0; i < circleCollisions.length; i++) {
+                const vertex = circleCollisions[i];
+                var nextIndex = i + 1;
+                if (nextIndex == circleCollisions.length) nextIndex = 0;
+                const nextVertex = circleCollisions[nextIndex];
+                const angle1 = Math.atan2(vertex.y - pos.y, vertex.x - pos.x);
+                const angle2 = Math.atan2(nextVertex.y - pos.y, nextVertex.x - pos.x);
+                var newAngle;
+                if (Math.abs(angle1) > Math.PI / 2 && Math.abs(angle2) > Math.PI / 2 && angle1 / Math.abs(angle1) != angle2 / Math.abs(angle2)) {
+                    // if the arc between the to points crosses over the left side (+/- pi radians)
+                    const newAngle1 = (Math.PI - Math.abs(angle1)) * (angle1 / Math.abs(angle1));
+                    const newAngle2 = (Math.PI - Math.abs(angle2)) * (angle2 / Math.abs(angle2));
+                    newAngle = (newAngle1 + newAngle2) / 2;
+                    var multiplier;
+                    if (newAngle == 0) {
+                        multiplier = 1;
+                    } else {
+                        multiplier = newAngle / Math.abs(newAngle);
+                    }
+                    newAngle = Math.PI * multiplier - newAngle * multiplier;
+                    test = true;
+                } else {
+                    newAngle = (angle1 + angle2) / 2;
+                }
+
+                // shoot ray between them
+                var endPoint = {
+                    x: Math.cos(newAngle) * radius + pos.x,
+                    y: Math.sin(newAngle) * radius + pos.y
+                }
+
+                var best = getIntersection(pos, endPoint, domain);
+
+                vertices.push(vertex);
+
+                if (best.dist <= radius) vertices.push({ x: best.x, y: best.y })
+            }
+
+            vertices.sort((a, b) => Math.atan2(a.y - pos.y, a.x - pos.x) - Math.atan2(b.y - pos.y, b.x - pos.x));
+            return vertices;
+        }
+
+        function compareArrays(array1, array2) {
+            for (var i = 0; i < array1.length; i++) {
+                if (array1[i] != array2[i]) return false;
+            }
+
+            return true;
+        }
+
+        function generateIntersectMap() {
+            // include intersections in map elements to avoid LoS issues with overlapping
+            const intersectMap = [];
+            for (var i = 0; i < map.length; i++) {
+                const obj = map[i];
+                const newVertices = [];
+                const restOfMap = [...map].slice(0, i).concat([...map].slice(i + 1))
+                for (var j = 0; j < obj.vertices.length - 1; j++) {
+                    var intersections = getIntersections(obj.vertices[j], obj.vertices[j + 1], restOfMap);
+                    newVertices.push(obj.vertices[j]);
+                    for (const vertex of intersections) {
+                        newVertices.push({ x: vertex.x, y: vertex.y });
+                    }
+                }
+                intersections = getIntersections(obj.vertices[obj.vertices.length - 1], obj.vertices[0], restOfMap);
+                newVertices.push(obj.vertices[obj.vertices.length - 1]);
+                for (const vertex of intersections) {
+                    newVertices.push({ x: vertex.x, y: vertex.y });
+                }
+
+                intersectMap.push({ vertices: newVertices });
+            }
+
+            return intersectMap;
+        }
+
+        function addPartToMap(len) { // from "run" map
+            map[len].collisionFilter.category = cat.map;
+            map[len].collisionFilter.mask = cat.player | cat.map | cat.body | cat.bullet | cat.powerUp | cat.mob | cat.mobBullet;
+            Matter.Body.setStatic(map[len], true);
+            Composite.add(engine.world, map[len]);
+        }
+
+        level.setPosToSpawn(-500, -50);
+        spawn.mapRect(level.enter.x, level.enter.y + 20, 100, 20);
+        level.exit.x = 250;
+        level.exit.y = 720;
+        spawn.mapRect(level.exit.x, level.exit.y + 20, 100, 20);
+        level.defaultZoom = 1800;
+        simulation.zoomTransition(level.defaultZoom);
+        document.body.style.backgroundColor = "#d8dadf";
+
+        spawn.mapRect(-925, 0, 2650, 100);
+
+        spawn.mapRect(-925, -1700, 325, 1800);
+        spawn.mapRect(-650, -325, 325, 50);
+        spawn.mapRect(-650, -1400, 325, 50);
+        spawn.mapRect(-1700, -1700, 1100, 200);
+        spawn.mapRect(-1700, -4600, 300, 3100);
+        spawn.mapRect(-1700, -4600, 1250, 200);
+        spawn.mapRect(200, -4600, 2750, 200);
+        spawn.mapRect(-400, -4225, 200, 50);
+        spawn.mapRect(2800, -4600, 150, 1400);
+
+        spawn.mapRect(1350, -325, 100, 50);
+        spawn.mapRect(1400, -1500, 325, 1600);
+        spawn.mapRect(1400, -1500, 1550, 50);
+        spawn.mapRect(1250, -1900, 1050, 50);
+        spawn.mapRect(1250, -2900, 100, 1050);
+
+        spawn.mapRect(-600, -2900, 3550, 100);
+        spawn.mapRect(2850, -2900, 100, 700);
+        spawn.mapRect(2850, -2200, 100, 350);
+        map[map.length - 1].fallsOff2 = true; // this piece will fall off in the middle of cutscene
+
+        spawn.mapRect(2300, -1900, 500, 50);
+        map[map.length - 1].fallsOff = true; // this piece wall fall off at the start of cutscene
+
+        spawn.mapRect(2800, -1900, 200, 50);
+        spawn.mapRect(2900, -1900, 50, 450);
+        powerUps.directSpawn(2700, -1675, "tech");
+
+        spawn.mapRect(2800, -3300, 825, 100);
+        spawn.mapRect(3525, -3300, 100, 3000);
+        spawn.mapRect(3400, -2850, 225, 50);
+        spawn.mapRect(2875, -2525, 175, 25);
+        spawn.mapRect(3325, -2675, 150, 25);
+        spawn.mapRect(3400, -2850, 75, 200);
+        spawn.mapRect(3150, -2225, 100, 25);
+
+        spawn.mapRect(-2300, 750, 5450, 100);
+
+        pendulum1 = pendulum(400, -2500, 75, 1700, 50, 0.3, 0, 300);
+        const gear1 = mapGear(-1200, -2000, 100, 200, 0, -0.05, 5, 75);
+        const gear2 = mapGear(-700, -2500, 150, 270, -0.5, 0.05, 5, 50);
+        const gear3 = mapGear(-3500, -1000, 1100, 1500, -0.5, 0.005, 10, 150, 40);
+        const piston1 = customDoor(1650, -1850, 100, 350); // x, y, width, height, distance, speed = 1
+        const piston2 = customDoor(1950, -1850, 100, 350);
+        const piston3 = horizontalDoor(-2000, -4200, 300, 100, 300, 20);
+        const piston4 = horizontalDoor(-2000, -3800, 300, 100, 300, 20);
+        const piston5 = horizontalDoor(-2000, -3400, 300, 100, 300, 20);
+        const piston6 = horizontalDoor(-2000, -3000, 300, 100, 300, 20);
+        const piston7 = horizontalDoor(-2000, -2600, 300, 100, 300, 20);
+        const hand1 = clockHand(400, -3700, 75, 600);
+        const elevator1 = level.elevator(3200, 0, 150, 50, -1750, 0.0025, { up: 0.05, down: 0.2 });
+        const lightButton = level.button(1400, -1900);
+        lightButton.isUp = true;
+        var lightOn = false;
+        simulation.ephemera.push({
+            name: "lightWire",
+            do() {
+                if (level.levels[level.onLevel] == "clock") {
+                    // light wire
+                    ctx.beginPath();
+                    ctx.moveTo(1460, -1887);
+                    ctx.lineTo(1300, -1887);
+                    ctx.lineTo(1300, -2860);
+                    ctx.lineTo(400, -2860);
+                    ctx.lineTo(400, -2800);
+                    ctx.lineWidth = 6;
+                    ctx.strokeStyle = lightOn ? "#ffd700" : "000";
+                    ctx.stroke();
+                } else {
+                    simulation.removeEphemera(this.name);
+                }
+            },
+        })
+
+        spawn.debris(-300, 0, 1300, 6);
+        spawn.debris(0, -2900, 2500, 8);
+
+        spawn.randomSmallMob(-500, -500, 1);
+        spawn.randomMob(190, -1300, 1);
+        spawn.randomMob(200, -320, 0.3);
+        spawn.randomMob(1000, -1100, 1);
+        spawn.randomMob(-160, -2050, 1);
+        spawn.randomMob(-1100, -2900, 0.5);
+        // spawn.randomLevelBoss(1900, -3800, spawn.randomBossList.splice(0, spawn.randomBossList.indexOf("shieldingBoss"), 1).concat(spawn.randomBossList.splice(spawn.randomBossList.indexOf("shieldingBoss") + 1))); // shieldingBoss lags out the lighting system for some reason
+        spawn.randomLevelBoss(1900, -3800, [...spawn.randomBossList].splice(0, spawn.randomBossList.indexOf("shieldingBoss"), 1).concat([...spawn.randomBossList].splice(spawn.randomBossList.indexOf("shieldingBoss") + 1))); // shieldingBoss lags out the lighting system for some reason
+        spawn.randomMob(2500, -3500, 0.3);
+        spawn.randomMob(1300, -4100, 0.5);
+        spawn.randomMob(3400, -2450, 1);
+        spawn.randomMob(2850, -2050, 0.4);
+        spawn.randomGroup(-150, -2400, 0.5);
+        spawn.randomMob(-1250, -5150, 1);
+        spawn.randomMob(-2900, -4000, 0.4);
+        spawn.randomMob(-1350, -950, 1);
+        spawn.randomMob(2700, -850, 0.4);
+        spawn.randomMob(2500, -50, 0.4);
+
+        powerUps.addResearchToLevel() // needs to run after mobs are spawned
+
+        var dealtPiston1Damage = false;
+        var dealtPiston2Damage = false;
+        var dealtPiston1MobDamage = false;
+        var dealtPiston2MobDamage = false;
+        var lastPistonDirection = false;
+        var pistonsLocked = false;
+        var finishedGearFight = false;
+        var roofReadyToFall = false;
+        var roofFallCycle = 0;
+        var drawGear = false;
+        var gearCycle = simulation.cycle;
+        var gearPositions = [];
+        var pistonUnlockCycle = 0;
+
+        for (var i = 0; i < 15; i++) {
+            gearPositions.push({
+                x: 2400 + Math.random() * 200,
+                y: -3300 - Math.random() * 3000
+            });
+        }
+
+        var gearSizes = [];
+
+        for (var i = 0; i < 15; i++) {
+            const r1 = 30 + Math.random() * 50;
+            gearSizes.push({
+                r1: r1,
+                r2: r1 + 15 + Math.random() * 30
+            })
+        }
+
+        var circleHead = Matter.Bodies.polygon(m.pos.x, m.pos.y, 0, 31);
+        var losDomain = generateIntersectMap().concat(mob.filter((obj) => { return obj.isNotCloaked == null && (obj.isBoss || obj.label != 'Circle Body') }), [pendulum1, gear1, gear2, player, circleHead]);
+        var oldMap = [...map];
+        var oldMob = [...mob];
+        var spawnGearMobCycle = 0;
+        var gearsSpawned = 0;
+        var lastSmallGearRot = 0;
+        var smallGearRot = 0;
+        var smallGearPosRot = 0;
+        var bigGearRot = 0;
+        var finalGearRot;
+        var lastFinalGearRot;
+        var startCycle = simulation.cycle; // used to offset simulation.cycle to avoid the swing starting halfway through at the start of the level and messing up syncronization
+
+        level.custom = () => {
+            if (lightOn) {
+                Matter.Body.setPosition(circleHead, m.pos)
+                if (!(compareArrays(oldMap, map) && compareArrays(oldMob, mob))) losDomain = generateIntersectMap().concat(mob.filter((obj) => { return obj.isNotCloaked == null && (obj.isBoss || obj.label != 'Circle Body') }), [pendulum1, gear1, gear2, player, circleHead]);
+                oldMap = [...map];
+                oldMob = [...mob];
+            }
+            ctx.fillStyle = "#b0b0b2";
+            ctx.fillRect(-600, -1700, 2000, 1700);
+            ctx.fillRect(1350, -1851, 1550, 350);
+            ctx.fillRect(-1400, -2950, 4250, 1450);
+            ctx.fillRect(-1400, -4400, 4350, 1500);
+            ctx.fillRect(-450, -4600, 650, 250);
+            ctx.fillRect(2750, -3200, 200, 1300);
+            ctx.fillRect(2750, -3200, 200, 1300);
+            ctx.fillStyle = "#000";
+            ctx.fillRect(350, -2800, 100, 25);
+            // light
+            if (lightOn) {
+                var lightPos = { x: 400, y: -2775 };
+                var lightRadius = 2950;
+                const vertices = circleLoS(lightPos, lightRadius, map.concat(mob.filter((obj) => { return obj.isNotCloaked == null && (obj.isBoss || obj.label != 'Circle Body') }), [pendulum1, gear1, gear2, player, circleHead])); if (vertices.length > 0 && vertices[0].x) {
+                    ctx.beginPath();
+                    ctx.moveTo(vertices[0].x, vertices[0].y);
+                    for (var i = 1; i < vertices.length; i++) {
+                        var currentDistance = Math.sqrt((vertices[i - 1].x - lightPos.x) ** 2 + (vertices[i - 1].y - lightPos.y) ** 2);
+                        var newDistance = Math.sqrt((vertices[i].x - lightPos.x) ** 2 + (vertices[i].y - lightPos.y) ** 2);
+                        if (Math.abs(currentDistance - lightRadius) < 1 && Math.abs(newDistance - lightRadius) < 1) {
+                            const currentAngle = Math.atan2(vertices[i - 1].y - lightPos.y, vertices[i - 1].x - lightPos.x);
+                            const newAngle = Math.atan2(vertices[i].y - lightPos.y, vertices[i].x - lightPos.x);
+                            ctx.arc(lightPos.x, lightPos.y, lightRadius, currentAngle, newAngle);
+                        } else {
+                            ctx.lineTo(vertices[i].x, vertices[i].y)
+                        }
+                    }
+                    newDistance = Math.sqrt((vertices[0].x - lightPos.x) ** 2 + (vertices[0].y - lightPos.y) ** 2);
+                    currentDistance = Math.sqrt((vertices[vertices.length - 1].x - lightPos.x) ** 2 + (vertices[vertices.length - 1].y - lightPos.y) ** 2);
+                    if (Math.abs(currentDistance - lightRadius) < 1 && Math.abs(newDistance - lightRadius) < 1) {
+                        const currentAngle = Math.atan2(vertices[vertices.length - 1].y - lightPos.y, vertices[vertices.length - 1].x - lightPos.x);
+                        const newAngle = Math.atan2(vertices[0].y - lightPos.y, vertices[0].x - lightPos.x);
+                        ctx.arc(lightPos.x, lightPos.y, lightRadius, currentAngle, newAngle);
+                    } else {
+                        ctx.lineTo(vertices[0].x, vertices[0].y)
+                    }
+                    ctx.fillStyle = "rgba(216, 218, 223, 0.5)";
+                    ctx.fill();
+                }
+            }
+
+            ctx.beginPath();
+            ctx.moveTo(425, -2775);
+            ctx.arc(400, -2775, 25, 0, Math.PI);
+            ctx.fillStyle = lightOn ? "#ffe245" : "transparent";
+            ctx.fill();
+            ctx.strokeStyle = "#000000";
+            ctx.lineWidth = 1;
+            ctx.stroke();
+            pendulum1.rotate();
+            gear1.rotate();
+            gear2.rotate();
+            gear3.rotate();
+            hand1.rotate();
+            drawBackgroundGear(-1200, -2300, 75, 150, 0.3, "#ccc", -0.05);
+            drawBackgroundGear(-1010, -2380, 30, 100, -0.1, "#ccc", 0.05);
+
+            // pendulum gears
+            if (!m.isBodiesAsleep) smallGearPosRot += Math.sin((simulation.cycle - startCycle) / 50) * 0.3 - Math.sin((simulation.cycle - startCycle - 1) / 50) * 0.3;
+            if (smallGearPosRot > 0.1) smallGearPosRot = 0.1;
+            if (smallGearPosRot < -0.1) smallGearPosRot = -0.1;
+            var circ = 2 * Math.PI * 150;
+            var arcLength = ((smallGearPosRot - Math.sin((simulation.cycle - startCycle) / 50) * 0.2) / (Math.PI * 2)) * circ;
+            lastSmallGearRot = smallGearRot;
+            smallGearRot = arcLength / (2 * Math.PI * 50) * Math.PI * -2 + 0.6;
+
+            if (Math.abs(smallGearPosRot) == 0.1) {
+                bigGearRot += Math.abs((smallGearRot - lastSmallGearRot) * (50 / 75));
+            }
+
+            drawBackgroundGear(740, -2625, 270, 330, bigGearRot, "#d2d3d4", 0, 15, 20); // the big one in the background
+
+            drawBackgroundGear(400, -2500, 100, 150, Math.sin((simulation.cycle - startCycle) / 50) * -0.3, "#ccc", 0, 8, 20); // attached to pendulum
+
+            drawBackgroundGear(400 + Math.cos(smallGearPosRot) * 200, -2500 + Math.sin(smallGearPosRot) * 200, 50, 75, smallGearRot, "#ccc", 0, 7, 20);
+            ctx.beginPath();
+            ctx.arc(400 + Math.cos(smallGearPosRot) * 200, -2500 + Math.sin(smallGearPosRot) * 200, 10, 0, 2 * Math.PI);
+            ctx.strokeStyle = "#444";
+            ctx.lineWidth = 10;
+            ctx.stroke();
+            ctx.beginPath();
+            ctx.arc(400, -2500, 200, -0.1, 0.1);
+            ctx.strokeStyle = "#444";
+            ctx.lineWidth = 10;
+            ctx.stroke();
+
+            drawBackgroundGear(740, -2625, 75, 110, bigGearRot, "#ccc", 0, 8, 20);
+            ctx.beginPath();
+            ctx.arc(740, -2625, 40, 0, 2 * Math.PI);
+            ctx.fillStyle = "#bbb";
+            ctx.fill();
+            ctx.strokeStyle = "#000";
+            ctx.lineWidth = 2;
+            ctx.stroke();
+            drawBackgroundGear(740, -2375, 75, 110, bigGearRot * -1, "#ccc", 0, 8, 20);
+            ctx.beginPath();
+            ctx.arc(740, -2375, 40, 0, 2 * Math.PI);
+            ctx.fillStyle = "#bbb";
+            ctx.fill();
+            ctx.strokeStyle = "#000";
+            ctx.lineWidth = 2;
+            ctx.stroke();
+
+            drawDiagonalBelt({ x: 740, y: -2625, radius: 40 }, { x: 740, y: -2375, radius: 40 })
+
+            if (finalGearRot != null) lastFinalGearRot = finalGearRot;
+            finalGearRot = Math.round((-bigGearRot * 294.72 / 25) * 100) / 100 + Math.PI / 2;
+
+            drawBackgroundGear(1080, -2650, 10, 20, finalGearRot, "#ccc", 0, 5, 50);
+            ctx.beginPath();
+            ctx.arc(1080, -2650, 10, 0, 2 * Math.PI);
+            ctx.fillStyle = "#bbb";
+            ctx.fill();
+            ctx.strokeStyle = "#000";
+            ctx.lineWidth = 2;
+            ctx.stroke();
+            drawBackgroundGear(1650, -2550, 300, 360, finalGearRot, "#ccc", 0, 6, 50);
+            ctx.beginPath();
+            ctx.arc(1650, -2550, 100, 0, 2 * Math.PI);
+            ctx.fillStyle = "#bbb";
+            ctx.fill();
+            ctx.strokeStyle = "#000";
+            ctx.lineWidth = 2;
+            ctx.stroke();
+            drawBelt({ x: 1080, y: -2650, radius: 10 }, { x: 1650, y: -2550, radius: 100 });
+            ctx.beginPath();
+            ctx.arc(Math.cos(-finalGearRot) * 294 + 1650, Math.sin(-finalGearRot) * 294 - 2550, 25, 0, 2 * Math.PI);
+            ctx.fillStyle = "#000";
+            ctx.fill();
+            drawBackgroundGear(2300, -2550, 300, 360, -finalGearRot + 0.5, "#ccc", 0, 6, 50);
+            ctx.beginPath();
+            ctx.arc(Math.cos(finalGearRot) * 294 + 2300, Math.sin(finalGearRot) * 294 - 2550, 25, 0, 2 * Math.PI);
+            ctx.fillStyle = "#000";
+            ctx.fill();
+
+            ctx.beginPath();
+            ctx.arc(1630, -2215, 15, 0, 2 * Math.PI);
+            ctx.fillStyle = "#000";
+            ctx.fill();
+            ctx.beginPath();
+            ctx.arc(1670, -2215, 15, 0, 2 * Math.PI);
+            ctx.fillStyle = "#000";
+            ctx.fill();
+
+            ctx.beginPath();
+            ctx.arc(1940, -2250, 15, 0, 2 * Math.PI);
+            ctx.fillStyle = "#000";
+            ctx.fill();
+            ctx.beginPath();
+            ctx.arc(2300, -2215, 15, 0, 2 * Math.PI);
+            ctx.fillStyle = "#000";
+            ctx.fill();
+
+            if (!finishedGearFight && !pistonsLocked && m.pos.x > 2100 && m.pos.x < 2900 && m.pos.y > -1850 && m.pos.y < -1500) {
+                pistonsLocked = true;
+                roofFallCycle = simulation.cycle + 250;
+                roofReadyToFall = true;
+            }
+
+            if (roofReadyToFall && simulation.cycle >= roofFallCycle) {
+                // section of roof is deleted
+                for (var i = 0; i < map.length; i++) {
+                    if (map[i].fallsOff) {
+                        Matter.Composite.remove(engine.world, map[i]);
+                        map.splice(i, 1);
+                    }
+                }
+
+                // replace it with a block
+                spawn.bodyRect(2310, -1900, 480, 50);
+                if (body[body.length-1] !== m.holdingTarget && !body[body.length-1].isNoSetCollision) {
+                  body[body.length-1].collisionFilter.category = cat.body;
+                  body[body.length-1].collisionFilter.mask = cat.player | cat.map | cat.body | cat.bullet | cat.mob | cat.mobBullet
+                }
+                body[body.length-1].classType = "body";
+                Composite.add(engine.world, body[body.length-1]); //add to world
+                roofReadyToFall = false;
+                drawGear = true;
+                gearCycle = simulation.cycle + 100;
+            }
+
+            //draw some background gears falling when roof falls
+            if (drawGear && simulation.cycle >= gearCycle) {
+                for (var i = 0; i < 15; i++) {
+                    drawFallingBackgroundGear(gearPositions[i].x, gearPositions[i].y, gearSizes[i].r1, gearSizes[i].r2, simulation.cycle, "#ccc", 0.1, 25, gearCycle);
+                }
+
+                if (spawnGearMobCycle == 0) {
+                    spawnGearMobCycle = simulation.cycle + 100;
+                }
+            }
+
+            if (spawnGearMobCycle > 0 && simulation.cycle >= spawnGearMobCycle) {
+                if (gearsSpawned < 40) {
+                    gearMob(1600 + Math.random() * 1000, -2300 - Math.random() * 300, false, true);
+                    gearsSpawned++;
+                    spawnGearMobCycle = simulation.cycle + 25 - (simulation.difficulty - simulation.difficultyMode) / 2;
+                } else if (pistonUnlockCycle == 0) {
+                    pistonUnlockCycle = simulation.cycle + 50;
+                }
+            }
+
+            if (!finishedGearFight && pistonUnlockCycle > 0 && simulation.cycle > pistonUnlockCycle) {
+                pistonsLocked = false;
+                finishedGearFight = true;
+
+                for (var i = 0; i < map.length; i++) {
+                    if (map[i].fallsOff2) {
+                        Matter.Composite.remove(engine.world, map[i]);
+                        map.splice(i, 1);
+                    }
+                }
+
+                spawn.bodyRect(2850, -2180, 100, 280);
+                if (body[body.length-1] !== m.holdingTarget && !body[body.length-1].isNoSetCollision) {
+                  body[body.length-1].collisionFilter.category = cat.body;
+                  body[body.length-1].collisionFilter.mask = cat.player | cat.map | cat.body | cat.bullet | cat.mob | cat.mobBullet
+                }
+                body[body.length-1].classType = "body";
+                Composite.add(engine.world, body[body.length-1]); //add to world
+                Matter.Body.setAngularVelocity(body[body.length - 1], 0.025);
+            }
+
+            if (Math.sin((simulation.cycle + 15) / 25) < 0 && !lastPistonDirection) { // 15 cycles early to line up better with pendulum
+                piston3.isClosing = true;
+                piston4.isClosing = false;
+                piston5.isClosing = true;
+                piston6.isClosing = false;
+                piston7.isClosing = true;
+            } else if (Math.sin((simulation.cycle + 15) / 25) > 0 && lastPistonDirection) {
+                piston3.isClosing = false;
+                piston4.isClosing = true;
+                piston5.isClosing = false;
+                piston6.isClosing = true;
+                piston7.isClosing = false;
+            }
+
+            if (Math.sin(-finalGearRot) - Math.sin(-lastFinalGearRot) < -0.01) {
+                dealtPiston1Damage = false;
+                dealtPiston1MobDamage = false;
+            }
+            if (Math.sin(-finalGearRot) - Math.sin(-lastFinalGearRot) > 0.01) {
+                dealtPiston2Damage = false;
+                dealtPiston2MobDamage = false;
+            }
+
+            piston3.openClose();
+            piston4.openClose();
+            piston5.openClose();
+            piston6.openClose();
+            piston7.openClose();
+
+            if (!pistonsLocked) {
+                piston1.isLocked = false;
+            }
+
+            if (!pistonsLocked || ((Math.sin(-finalGearRot) - Math.sin(-lastFinalGearRot) != 0 || piston1.position.y < -1850) && !piston1.isLocked)) {
+                piston1.setPos(1650, -1850 + Math.sin(-finalGearRot) * 175);
+            } else {
+                piston1.isLocked = true;
+            }
+
+            piston2.setPos(1950, -1850 + Math.sin(finalGearRot) * 175);
+            ctx.beginPath();
+            ctx.moveTo(Math.cos(-finalGearRot) * 294 + 1650, Math.sin(-finalGearRot) * 294 - 2550);
+            ctx.lineTo(1650, -2230);
+            ctx.lineTo(piston1.position.x, piston1.position.y - 175)
+            ctx.strokeStyle = "#777";
+            ctx.lineWidth = 10;
+            ctx.stroke();
+
+            var circle1;
+            var circle2;
+            if (Math.cos(finalGearRot) * 294 > 0) {
+                circle1 = {
+                    x: Math.cos(finalGearRot) * 294 + 2300,
+                    y: Math.sin(finalGearRot) * 294 - 2550,
+                    radius: -25
+                }
+
+                circle2 = {
+                    x: 2300,
+                    y: -2215,
+                    radius: -15
+                }
+            } else {
+                circle1 = {
+                    x: Math.cos(finalGearRot) * 294 + 2300,
+                    y: Math.sin(finalGearRot) * 294 - 2550,
+                    radius: 25
+                }
+
+                circle2 = {
+                    x: 2300,
+                    y: -2215,
+                    radius: 15
+                }
+            }
+
+            // same method used in drawBelt()
+            var distance = Math.sqrt((circle2.x - circle1.x) ** 2 + (circle2.y - circle1.y) ** 2);
+            var distanceToIntersection = (-circle1.radius * distance) / (-circle1.radius + circle2.radius);
+            var slopeAngle = Math.atan((circle2.y - circle1.y) / (circle2.x - circle1.x));
+            var angleToTangent = Math.acos(-circle1.radius / distanceToIntersection);
+            const tangentPoint = {
+                x: Math.cos(angleToTangent + slopeAngle) * -circle2.radius + circle2.x,
+                y: Math.sin(angleToTangent + slopeAngle) * -circle2.radius + circle2.y
+            }
+
+            // same method used in drawDiagonalBelt()
+            const circle3 = {
+                x: 1940,
+                y: -2250,
+                radius: 15
+            }
+
+            distance = Math.sqrt((circle2.x - circle3.x) ** 2 + (circle2.y - circle3.y) ** 2);
+            distanceToIntersection = (circle3.radius * distance) / (circle3.radius + circle2.radius);
+            slopeAngle = Math.atan((circle2.y - circle3.y) / (circle2.x - circle3.x));
+            angleToTangent = Math.acos(circle3.radius / distanceToIntersection);
+            const invertedTangentPoint2 = {
+                x: Math.cos(-angleToTangent + slopeAngle) * circle3.radius + circle3.x,
+                y: Math.sin(-angleToTangent + slopeAngle) * circle3.radius + circle3.y
+            }
+
+            const tangentPoint3 = {
+                x: Math.cos(angleToTangent + slopeAngle) * -circle2.radius + circle2.x,
+                y: Math.sin(angleToTangent + slopeAngle) * -circle2.radius + circle2.y
+            }
+
+            distance = Math.sqrt((piston2.position.y - 175 - circle3.y) ** 2 + (piston2.position.x - 50 - circle3.x) ** 2);
+            slopeAngle = Math.atan((piston2.position.y - 175 - circle3.y) / (piston2.position.x - 50 - circle3.x));
+            angleToTangent = Math.acos(circle3.radius / distance);
+            const tangentPoint4 = {
+                x: Math.cos(angleToTangent) * distance + circle3.x,
+                y: Math.sin(angleToTangent) * distance + circle3.y
+            }
+
+            // draw
+            ctx.beginPath();
+            ctx.moveTo(circle1.x, circle1.y);
+            ctx.lineTo(tangentPoint.x, tangentPoint.y);
+            const newAngle = Math.atan((tangentPoint.y - circle2.y) / (tangentPoint.x - circle2.x));
+            const newAngle2 = Math.atan((tangentPoint3.y - circle2.y) / (tangentPoint3.x - circle2.x));
+            ctx.arc(circle2.x, circle2.y, Math.abs(circle2.radius), newAngle, -newAngle2);
+            ctx.lineTo(invertedTangentPoint2.x, invertedTangentPoint2.y);
+            const newAngle3 = Math.atan((invertedTangentPoint2.y - circle3.y) / (invertedTangentPoint2.x - circle3.x));
+            ctx.arc(circle3.x, circle3.y, circle3.radius, newAngle3, Math.PI / 2 + angleToTangent, true);
+            ctx.lineTo(tangentPoint4.x, tangentPoint4.y);
+            ctx.strokeStyle = '#777';
+            ctx.lineWidth = 10;
+            ctx.stroke();
+
+            lastPistonDirection = Math.sin((simulation.cycle + 15) / 25) < 0;
+
+            if (Matter.Query.ray([player], Matter.Vector.create(piston1.position.x - 50, piston1.position.y + 175), Matter.Vector.create(piston1.position.x + 50, piston1.position.y + 175), 5).length > 0 && !dealtPiston1Damage && Math.sin(-finalGearRot) - Math.sin(-lastFinalGearRot) > 0.01) {
+                m.damage(0.1);
+                dealtPiston1Damage = true;
+            }
+
+            var piston1MobCollisions = Matter.Query.ray(mob, Matter.Vector.create(piston1.position.x - 50, piston1.position.y + 175), Matter.Vector.create(piston1.position.x + 50, piston1.position.y + 175), 5);
+            if (piston1MobCollisions.length > 0 && !dealtPiston1MobDamage && Math.sin(-finalGearRot) - Math.sin(-lastFinalGearRot) > 0.01) {
+                for (var mobHit of piston1MobCollisions) {
+                    mobHit.body.damage(1);
+                }
+                dealtPiston1MobDamage = true;
+            }
+
+            if (Matter.Query.ray([player], Matter.Vector.create(piston2.position.x - 50, piston2.position.y + 175), Matter.Vector.create(piston2.position.x + 50, piston2.position.y + 175), 5).length > 0 && !dealtPiston2Damage && Math.sin(-finalGearRot) - Math.sin(-lastFinalGearRot) < -0.01) {
+                m.damage(0.1);
+                dealtPiston2Damage = true;
+            }
+
+            var piston2MobCollisions = Matter.Query.ray(mob, Matter.Vector.create(piston2.position.x - 50, piston2.position.y + 175), Matter.Vector.create(piston2.position.x + 50, piston2.position.y + 175), 5);
+            if (piston2MobCollisions.length > 0 && !dealtPiston2MobDamage && Math.sin(-finalGearRot) - Math.sin(-lastFinalGearRot) > 0.01) {
+                for (var mobHit of piston2MobCollisions) {
+                    mobHit.body.damage(1);
+                }
+                dealtPiston2MobDamage = true;
+            }
+
+            // clock
+            ctx.beginPath();
+            ctx.arc(400, -3700, 600, 0, 2 * Math.PI);
+            ctx.fillStyle = "#e9e9e9";
+            ctx.fill();
+            ctx.strokeStyle = "#3a3f20";
+            ctx.lineWidth = 2;
+            ctx.stroke();
+
+            ctx.lineCap = "butt";
+            ctx.beginPath();
+            ctx.moveTo(350, -4275);
+            ctx.lineTo(390, -4150);
+            ctx.strokeStyle = "#000";
+            ctx.lineWidth = 20;
+            ctx.stroke();
+            ctx.beginPath();
+            ctx.moveTo(390, -4275);
+            ctx.lineTo(350, -4150);
+            ctx.stroke();
+            ctx.beginPath();
+            ctx.moveTo(420, -4275);
+            ctx.lineTo(420, -4150);
+            ctx.stroke();
+            ctx.beginPath();
+            ctx.moveTo(450, -4275);
+            ctx.lineTo(450, -4150);
+            ctx.stroke();
+
+            var numberOffset = {
+                x: 400 + Math.cos(-Math.PI / 3) * 510,
+                y: -3700 + Math.sin(-Math.PI / 3) * 510
+            }
+            ctx.beginPath();
+            ctx.moveTo(numberOffset.x, numberOffset.y - 62);
+            ctx.lineTo(numberOffset.x, numberOffset.y + 63);
+            ctx.stroke();
+
+            var numberOffset = {
+                x: 400 + Math.cos(-Math.PI / 6) * 510,
+                y: -3700 + Math.sin(-Math.PI / 6) * 510
+            }
+            ctx.beginPath();
+            ctx.moveTo(numberOffset.x - 20, numberOffset.y - 62);
+            ctx.lineTo(numberOffset.x - 20, numberOffset.y + 63);
+            ctx.stroke();
+            ctx.beginPath();
+            ctx.moveTo(numberOffset.x + 20, numberOffset.y - 62);
+            ctx.lineTo(numberOffset.x + 20, numberOffset.y + 63);
+            ctx.stroke();
+
+            ctx.beginPath();
+            ctx.moveTo(870, -3762);
+            ctx.lineTo(870, -3637);
+            ctx.stroke();
+            ctx.beginPath();
+            ctx.moveTo(910, -3762);
+            ctx.lineTo(910, -3637);
+            ctx.stroke();
+            ctx.beginPath();
+            ctx.moveTo(950, -3762);
+            ctx.lineTo(950, -3637);
+            ctx.stroke();
+
+            var numberOffset = {
+                x: 400 + Math.cos(Math.PI / 6) * 535,
+                y: -3700 + Math.sin(Math.PI / 6) * 535
+            }
+            ctx.beginPath();
+            ctx.moveTo(numberOffset.x - 50, numberOffset.y - 62);
+            ctx.lineTo(numberOffset.x - 50, numberOffset.y + 63);
+            ctx.stroke();
+            ctx.beginPath();
+            ctx.moveTo(numberOffset.x - 20, numberOffset.y - 62);
+            ctx.lineTo(numberOffset.x, numberOffset.y + 53);
+            ctx.lineTo(numberOffset.x + 20, numberOffset.y - 62);
+            ctx.stroke();
+
+            var numberOffset = {
+                x: 400 + Math.cos(Math.PI / 3) * 515,
+                y: -3700 + Math.sin(Math.PI / 3) * 515
+            }
+            ctx.beginPath();
+            ctx.moveTo(numberOffset.x - 20, numberOffset.y - 62);
+            ctx.lineTo(numberOffset.x, numberOffset.y + 53);
+            ctx.lineTo(numberOffset.x + 20, numberOffset.y - 62);
+            ctx.stroke();
+
+            var numberOffset = {
+                x: 400 + Math.cos(Math.PI / 2) * 515,
+                y: -3700 + Math.sin(Math.PI / 2) * 515
+            }
+            ctx.beginPath();
+            ctx.moveTo(numberOffset.x - 35, numberOffset.y - 62);
+            ctx.lineTo(numberOffset.x - 15, numberOffset.y + 53);
+            ctx.lineTo(numberOffset.x + 5, numberOffset.y - 62);
+            ctx.stroke();
+            ctx.beginPath();
+            ctx.moveTo(numberOffset.x + 35, numberOffset.y - 62);
+            ctx.lineTo(numberOffset.x + 35, numberOffset.y + 63);
+            ctx.stroke();
+
+            var numberOffset = {
+                x: 400 + Math.cos(Math.PI * 2 / 3) * 500,
+                y: -3700 + Math.sin(Math.PI * 2 / 3) * 500
+            }
+            ctx.beginPath();
+            ctx.moveTo(numberOffset.x - 65, numberOffset.y - 62);
+            ctx.lineTo(numberOffset.x - 45, numberOffset.y + 53);
+            ctx.lineTo(numberOffset.x - 25, numberOffset.y - 62);
+            ctx.stroke();
+            ctx.beginPath();
+            ctx.moveTo(numberOffset.x + 5, numberOffset.y - 62);
+            ctx.lineTo(numberOffset.x + 5, numberOffset.y + 63);
+            ctx.stroke();
+            ctx.beginPath();
+            ctx.moveTo(numberOffset.x + 35, numberOffset.y - 62);
+            ctx.lineTo(numberOffset.x + 35, numberOffset.y + 63);
+            ctx.stroke();
+
+            var numberOffset = {
+                x: 400 + Math.cos(Math.PI * 5 / 6) * 500,
+                y: -3700 + Math.sin(Math.PI * 5 / 6) * 500
+            }
+            ctx.beginPath();
+            ctx.moveTo(numberOffset.x - 65, numberOffset.y - 62);
+            ctx.lineTo(numberOffset.x - 45, numberOffset.y + 53);
+            ctx.lineTo(numberOffset.x - 25, numberOffset.y - 62);
+            ctx.stroke();
+            ctx.beginPath();
+            ctx.moveTo(numberOffset.x + 5, numberOffset.y - 62);
+            ctx.lineTo(numberOffset.x + 5, numberOffset.y + 63);
+            ctx.stroke();
+            ctx.beginPath();
+            ctx.moveTo(numberOffset.x + 35, numberOffset.y - 62);
+            ctx.lineTo(numberOffset.x + 35, numberOffset.y + 63);
+            ctx.stroke();
+            ctx.beginPath();
+            ctx.moveTo(numberOffset.x + 65, numberOffset.y - 62);
+            ctx.lineTo(numberOffset.x + 65, numberOffset.y + 63);
+            ctx.stroke();
+
+            var numberOffset = {
+                x: 400 + Math.cos(Math.PI) * 500,
+                y: -3700 + Math.sin(Math.PI) * 500
+            }
+            ctx.beginPath();
+            ctx.moveTo(numberOffset.x - 5, numberOffset.y - 62);
+            ctx.lineTo(numberOffset.x + 35, numberOffset.y + 63);
+            ctx.stroke();
+            ctx.beginPath();
+            ctx.moveTo(numberOffset.x - 5, numberOffset.y + 63);
+            ctx.lineTo(numberOffset.x + 35, numberOffset.y - 62);
+            ctx.stroke();
+            ctx.beginPath();
+            ctx.moveTo(numberOffset.x - 35, numberOffset.y - 62);
+            ctx.lineTo(numberOffset.x - 35, numberOffset.y + 63);
+            ctx.stroke();
+
+            var numberOffset = {
+                x: 400 + Math.cos(-Math.PI * 5 / 6) * 500,
+                y: -3700 + Math.sin(-Math.PI * 5 / 6) * 500
+            }
+            ctx.beginPath();
+            ctx.moveTo(numberOffset.x - 25, numberOffset.y - 62);
+            ctx.lineTo(numberOffset.x + 25, numberOffset.y + 63);
+            ctx.stroke();
+            ctx.beginPath();
+            ctx.moveTo(numberOffset.x - 25, numberOffset.y + 63);
+            ctx.lineTo(numberOffset.x + 25, numberOffset.y - 62);
+            ctx.stroke();
+
+            var numberOffset = {
+                x: 400 + Math.cos(-Math.PI * 2 / 3) * 500,
+                y: -3700 + Math.sin(-Math.PI * 2 / 3) * 500
+            }
+            ctx.beginPath();
+            ctx.moveTo(numberOffset.x - 10, numberOffset.y - 62);
+            ctx.lineTo(numberOffset.x + 40, numberOffset.y + 63);
+            ctx.stroke();
+            ctx.beginPath();
+            ctx.moveTo(numberOffset.x - 10, numberOffset.y + 63);
+            ctx.lineTo(numberOffset.x + 40, numberOffset.y - 62);
+            ctx.stroke();
+            ctx.beginPath();
+            ctx.moveTo(numberOffset.x - 40, numberOffset.y + 63);
+            ctx.lineTo(numberOffset.x - 40, numberOffset.y - 62);
+            ctx.stroke();
+
+            ctx.lineCap = "round";
+
+            level.exit.drawAndCheck();
+            level.enter.draw();
+        }
+
+        var lastBlock = Math.sin(simulation.cycle / 50) < 0;
+
+        level.customTopLayer = () => {
+            if (!lightOn) lightButton.query();
+            if (!lightButton.isUp) lightOn = true;
+            lightButton.draw();
+            elevator1.move();
+
+            ctx.beginPath();
+            ctx.moveTo(pendulum1.parts[2].vertices[0].x, pendulum1.parts[2].vertices[0].y);
+            for (var i = 0; i < pendulum1.parts[2].vertices.length; i++) {
+                ctx.lineTo(pendulum1.parts[2].vertices[i].x, pendulum1.parts[2].vertices[i].y);
+            }
+            ctx.lineTo(pendulum1.parts[2].vertices[0].x, pendulum1.parts[2].vertices[0].y);
+            ctx.fillStyle = "#999";
+            ctx.fill();
+            ctx.lineWidth = 2
+            ctx.strokeStyle = color.blockS;
+            ctx.stroke();
+
+            ctx.beginPath();
+            ctx.moveTo(gear3.parts[1].vertices[0].x, gear3.parts[1].vertices[0].y);
+            for (var i = 0; i < gear3.parts[1].vertices.length; i++) {
+                ctx.lineTo(gear3.parts[1].vertices[i].x, gear3.parts[1].vertices[i].y);
+            }
+            ctx.lineTo(gear3.parts[1].vertices[0].x, gear3.parts[1].vertices[0].y);
+            ctx.fillStyle = "#999";
+            ctx.fill();
+            ctx.lineWidth = 2
+            ctx.strokeStyle = color.blockS;
+            ctx.stroke();
+
+            ctx.fillStyle = "#444";
+            ctx.fillRect(3275, -1750, 1, 1750);
+
+            ctx.fillStyle = "#888";
+
+            if (Math.sin(simulation.cycle / 50) < 0 && !lastBlock) {
+                // remove old elements
+                for (var i = 0; i < map.length; i++) {
+                    if (map[i].isRemove) {
+                        Matter.Composite.remove(engine.world, map[i]);
+                        map.splice(i, 1);
+                    }
+                }
+
+                // add new element
+                spawn.mapRect(-200, -600, 275, 50);
+                addPartToMap(map.length - 1);
+                map[map.length - 1].isRemove = true;
+            } else if (Math.sin(simulation.cycle / 50) * 0.3 >= 0 && lastBlock) {
+                for (var i = 0; i < map.length; i++) {
+                    if (map[i].isRemove) {
+                        Matter.Composite.remove(engine.world, map[i]);
+                        map.splice(i, 1);
+                    }
+                }
+
+                spawn.mapRect(825, -600, 275, 50);
+                addPartToMap(map.length - 1);
+                map[map.length - 1].isRemove = true;
+            }
+
+            simulation.draw.setPaths();
+            lastBlock = Math.sin(simulation.cycle / 50) * 0.3 < 0;
+        }
+    },
+    
     // ********************************************************************************************************
     // ********************************************************************************************************
     // **************************************** c-gon exclusives **********************************************
