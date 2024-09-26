@@ -12,7 +12,7 @@ const level = {
     modernPlayableLevels: ["lock", "towers", "flocculation"],
     cgonLevels: ["descent", "split"],
     communityLevels: ["stronghold", "basement", "crossfire", "vats", "n-gon", "house", "perplex", "coliseum", "tunnel", "islands"],
-    modernCommunityLevels: ["dripp", "fortress"], // todo: backport
+    modernCommunityLevels: ["dripp", "fortress", "commandeer", "clock"], // todo: backport
     gimmickLevels: ["run", "testChamber2", "temple", "biohazard", "stereoMadness", "yingYang", "staircase"],
     trainingLevels: ["walk", "crouch", "jump", "hold", "throw", "throwAt", "deflect", "heal", "fire", "nailGun", "shotGun", "superBall", "matterWave", "missile", "stack", "mine", "grenades", "harpoon"],
     levels: [],
@@ -17828,6 +17828,2356 @@ const level = {
         powerUps.spawn(3167.6, -1300, "heal")
         powerUps.spawn(1, 1, "ammo")
         powerUps.addResearchToLevel() //needs to run after mobs are spawned
+    },
+    commandeer() {
+        simulation.makeTextLog(`<strong>commandeer</strong> by <span class='color-var'>Desboot</span>`);
+
+        let waterFallWidth = 400
+        let waterFallX = 15900
+        let waterFallSmoothX = 0
+        const elevator = level.elevator(-80.4, -931.6, 180, 50, -1550)
+        15900 && player.position.x < 16300 && player.position.y > -960.2
+        //const slime = level.hazard(15900, -960, 400, 6000);
+        const slime2 = level.hazard(15147.2, -1782.4, 2000, 822);
+        const boost1 = level.boost(5950, -20, 700)
+        const boost2 = level.boost(21088, -1672, 700)
+        const boost3 = level.boost(19390, -31, 1700)
+        const boost4 = level.boost(19390, -31, 1700)
+        const boost5 = level.boost(17274, -1242, 1000)
+        const portal = level.portal({ x: 443, y: -1636 }, Math.PI, { x: 21391.9, y: -1806.3 }, -Math.PI)
+        const portal2 = level.portal({ x: 16838.3, y: -626.7 }, Math.PI, { x: 16882.8, y: -2566.5 }, -Math.PI)
+        const buttonDoor = level.button(21889, -10)
+        const door = level.door(19119, -2133, 110, 510, 480)
+        const buttonDoor2 = level.button(18711, -2210)
+        const door2 = level.door(17041, -412, 110, 510, 480)
+        const buttonDoor3 = level.button(20456.6, -1636.2)
+        const door3 = level.door(20238, -781.4, 88, 452, 412)
+        const hazard2 = level.hazard(2550, -150, 10, 0.4)               //y=-1485
+
+        level.setPosToSpawn(0, -50); //normal spawn
+        level.exit.x = 15316;
+        level.exit.y = -30;
+        spawn.mapRect(level.enter.x, level.enter.y + 20, 100, 20); //bump for level entrance
+        spawn.mapRect(level.exit.x, level.exit.y + 20, 100, 20); //bump for level exit
+        level.defaultZoom = 1800
+        simulation.zoomTransition(level.defaultZoom)
+        document.body.style.backgroundColor = "#001738";
+        color.map = "#444" //custom map color
+
+
+
+        level.custom = () => {
+            //spawn.mapRect(22330, -2688.75, 400, 800);
+            //spawn.mapRect(22330, -1793.5, 400, 800);//-46.25*2=-92.5
+            //spawn.mapRect(22330, -804.25, 400, 800);//-46.25*3
+
+
+            ctx.fillStyle = "rgba(250,250,250,0.8)"//lights
+            ctx.beginPath()
+            ctx.moveTo(1124, -628)
+            ctx.lineTo(496, 0)
+            ctx.lineTo(1852, 0)
+            ctx.lineTo(1224, -628)
+            ctx.fill()
+
+            ctx.beginPath()
+            ctx.moveTo(906, -1365)
+            ctx.lineTo(206, -690)
+            ctx.lineTo(1706, -690)
+            ctx.lineTo(1006, -1365)
+            ctx.fill()
+
+            ctx.beginPath()
+            ctx.moveTo(3330, -1905)//-700
+            ctx.lineTo(2815.6, -1405.8)
+            ctx.lineTo(2815.6, -1230)
+            ctx.lineTo(4022.9, -1283.9)
+            ctx.lineTo(4023.5, -1405.8)
+            ctx.lineTo(3430, -1905)
+
+            ctx.fill()
+
+
+
+
+            ctx.fillStyle = "rgba(63,247,251,0.8)"
+            ctx.fillRect(22330, -2713.75, 550, 700)//15845.0, -1262.2
+            ctx.fillRect(22330, -1743.5, 550, 700)
+            ctx.fillRect(22330, -754.25, 550, 700)
+
+            ctx.fillRect(6237, -1830.7, 550, 700)
+            ctx.fillRect(6237, -840.4, 550, 700)
+            ctx.fillStyle = "rgba(200,200,200,0.8)"
+            ctx.fillRect(-192, -1973, 6484, 2071)
+            ctx.fillStyle = "rgba(240,240,240,0.8)"
+
+            ctx.fillRect(15109.5, -2867.5, 7284, 2971)
+            ctx.fillStyle = "rgba(35,35,35,0.8)"
+            ctx.fillRect(15145.9, -960, 200, 25)
+
+
+
+
+            ctx.fillStyle = "rgba(255,255,255,0.9)"
+
+
+
+
+
+            buttonDoor.query();
+            buttonDoor.draw();
+            buttonDoor2.query();
+            buttonDoor2.draw();
+            buttonDoor3.query();
+            buttonDoor3.draw();
+
+
+            //slime.query();
+            slime2.query();
+
+
+            if (buttonDoor.isUp) {
+                door.isClosing = true
+            } else {
+                door.isClosing = false
+            }
+            if (buttonDoor2.isUp) {
+                door2.isClosing = true
+            } else {
+                door2.isClosing = false
+            }
+            if (buttonDoor3.isUp) {
+                door3.isClosing = true
+            } else {
+                door3.isClosing = false
+            }
+            door.openClose();
+            door2.openClose();
+            door3.openClose();
+            portal[2].query()
+            portal[3].query()
+            portal2[2].query()
+            portal2[3].query()
+
+            boost1.query();
+            boost2.query();
+            boost3.query();
+            boost4.query();
+            boost5.query();
+            level.exit.drawAndCheck();
+            level.enter.draw();
+            ctx.fillStyle = "rgba(0,0,0,0.2)"//shadows
+            ctx.fillRect(2773, -682, 469, 500)
+            ctx.fillRect(3947, -851, 469, 700)
+            ctx.fillRect(4818, -1006, 400, 400)
+            ctx.fillRect(5313, -1309, 1000, 700)
+
+            ctx.fillRect(16705, -2831, 40, 700)
+            ctx.fillRect(16140, -2812, 40, 400)
+            ctx.fillRect(15559, -2855, 40, 800)
+            ctx.fillRect(16530, -2855, 30, 200)
+
+
+            ctx.beginPath()
+            ctx.moveTo(18254.7, -2194.1)
+            ctx.lineTo(18554.6, -1952.7)
+            ctx.lineTo(18554.6, -1992.7)
+            ctx.lineTo(18294.7, -2194.1)
+            ctx.fill()
+            ctx.beginPath()
+            ctx.moveTo(18154.7, -1004.1)
+            ctx.lineTo(18554.6, -762.7)
+            ctx.lineTo(18554.6, -802.7)
+            ctx.lineTo(18214.7, -1004.1)
+            ctx.fill()
+
+            ctx.beginPath()
+            ctx.moveTo(17585.2, -1123.8)
+            ctx.lineTo(17151.2, -781.7)
+            ctx.lineTo(17151.2, -741.7)
+            ctx.lineTo(17625.2, -1123.8)
+            ctx.fill()
+
+
+            ctx.fillRect(20540, -1103, 610, 300)
+            ctx.fillRect(20820, -243, 410, 300)
+            ctx.fillRect(5772, -609, 469, 700)
+            ctx.fillRect(5772, -609, 469, 700)
+
+            ctx.fillStyle = "rgba(48,184,140,255)"
+            ctx.fillRect(waterFallX, -960, waterFallWidth, 6000)
+            ctx.fillStyle = `hsla(160, 100%, 43%,${0.3 + 0.07 * Math.random()})`
+            ctx.fillRect(waterFallX + waterFallWidth * Math.random(), -900 - Math.random() * 400, Math.random() * 5 + 8, 6000)
+            ctx.fillRect(waterFallX + waterFallWidth * Math.random(), -900 - Math.random() * 400, Math.random() * 5 + 5, 6000)
+            waterFallWidth = 0.995 * waterFallWidth + 4 * Math.random()//4.7
+            waterFalSmoothlX = 0.96 * waterFallSmoothX + 20 * Math.random()//3.5
+            waterFallX = waterFallSmoothX + 15900
+
+
+            ctx.fillStyle = "rgba(0,0,0,0.4)"//wires
+            ctx.fillRect(20990, -2672, 20, 112)
+            ctx.fillRect(21090, -2506, 72, 20)
+            ctx.fillRect(21090, -1970, 72, 20)
+
+
+
+            ctx.fillRect(16901.8, -2497.7, 25, 100)
+            ctx.fillRect(16901.8, -2397.7, 50, 25)
+            ctx.fillRect(16951.8, -2397.7, 25, 1640)
+            ctx.fillRect(16901.8, -782.7, 50, 25)
+            ctx.fillRect(16901.8, -757.7, 25, 100)
+
+
+            ctx.fillRect(20900, -2666, 500, 9)
+            ctx.fillRect(20900, -2651, 1315, 9)
+            ctx.fillRect(20900, -2636, 1300, 9)
+            ctx.fillRect(20900, -2621, 245, 9)
+            ctx.fillRect(20900, -2606, 230, 9)
+            ctx.fillRect(20900, -2591, 215, 9)
+            ctx.fillRect(20900, -2576, 200, 9)
+
+            ctx.fillRect(21145, -2621, 9, 700)
+            ctx.fillRect(21130, -2606, 9, 1000)
+            ctx.fillRect(21115, -2591, 9, 1000)
+            ctx.fillRect(21100, -2576, 9, 850)
+
+            ctx.fillRect(21400, -3066, 9, 409)
+
+
+            ctx.fillRect(20900, -1726, 209, 9)
+            ctx.fillRect(21145, -1921, 270, 9)
+            ctx.fillRect(21415, -1921, 9, 50)
+
+            ctx.fillRect(22200, -2636, 9, 1300)
+            ctx.fillRect(22215, -2651, 9, 300)
+
+            ctx.fillRect(22200, -1336, 300, 9)
+            ctx.fillRect(22215, -2351, 300, 9)
+
+
+            //943.9, -1698.0
+
+            ctx.fillRect(916.5, -1725, 80, 80)//+55 // 55/2=27.5
+            ctx.fillRect(1204, -1706, 25, 40)//179
+            ctx.fillRect(1354, -1706, 25, 40)
+            ctx.fillRect(1504, -1885, 25, 40)
+            ctx.fillRect(3504, -1885, 25, 40)
+            ctx.fillRect(5504, -1885, 25, 40)
+
+
+            ctx.fillRect(1019, -1718, 9, 20)
+            ctx.fillRect(1019, -1674, 9, 20)
+
+            ctx.fillRect(996, -1718, 23, 9)
+            ctx.fillRect(996, -1663, 23, 9)
+
+
+
+
+            ctx.fillRect(1019, -1698, 425, 9)
+            ctx.fillRect(1444, -1868, 9, 179)
+            ctx.fillRect(1444, -1877, 4700, 9)
+
+            ctx.fillRect(1019, -1683, 440, 9)
+            ctx.fillRect(1459, -1853, 9, 179)
+            ctx.fillRect(1459, -1862, 4670, 9)
+
+            ctx.fillRect(6144, -1877, 9, 100)
+            ctx.fillRect(6144, -1777, 100, 9)
+
+            ctx.fillRect(6129, -1862, 9, 1100)
+            ctx.fillRect(6129, -762, 150, 9)
+
+
+
+
+
+
+
+        };
+
+
+        level.customTopLayer = () => {
+
+
+
+            door.draw();
+            door2.draw();
+            door3.draw();
+
+            portal[0].draw();
+            portal[1].draw();
+            portal[2].draw();
+            portal[3].draw();
+            portal2[0].draw();
+            portal2[1].draw();
+            portal2[2].draw();
+            portal2[3].draw();
+            elevator.move()
+
+
+            // if (player.position.x > 15900 && player.position.x < 16300 && player.position.y > -1360.2) {
+            //     Matter.Body.setVelocity(player, {
+            //         x: player.velocity.x,
+            //         y: player.velocity.y + 10
+            //     });
+            // }else{
+            //     if (Math.abs(player.velocity.x) > 0.5){
+            //         if (m.onGround){
+            //     Matter.Body.setVelocity(player, {
+            //         x: player.velocity.x + (0.07 * (Math.abs(player.velocity.x) / player.velocity.x)),
+            //         y: player.velocity.y - 0.2
+
+            //     });  
+            //         }else{
+            //             Matter.Body.setVelocity(player, {
+            //                 x: player.velocity.x,
+            //                 y: player.velocity.y - 0.2   
+            //         });
+            //         }
+            //     }else{
+            //         Matter.Body.setVelocity(player, {
+            //             x: player.velocity.x,
+            //             y: player.velocity.y - 0.2   
+            //     });
+            //     }
+            // }
+
+            if (player.position.x > 15900 && player.position.x < 16300 && player.position.y > -1360.2) {
+                Matter.Body.setVelocity(player, {
+                    x: player.velocity.x,
+                    y: player.velocity.y + 2
+                });
+            } else {
+                if (Math.abs(player.velocity.x) > 0.5) {
+                    if (m.onGround) {
+                        Matter.Body.setVelocity(player, {
+                            x: player.velocity.x + (0.07 * (Math.abs(player.velocity.x) / player.velocity.x)),
+                            y: player.velocity.y - 0.2
+
+                        });
+                    } else {
+                        Matter.Body.setVelocity(player, {
+                            x: player.velocity.x,
+                            y: player.velocity.y - 0.2
+                        });
+                    }
+                } else {
+                    Matter.Body.setVelocity(player, {
+                        x: player.velocity.x,
+                        y: player.velocity.y - 0.2
+                    });
+                }
+            }
+            hazard2.opticalQuery();
+
+
+        };
+
+
+
+
+
+        //1273.2, -1404.7
+
+        spawn.mapRect(1124, -653, 100, 25);
+        spawn.mapRect(906, -1390, 100, 25);
+        spawn.mapRect(3330, -1930, 100, 25);
+
+
+        //first ship base
+        spawn.mapRect(-300, 0, 6684, 100);//lower floor
+        spawn.mapRect(-300, -2071, 154, 2071);//left right wall
+        spawn.mapRect(2511, -300, 1309, 308);//left big block
+        spawn.mapRect(3820, -184, 1309, 184);//right big block
+        spawn.mapRect(-300, -739, 2549, 100);//upper right floor
+        spawn.mapRect(2056, -1309, 2764, 169);//upper center floor
+        spawn.mapRect(2056, -1309, 193, 650);//upper left floor wall
+        spawn.mapRect(4636, -1309, 193, 793);//upper right floor wall
+        spawn.mapRect(4821, -654, 955, 138);//upper right floor
+        spawn.mapRect(6237, -2071, 147, 2071);//far right wall
+        spawn.mapRect(-300, -2071, 6684, 154);//roof
+
+        //first ship details
+        spawn.mapRect(245, -360, 70, 400);//start room wall
+        spawn.mapRect(500, -1929, 154, 462);
+        spawn.mapRect(185, -1517, 469, 77);
+        spawn.mapRect(2773, -682, 469, 77);//walls in 1st room
+        spawn.mapRect(3743, -566, 77, 469);
+        spawn.mapRect(3947, -851, 469, 77);
+        spawn.mapRect(5313, -1309, 1000, 70);//walls in second area
+        spawn.mapRect(4818, -1006, 400, 70);
+        spawn.mapRect(4768, -1626, 800, 70);
+        spawn.mapRect(4760, -1626, 70, 400);
+        spawn.mapRect(645.1, -1480.8, 700, 100);//room for shielding boss
+        spawn.mapVertex(515, -1447, "0 0   0 100   -400 0");
+        spawn.mapRect(1245.1, -1980.8, 100, 500);
+        spawn.mapRect(2346.9, -1658.8, 469, 77);
+        spawn.mapRect(4023.6, -1723.7, 469, 77);
+
+        //engines //y -2972 -> 0
+        spawn.mapRect(6237, -1880.7, 400, 800);
+        spawn.mapRect(6237, -890.4, 400, 800);
+
+
+        //first ship blocks/debris
+        spawn.debris(3267.6, -797.1, 700, 5); //16 debris per level
+        spawn.debris(1626.0, -372.5, 1700, 8); //16 debris per level
+        spawn.debris(1880.1, -1508.9, 3700, 16); //16 debris per level
+        spawn.debris(5335.3, -1431.6, 3700, 16); //16 debris per level
+        spawn.debris(1563.8, -1087.9, 700, 5); //16 debris per level
+        spawn.bodyRect(1540, -1110, 218, 125, 0.9);
+
+
+
+        //first ship mobs
+        spawn.randomSmallMob(893.5, -120.8);
+
+        // spawn.randomMob(2903.9, -754.5, 0.4);
+        // spawn.randomMob(5577.0, -217.0, 0.2);
+        // spawn.randomMob(765.8, -1029.7, 0.5);
+        // spawn.randomMob(2680.1, -1779.2, 0.6);
+        // spawn.randomMob(20079.4, -2219.7, 0.4);
+        // spawn.randomMob(3924.9, -1504.1, 0.5);
+        // spawn.randomMob(21284.2, -983.1, 0.3);
+        // spawn.randomMob(20381.0, -254.2, 0.5);
+        // spawn.randomMob(18375.6, -1574.4, 0.6);
+        // spawn.randomMob(19448.2, -1323.3, 0.3);
+        // spawn.randomMob(18397.7, -711.2, 0.3);
+        // spawn.randomMob(15547.2, -2249.6, 0.5);
+        // spawn.randomSmallMob(16114.6, -2524.2);
+        // spawn.randomSmallMob(15378.9, -2549.6);
+
+        // spawn.randomSmallMob(3266.4, -1578.4);
+        // spawn.randomSmallMob(4386.2, -439.6);
+        // spawn.randomSmallMob(5667.0, -847.8);
+        // spawn.randomSmallMob(3158.5, -1581.8);
+        // spawn.randomSmallMob(3866.7, -1483.2);
+        // spawn.randomSmallMob(4652.3, -1729.4);
+        // spawn.randomSmallMob(1068.7, -106.1);
+        // spawn.randomSmallMob(3382.5, -1590.6);//3545.0, -413.0
+        // spawn.randomSmallMob(5099.7, -1204.2);
+        // spawn.randomSmallMob(1456.4, -1014.8);
+        // spawn.randomSmallMob(20432.4, -1374.3);
+        // spawn.randomSmallMob(20381.0, -254.2);
+        // spawn.randomSmallMob(3505.1, -1531.1);
+        // spawn.randomSmallMob(20648.1, -136.8);
+        // spawn.randomSmallMob(17502.8, -1520.6);
+        // spawn.randomSmallMob(17438.7, -876.7);
+
+        spawn.randomMob(18375.6, -1574.4, 0.2);
+        spawn.randomSmallMob(15378.9, -2549.6);
+        spawn.randomSmallMob(5820.2, -1545.2);
+        spawn.randomMob(765.8, -1029.7, 0.2);
+        spawn.randomMob(21284.2, -983.1, 0.3);
+        spawn.randomSmallMob(3382.5, -1590.6);
+        spawn.randomSmallMob(3545.0, -413.0);
+        spawn.randomMob(20381.0, -254.2, 0.6);
+        spawn.randomSmallMob(20432.4, -1374.3);
+        spawn.randomSmallMob(5667.0, -847.8);
+        spawn.randomMob(2903.9, -754.5, 0.2);
+        spawn.randomSmallMob(3266.4, -1578.4);
+        spawn.randomSmallMob(20648.1, -136.8);
+        spawn.randomSmallMob(16114.6, -2524.2);
+        spawn.randomSmallMob(20381.0, -254.2);
+        spawn.randomMob(5577.0, -217.0, 0.3);
+        spawn.randomSmallMob(1456.4, -1014.8);
+        spawn.randomSmallMob(1068.7, -106.1);
+        spawn.randomSmallMob(5099.7, -1204.2);
+        spawn.randomSmallMob(17502.8, -1520.6);
+        spawn.randomMob(15547.2, -2249.6, 0.2);
+        spawn.randomMob(19448.2, -1323.3, 0.7);
+        spawn.randomSmallMob(3158.5, -1581.8);
+        spawn.randomSmallMob(17438.7, -876.7);
+        spawn.randomMob(20079.4, -2219.7, 0.2);
+        spawn.randomMob(2680.1, -1779.2, 0.6);
+        spawn.randomMob(3924.9, -1504.1, 0.3);
+        spawn.randomSmallMob(4652.3, -1729.4);
+        spawn.randomMob(18397.7, -711.2, 0.3);
+        spawn.randomSmallMob(4386.2, -439.6);
+
+        spawn.randomSmallMob(3505.1, -1531.1);
+        spawn.randomSmallMob(3866.7, -1483.2);
+
+
+
+
+        //second ship mobs
+        spawn.debris(17732.3, -550.0, 700, 5); //16 debris per level
+        spawn.debris(17827.2, -2357.1, 700, 5); //16 debris per level
+        spawn.debris(16108.6, -2621.1, 700, 5); //16 debris per level
+        spawn.debris(20823.6, -1332.1, 1300, 5); //16 debris per level
+        spawn.debris(21095.5, -423.4, 700, 5); //16 debris per level
+        spawn.debris(20534.5, -1282.1, 700, 5); //16 debris per level
+
+
+
+
+
+
+
+        spawn.randomSmallMob(1300, -70);
+        spawn.shieldingBoss(943.9, -1698.0)
+
+
+        //second ship base
+        spawn.mapRect(15000, 0, 515, 185);//lower floor 1
+        spawn.mapRect(17015, 0, 5500, 185);//lower floor 2
+        spawn.mapRect(15000, -2972, 185, 2972);//left wall
+        spawn.mapRect(15000, -2972, 7515, 185);//roof
+        spawn.mapRect(22330, -2972, 185, 2972);//right wall
+        spawn.mapRect(17002, -2972, 169, 2564);//left middle wall
+        spawn.mapRect(19089, -2972, 169, 855);//right middle wall upper
+        spawn.mapRect(19089, -1625, 169, 1800);//right middle wall lower
+        spawn.mapRect(20760, -2972, 169, 1350);//medium wall left of portal
+        spawn.mapRect(19720, -1625, 1725, 162);//right room upper floor
+        spawn.mapRect(21440, -2325, 169, 863);//medium wall right of portal
+        spawn.mapRect(19720, -855, 2725, 162);//right room lower floor
+
+        //engines //y -2972 -> 0
+        spawn.mapRect(22330, -2763.75, 400, 800);
+        spawn.mapRect(22330, -1793.5, 400, 800);
+        spawn.mapRect(22330, -804.25, 400, 800);
+
+
+
+        //second ship details
+        spawn.mapRect(19904, -1465, 85, 362);//upper L
+        spawn.mapRect(19542, -1191, 412, 88);//lower L
+        spawn.mapRect(18546, -2199, 600, 82);//2nd room enternce wall
+        spawn.mapRect(18546, -2499, 82, 2300);
+        spawn.mapRect(18108, -326, 500, 82);//walls/floors in middle room
+        spawn.mapRect(17750, -682, 300, 82);
+        spawn.mapRect(17156, -468, 500, 60);
+        spawn.mapRect(18022, -1082, 600, 82);
+        spawn.mapRect(17151, -1196, 500, 82);
+        spawn.mapRect(17453, -2060, 500, 82);
+        spawn.mapRect(18197, -2269, 400, 82);
+        spawn.mapRect(18108, -326, 500, 82);
+        spawn.mapRect(20542, -1191, 612, 88);
+        spawn.mapRect(20238, -1191, 88, 412);
+        spawn.mapRect(21520, -1468, 88, 412);
+        spawn.mapRect(20238, -330.2, 88, 412);
+        spawn.mapRect(20819, -328.3, 412, 88);
+        spawn.mapRect(21532, -708, 88, 412);
+        spawn.mapRect(15483.8, 12.5, 388, 30);//broken floor
+        spawn.mapRect(15487.6, 76.6, 488, 24);
+        spawn.mapRect(15506.5, 134.2, 288, 45);
+        spawn.mapVertex(16758.6, 135.3, "400 -30   -350 -40   -400 30   400 30");
+        spawn.mapVertex(16758.6, 55.3, "423 -30   -408 -20   -400 20   400 20");
+        //tank
+        spawn.mapRect(15310, -960, 600, 135);
+        spawn.mapRect(16290, -960, 800, 135);
+        //in tank
+        spawn.mapRect(16524.8, -2726.8, 40, 400);
+        spawn.mapRect(16524.8, -2130.9, 400, 40);
+        spawn.mapRect(16010.2, -2412.2, 300, 40);
+        spawn.mapRect(15379.2, -2055.1, 400, 40);
+
+        spawn.mapVertex(17626.3, -3035, "-245 0   -220 -110   -173 -173   -110 -220   0 -250   110 -220   173 -173   220 -110   245 0");
+        spawn.mapRect(17226.3, -3035, 400, 40);
+
+        spawn.mapVertex(17626.3, 225, "-245 0   -220 110   -173 173   -110 220   0 250   110 220   173 173   220 110   245 0");
+        spawn.mapRect(17226.3, 225, 400, 40);
+
+        spawn.mapVertex(19626.3, -3035, "-245 0   -220 -110   -173 -173   -110 -220   0 -250   110 -220   173 -173   220 -110   245 0");
+        spawn.mapRect(19226.3, -3035, 400, 40);
+
+        spawn.mapVertex(19626.3, 225, "-245 0   -220 110   -173 173   -110 220   0 250   110 220   173 173   220 110   245 0");
+        spawn.mapRect(19226.3, 225, 400, 40);
+
+        spawn.mapVertex(21626.3, -3035, "-245 0   -220 -110   -173 -173   -110 -220   0 -250   110 -220   173 -173   220 -110   245 0");
+        spawn.mapRect(21226.3, -3035, 400, 40);
+
+        spawn.mapVertex(21626.3, 225, "-245 0   -220 110   -173 173   -110 220   0 250   110 220   173 173   220 110   245 0");
+        spawn.mapRect(21226.3, 225, 400, 40);
+
+
+
+        //add fuel tanks in the last room
+
+
+        spawn.mapRect(21531.9, -707.8, 488, 8);
+
+        //22185.5, -114.8
+        spawn.mapVertex(22207.8, -103, "325 -200   100 -200   325 -300");
+        spawn.mapRect(22056.6, -70, 225, 212);
+
+        spawn.mapVertex(20723.1, -1734, "325 -200   100 -200   325 -300");
+        spawn.mapRect(20571.9, -1701.0, 225, 212);
+
+        spawn.mapVertex(22207.8, -103, "325 -200   100 -200   325 -300");
+        spawn.mapRect(22056.6, -70, 225, 212);
+        //spawn.mapVertex(x,y, "coordinates")
+        //the parts in quotes is "x y   x y   x y   x y   x y"  x and y need to be the coordinates of points that define the shape in a concave clockwise direction
+
+        //second ship blocks/debris
+        spawn.bodyRect(21525, -113, 50, 50, 9);//first button block 
+        spawn.bodyRect(18993, -2283, 50, 50, 9);//second button block
+        spawn.bodyRect(20303, -1736, 50, 50, 9);//third button block
+
+
+
+        // spawn.randomLevelBoss(17902, -1689, ["blinkBoss", "shooterBoss", "launcherBoss", "pulsarBoss", "blockBoss", "bladeBoss", "revolutionBoss", "spawnerBossCulture", "spiderBoss", "sneakBoss", "snakeSpitBoss"])
+        spawn.randomLevelBoss(17902, -1689, ["launcherBoss", "laserTargetingBoss", "blinkBoss", "streamBoss", "historyBoss", "grenadierBoss", "blockBoss", "revolutionBoss", "slashBoss"]);
+
+        // powerUps.spawnStartingPowerUps(1475, -1175);
+        // spawn.debris(750, -2200, 3700, 16); //16 debris per level
+        // spawn.bodyRect(1540, -1110, 300, 25, 0.9); 
+        // spawn.randomSmallMob(1300, -70);
+        // spawn.randomMob(2650, -975, 0.8);
+        // spawn.randomGroup(1700, -900, 0.4);
+        // if (simulation.difficulty > 1) spawn.randomLevelBoss(2200, -1300);
+        // spawn.secondaryBossChance(100, -1500)
+        powerUps.addResearchToLevel() //needs to run after mobs are spawned
+    },
+    clock() {
+        simulation.makeTextLog(`<strong>clock</strong> by <span class='color-var'>Cornbread 2100</span>`);
+
+        function drawBackgroundGear(x, y, r1, r2, rot, color, speed, numTeeth = 5, toothWidth = 75, linew = 2) {
+            var vertices = getGearVertices(x, y, r1, r2, numTeeth, simulation.cycle * speed + rot, toothWidth / 100);
+
+            // draw gear
+            ctx.beginPath();
+            ctx.moveTo(vertices[0].x, vertices[0].y);
+            for (var i = 1; i < vertices.length; i++) {
+                ctx.lineTo(vertices[i].x, vertices[i].y);
+            }
+            ctx.lineTo(vertices[0].x, vertices[0].y);
+            ctx.lineWidth = 2;
+            ctx.fillStyle = color;
+            ctx.fill();
+            ctx.strokeStyle = "#3a3f20";
+            ctx.lineWidth = linew;
+            ctx.stroke();
+        }
+
+        function drawFallingBackgroundGear(x, y, r1, r2, rot, color, speed, fallSpeed, startCycle, numTeeth = 5, linew = 2) {
+            rot *= speed;
+            numTeeth *= 2;
+
+            const gearInc = (2 * Math.PI) / numTeeth;
+            ctx.beginPath()
+            for (var i = 0; i <= numTeeth; i++) {
+                var gear_r = r2;
+                if (i % 2 == 1) gear_r = r1;
+                ctx.arc(x, y + (simulation.cycle - startCycle) * fallSpeed, gear_r, (i * gearInc) + rot, ((i + 1) * gearInc) + rot);
+            }
+            ctx.fillStyle = color;
+            ctx.fill();
+            ctx.strokeStyle = "#3a3f20";
+            ctx.lineWidth = linew;
+            ctx.stroke();
+        }
+
+        function getGearVertices(x, y, r1, r2, numTeeth, rot = 0, teethWidth = 0) {
+            if (teethWidth == 0) {
+                teethWidth = (2 * Math.PI) / (2 * numTeeth);
+            }
+            const gearInc = (2 * Math.PI) / numTeeth;
+            var vertices = [];
+
+            for (var i = 0; i < numTeeth; i++) {
+                //inner vertices of gear teeth
+                var distance = i * gearInc + rot;
+                var vX = Math.sin(distance + teethWidth / 2) * r1;
+                var vY = Math.cos(distance + teethWidth / 2) * r1;
+
+                var point1 = { x: vX, y: vY, point: 1 };
+
+                vX = Math.sin(distance - teethWidth / 2) * r1;
+                vY = Math.cos(distance - teethWidth / 2) * r1;
+
+                var point4 = { x: vX, y: vY, point: 4 };
+
+                vX = Math.sin(distance) * r1;
+                vY = Math.cos(distance) * r1;
+
+                if (vX == 0) {
+                    vX = 0.0001
+                }
+
+                var slope = vY / vX;
+
+                var angle = Math.atan2(vY, vX);
+
+                //outer vertices of gear teeth
+                var point2 = { x: point1.x, y: point1.y, point: 2 };
+                point2.x += Math.cos(angle) * (r2 - r1);
+                point2.y += Math.sin(angle) * (r2 - r1);
+
+                var point3 = { x: point4.x, y: point4.y, point: 3 };
+                point3.x += Math.cos(angle) * (r2 - r1);
+                point3.y += Math.sin(angle) * (r2 - r1);
+
+                vertices.push(point4);
+                vertices.push(point3);
+                vertices.push(point2);
+                vertices.push(point1);
+            }
+
+            for (var i = 0; i < vertices.length; i++) {
+                vertices[i].x += x;
+                vertices[i].y += y;
+            }
+
+            return vertices;
+        }
+
+        function getGearTeethVertices(x, y, r1, r2, numTeeth, toothIndex, teethWidth = 0) {
+            if (teethWidth == 0) {
+                teethWidth = (2 * Math.PI) / (2 * numTeeth);
+            }
+
+            const gearInc = (2 * Math.PI) / numTeeth;
+            var vertices = [];
+
+            for (var i = 0; i < numTeeth; i++) {
+                //inner vertices of gear teeth
+                var distance = i * gearInc;
+                var vX = Math.sin(distance + teethWidth / 2) * r1;
+                var vY = Math.cos(distance + teethWidth / 2) * r1;
+
+                var point1 = { x: vX, y: vY, point: 1 };
+
+                vX = Math.sin(distance - teethWidth / 2) * r1;
+                vY = Math.cos(distance - teethWidth / 2) * r1;
+
+                var point4 = { x: vX, y: vY, point: 4 };
+
+                vX = Math.sin(distance) * r1;
+                vY = Math.cos(distance) * r1;
+
+                if (vX == 0) {
+                    vX = 0.0001
+                }
+
+                var slope = vY / vX;
+
+                var angle = Math.atan2(vY, vX);
+
+                //outer vertices of gear teeth
+                var point2 = { x: point1.x, y: point1.y, point: 2 };
+                point2.x += Math.cos(angle) * (r2 - r1);
+                point2.y += Math.sin(angle) * (r2 - r1);
+
+                var point3 = { x: point4.x, y: point4.y, point: 3 };
+                point3.x += Math.cos(angle) * (r2 - r1);
+                point3.y += Math.sin(angle) * (r2 - r1);
+
+                if (i == toothIndex) {
+                    vertices.push(point4);
+                    vertices.push(point3);
+                    vertices.push(point2);
+                    vertices.push(point1);
+                }
+            }
+
+            for (var i = 0; i < vertices.length; i++) {
+                vertices[i].x += x;
+                vertices[i].y += y;
+            }
+
+            return vertices;
+        }
+
+        function mapGear(x, y, r1, r2, rot, speed, numTeeth = 5, toothWidth = 50, additionalCircleRadius = 10) {
+            const part1 = body[body.length] = Bodies.polygon(x, y, 0, r1 + additionalCircleRadius, {
+                collisionFilter: {
+                    category: cat.body,
+                    mask: cat.player | cat.body | cat.bullet | cat.powerUp | cat.mob | cat.mobBullet
+                },
+                isNotHoldable: true,
+                frictionAir: 0,
+                friction: 1,
+                frictionStatic: 1,
+                restitution: 0
+            });
+
+            var parts = [part1];
+
+            for (var i = 0; i < numTeeth; i++) {
+                var toothVertices = getGearTeethVertices(0, 0, r2 - r1, toothWidth + r2 - r1, numTeeth, i, 70); // for some reason the teeth are sideways
+
+                var center = { // the center of the inner line of the gear
+                    x: toothVertices[3].x - toothVertices[0].x,
+                    y: toothVertices[3].y - toothVertices[0].y
+                };
+
+                distanceToCenter = Math.sqrt((center.x ** 2) + (center.y ** 2));
+
+                var radiusScale = (r1 + ((r2 - r1) / 2)) / distanceToCenter;
+
+                gearToothSlope = center.y / center.x;
+
+                var newPart = body[body.length] = Bodies.fromVertices(x + center.x * radiusScale, y + center.y * radiusScale, toothVertices, {
+                    collisionFilter: {
+                        category: cat.body,
+                        mask: cat.player | cat.body | cat.bullet | cat.powerUp | cat.mob | cat.mobBullet
+                    },
+                    isNotHoldable: true,
+                    frictionAir: 0.01,
+                    friction: 1,
+                    frictionStatic: 1,
+                    restitution: 0
+                });
+
+                parts.push(newPart);
+            }
+
+            const who = Body.create({
+                parts: parts
+            });
+
+            Composite.add(engine.world, who);
+            composite[composite.length] = who;
+            who.collisionFilter.category = cat.body;
+            who.collisionFilter.mask = cat.body | cat.player | cat.bullet | cat.mob | cat.mobBullet | cat.map
+
+            const constraint = Constraint.create({
+                pointA: {
+                    x: x,
+                    y: y
+                },
+                bodyB: who,
+                stiffness: 1,
+                damping: 1
+            });
+
+
+            Matter.Body.setDensity(who, 0.0001)
+            Composite.add(engine.world, constraint);
+            Matter.Body.setAngle(who, 0)
+            Matter.Body.setAngularVelocity(who, 0);
+            who.center = { x: x, y: y }
+
+            who.rotate = function () {
+                var rotation = simulation.cycle * speed + rot;
+                Matter.Body.setAngle(who, rotation);
+            }
+
+            who.gearSettings = {
+                x: x,
+                y: y,
+                r1: r1,
+                r2: r2,
+                rot: rot,
+                speed: speed,
+                numTeeth: numTeeth,
+                toothWidth: toothWidth
+            }
+
+            return who;
+        }
+
+        function clockHand(x, y, width, height, speed = 15 * Math.PI / 180, angle = 0, density = 0.001) {
+            var who1 = body[body.length] = Bodies.rectangle(x, y + height / 2, width, height, {
+                collisionFilter: {
+                    category: cat.body,
+                    mask: cat.player | cat.body | cat.bullet | cat.powerUp | cat.mob | cat.mobBullet
+                },
+                isNotHoldable: true,
+                friction: 1,
+                frictionStatic: 1,
+                restitution: 0
+            });
+
+            const who = Body.create({
+                parts: [who1],
+                handRotation: 0
+            });
+
+            Composite.add(engine.world, who);
+            composite[composite.length] = who;
+            who.collisionFilter.category = cat.body;
+            who.collisionFilter.mask = cat.body | cat.player | cat.bullet | cat.mob | cat.mobBullet | cat.map
+
+            who.position.y = y;
+
+            const constraint = Constraint.create({
+                pointA: {
+                    x: who.position.x,
+                    y: who.position.y
+                },
+                bodyB: who,
+                stiffness: 1,
+                damping: 1
+            });
+
+            Matter.Body.setDensity(who, density)
+            Composite.add(engine.world, constraint);
+            who.center = { x: who.position.x, y: who.position.y }
+
+            who.rotate = function () {
+                if (simulation.cycle % 60 == 0) {
+                    who.handRotation += speed;
+                    if (Math.abs(who.handRotation % (Math.PI * 2) - Math.PI) < 0.2) {
+                        // spawn random mob at exit door
+                        const pick = spawn.fullPickList[Math.floor(Math.random() * spawn.fullPickList.length)];
+                        spawn[pick](300, 600);
+                    }
+                    if (Matter.Query.collides(player, [this]).length != 0) {
+                        var playerAngle = Math.atan((m.pos.y - y) / (m.pos.x - x));
+                        if (m.pos.x - x < 0) playerAngle += Math.PI;
+                        const playerDistance = Math.sqrt((m.pos.x - x) ** 2 + (m.pos.y - y) ** 2);
+                        Matter.Body.setPosition(player, {
+                            x: x + Math.cos(playerAngle + speed) * playerDistance,
+                            y: y + Math.sin(playerAngle + speed) * playerDistance
+                        })
+                    }
+                }
+                Matter.Body.setAngle(who, who.handRotation + angle);
+            }
+
+            return who
+        }
+
+        function pendulum(x, y, width, height, swingTime = 50, swingDistanceMultiplier = 0.5, bobSides = 0, bobRadius = 200, density = 100, angle = 0, frictionAir = 0, angularVelocity = 0) {
+            const who1 = body[body.length] = Bodies.rectangle(x, y + height / 2, width, height, {
+                collisionFilter: {
+                    category: cat.body,
+                    mask: cat.player | cat.body | cat.bullet | cat.powerUp | cat.mob | cat.mobBullet
+                },
+                isNotHoldable: true,
+                frictionAir: frictionAir,
+                friction: 1,
+                frictionStatic: 1,
+                restitution: 0
+            });
+
+            const who2 = body[body.length] = Bodies.polygon(x, y + height, bobSides, bobRadius, {
+                collisionFilter: {
+                    category: cat.body,
+                    mask: cat.player | cat.body | cat.bullet | cat.powerUp | cat.mob | cat.mobBullet
+                },
+                isNotHoldable: true,
+                frictionAir: 0.01,
+                friction: 1,
+                frictionStatic: 1,
+                restitution: 0
+            });
+
+            const who = Body.create({
+                parts: [who1, who2],
+            });
+
+            Composite.add(engine.world, who);
+            composite[composite.length] = who;
+            who.collisionFilter.category = cat.body;
+            who.collisionFilter.mask = cat.body | cat.player | cat.bullet | cat.mob | cat.mobBullet | cat.map
+
+            who.position.y = y;
+
+            const constraint = Constraint.create({
+                pointA: {
+                    x: x,
+                    y: y
+                },
+                bodyB: who,
+                stiffness: 1,
+                damping: 1
+            });
+
+
+            Matter.Body.setDensity(who, density)
+            Composite.add(engine.world, constraint);
+            Matter.Body.setAngle(who, angle)
+            Matter.Body.setAngularVelocity(who, angularVelocity);
+            who.center = { x: x, y: y + height / 2 }
+
+            who.rotate = function () {
+                var rotation = Math.sin(simulation.cycle / swingTime) * swingDistanceMultiplier;
+
+                if (Matter.Query.collides(player, [this]).length != 0) {
+                    var playerAngle = Math.atan((player.position.y - y) / (player.position.x - x)) + rotation - Math.sin((simulation.cycle - 1) / swingTime) * swingDistanceMultiplier;
+                    if (player.position.x - x < 0) playerAngle += Math.PI;
+                    const playerDistance = Math.sqrt((player.position.x - x) ** 2 + (player.position.y - y) ** 2);
+                    Matter.Body.setPosition(player, {
+                        x: x + Math.cos(playerAngle) * playerDistance,
+                        y: y + Math.sin(playerAngle) * playerDistance
+                    })
+                }
+
+                Matter.Body.setAngle(who, rotation);
+            }
+
+            return who;
+        }
+
+        function gearMob(x, y, leaveBody = true, autoFindPlayer = false, radius = Math.floor(25 + 40 * Math.random()), teethRadius = 0) {
+            if (teethRadius == 0) {
+                teethRadius = radius + 15 + Math.floor(Math.random() * 20);
+            }
+
+            mobs.spawn(x, y, 0, teethRadius, "transparent");
+            let me = mob[mob.length - 1];
+            me.stroke = "transparent";
+
+            me.delay = 100 + 40 * simulation.CDScale;
+            me.accelMag = Math.PI / 10000;
+            me.memory = 120;
+            me.seeAtDistance2 = 2000000; // 140
+            Matter.Body.setDensity(me, 0.001);
+
+            me.leaveBody = leaveBody;
+
+            const numTeeth = Math.round(5 + Math.random() * 3);
+
+            me.gearRotation = 0;
+            me.gearSpeed = Math.round(-0.1 + Math.random() * 0.2);
+            me.gearAccelerating = true;
+
+            me.do = function () {
+                if (autoFindPlayer) {
+                    me.locatePlayer();
+                }
+
+                this.seePlayerByLookingAt();
+                this.checkStatus();
+                this.attraction();
+
+                if (me.gearAccelerating && (Math.random() > 0.99 || me.gearSpeed >= 0.1)) {
+                    me.gearAccelerating = false;
+                } else if (!me.gearAccelerating && (Math.random() > 0.99 || me.gearSpeed <= -0.1)) {
+                    me.gearAccelerating = true;
+                }
+
+                if (me.gearAccelerating) {
+                    me.gearSpeed += 0.001;
+                } else {
+                    me.gearSpeed -= 0.001;
+                }
+
+                me.gearRotation += me.gearSpeed;
+
+                var newVertices = getGearVertices(me.position.x, me.position.y, radius, teethRadius, numTeeth, me.gearRotation);
+                // draw body
+                ctx.beginPath();
+                ctx.moveTo(newVertices[0].x, newVertices[0].y);
+                for (let i = 1; i < newVertices.length; i++) {
+                    ctx.lineTo(newVertices[i].x, newVertices[i].y);
+                }
+                ctx.lineTo(newVertices[0].x, newVertices[0].y);
+                ctx.fillStyle = "#7b3f00";
+                ctx.fill();
+                ctx.strokeStyle = "#000";
+                ctx.lineWidth = 2;
+                ctx.stroke();
+            }
+        }
+
+        function customDoor(x, y, width, height) {
+            x = x + width / 2
+            y = y + height / 2
+            const doorBlock = body[body.length] = Bodies.rectangle(x, y, width, height, {
+                collisionFilter: {
+                    category: cat.map,
+                    mask: cat.player | cat.body | cat.bullet | cat.powerUp | cat.mob | cat.mobBullet //cat.player | cat.map | cat.body | cat.bullet | cat.powerUp | cat.mob | cat.mobBullet
+                },
+                inertia: Infinity, //prevents rotation
+                isNotHoldable: true,
+                friction: 1,
+                frictionStatic: 1,
+                restitution: 0,
+                isClosing: false,
+                setPos(x, y) {
+                    if (y - this.position.y <= 0 || ( // only move down if clear of stuff
+                        Matter.Query.ray([player], Matter.Vector.create(this.position.x - width / 2, this.position.y + height / 2), Matter.Vector.create(this.position.x + width / 2, this.position.y + height / 2), 5).length === 0 &&
+                        Matter.Query.ray(body, Matter.Vector.create(this.position.x - width / 2, this.position.y + height / 2), Matter.Vector.create(this.position.x + width / 2, this.position.y + height / 2), 5).length <= 1 &&
+                        Matter.Query.ray(mob, Matter.Vector.create(this.position.x - width / 2, this.position.y + height / 2), Matter.Vector.create(this.position.x + width / 2, this.position.y + height / 2), 5).length === 0)
+                    ) {
+                        const position = {
+                            x: x,
+                            y: y
+                        }
+                        Matter.Body.setPosition(this, position);
+                    }
+                },
+                draw() {
+                    ctx.fillStyle = "#555"
+                    ctx.beginPath();
+                    const v = this.vertices;
+                    ctx.moveTo(v[0].x, v[0].y);
+                    for (let i = 1; i < v.length; ++i) {
+                        ctx.lineTo(v[i].x, v[i].y);
+                    }
+                    ctx.lineTo(v[0].x, v[0].y);
+                    ctx.fill();
+                }
+            });
+            Matter.Body.setStatic(doorBlock, true); //make static
+            doorBlock.classType = "body"
+            return doorBlock
+        }
+
+        function horizontalDoor(x, y, width, height, distance, speed = 1) {
+            x = x + width / 2
+            y = y + height / 2
+            const doorBlock = body[body.length] = Bodies.rectangle(x, y, width, height, {
+                collisionFilter: {
+                    category: cat.map,
+                    mask: cat.player | cat.body | cat.bullet | cat.powerUp | cat.mob | cat.mobBullet //cat.player | cat.map | cat.body | cat.bullet | cat.powerUp | cat.mob | cat.mobBullet
+                },
+                inertia: Infinity, //prevents rotation
+                isNotHoldable: true,
+                friction: 1,
+                frictionStatic: 1,
+                restitution: 0,
+                isClosing: false,
+                openClose() {
+                    if (!m.isBodiesAsleep) {
+                        if (this.isClosing) {
+                            if (this.position.x > x) { //try to close
+                                if ( //if clear of stuff
+                                    Matter.Query.collides(this, [player]).length === 0 &&
+                                    Matter.Query.collides(this, body).length < 2 &&
+                                    Matter.Query.collides(this, mob).length === 0
+                                ) {
+                                    const position = {
+                                        x: this.position.x - speed,
+                                        y: this.position.y
+                                    }
+                                    Matter.Body.setPosition(this, position)
+                                }
+                            }
+                        } else {
+                            if (this.position.x < x + distance) { //try to open 
+                                const position = {
+                                    x: this.position.x + speed,
+                                    y: this.position.y
+                                }
+                                Matter.Body.setPosition(this, position)
+                            }
+                        }
+                    }
+                },
+                isClosed() {
+                    return this.position.x < x + 1
+                },
+                draw() {
+                    ctx.fillStyle = "#555"
+                    ctx.beginPath();
+                    const v = this.vertices;
+                    ctx.moveTo(v[0].x, v[0].y);
+                    for (let i = 1; i < v.length; ++i) {
+                        ctx.lineTo(v[i].x, v[i].y);
+                    }
+                    ctx.lineTo(v[0].x, v[0].y);
+                    ctx.fill();
+                }
+            });
+            Matter.Body.setStatic(doorBlock, true); //make static
+            doorBlock.classType = "body"
+            return doorBlock
+        }
+
+        function drawBelt(circle1, circle2) {
+            // circle 1
+            const distance = Math.sqrt((circle2.x - circle1.x) ** 2 + (circle2.y - circle1.y) ** 2);
+            const distanceToIntersection = (-circle1.radius * distance) / (-circle1.radius + circle2.radius);
+            const slopeAngle = Math.atan((circle2.y - circle1.y) / (circle2.x - circle1.x));
+            const angleToTangent = Math.acos(-circle1.radius / distanceToIntersection);
+            const tangentIntersection = {
+                x: Math.cos(slopeAngle) * distanceToIntersection + circle1.x,
+                y: Math.sin(slopeAngle) * distanceToIntersection + circle1.y
+            }
+            const tangentPoint = {
+                x: Math.cos(angleToTangent + slopeAngle) * -circle1.radius + circle1.x,
+                y: Math.sin(angleToTangent + slopeAngle) * -circle1.radius + circle1.y
+            }
+            const invertedTangentPoint = {
+                x: Math.cos(-angleToTangent + slopeAngle) * -circle1.radius + circle1.x,
+                y: Math.sin(-angleToTangent + slopeAngle) * -circle1.radius + circle1.y
+            }
+
+            // circle 2
+            const tangentPoint2 = {
+                x: Math.cos(angleToTangent + slopeAngle) * -circle2.radius + circle2.x,
+                y: Math.sin(angleToTangent + slopeAngle) * -circle2.radius + circle2.y
+            }
+            const invertedTangentPoint2 = {
+                x: Math.cos(-angleToTangent + slopeAngle) * -circle2.radius + circle2.x,
+                y: Math.sin(-angleToTangent + slopeAngle) * -circle2.radius + circle2.y
+            }
+
+            // draw
+            ctx.beginPath();
+            ctx.moveTo(tangentPoint.x, tangentPoint.y);
+            ctx.lineTo(tangentPoint2.x, tangentPoint2.y);
+            const newAngle = Math.atan((tangentPoint2.y - circle2.y) / (tangentPoint2.x - circle2.x));
+            const newAngle2 = Math.atan((invertedTangentPoint2.y - circle2.y) / (invertedTangentPoint2.x - circle2.x));
+            ctx.arc(circle2.x, circle2.y, circle2.radius, newAngle, newAngle2 + Math.PI);
+            ctx.lineTo(invertedTangentPoint.x, invertedTangentPoint.y);
+            const newAngle3 = Math.atan((invertedTangentPoint.y - circle1.y) / (invertedTangentPoint.x - circle1.x));
+            const newAngle4 = Math.atan((tangentPoint.y - circle1.y) / (tangentPoint.x - circle1.x));
+            ctx.arc(circle1.x, circle1.y, circle1.radius, newAngle3 + Math.PI, newAngle4);
+            ctx.strokeStyle = '#000';
+            ctx.lineWidth = 5;
+            ctx.stroke();
+        }
+
+        function drawDiagonalBelt(circle1, circle2) {
+            // circle 1
+            const distance = Math.sqrt((circle2.x - circle1.x) ** 2 + (circle2.y - circle1.y) ** 2);
+            const distanceToIntersection = (circle1.radius * distance) / (circle1.radius + circle2.radius);
+            const slopeAngle = Math.atan((circle2.y - circle1.y) / (circle2.x - circle1.x));
+            const angleToTangent = Math.acos(circle1.radius / distanceToIntersection);
+            const tangentIntersection = {
+                x: Math.cos(slopeAngle) * distanceToIntersection + circle1.x,
+                y: Math.sin(slopeAngle) * distanceToIntersection + circle1.y
+            }
+            const tangentPoint = {
+                x: Math.cos(angleToTangent + slopeAngle) * circle1.radius + circle1.x,
+                y: Math.sin(angleToTangent + slopeAngle) * circle1.radius + circle1.y
+            }
+            const invertedTangentPoint = {
+                x: Math.cos(-angleToTangent + slopeAngle) * circle1.radius + circle1.x,
+                y: Math.sin(-angleToTangent + slopeAngle) * circle1.radius + circle1.y
+            }
+
+            // circle 2
+            const tangentPoint2 = {
+                x: Math.cos(angleToTangent + slopeAngle) * -circle2.radius + circle2.x,
+                y: Math.sin(angleToTangent + slopeAngle) * -circle2.radius + circle2.y
+            }
+            const invertedTangentPoint2 = {
+                x: Math.cos(-angleToTangent + slopeAngle) * -circle2.radius + circle2.x,
+                y: Math.sin(-angleToTangent + slopeAngle) * -circle2.radius + circle2.y
+            }
+
+            // draw
+            ctx.beginPath();
+            ctx.moveTo(tangentPoint.x, tangentPoint.y);
+            ctx.lineTo(tangentPoint2.x, tangentPoint2.y);
+            const newAngle = Math.atan((tangentPoint2.y - circle2.y) / (tangentPoint2.x - circle2.x));
+            const newAngle2 = Math.atan((invertedTangentPoint2.y - circle2.y) / (invertedTangentPoint2.x - circle2.x));
+            ctx.arc(circle2.x, circle2.y, circle2.radius, newAngle, newAngle2 + Math.PI);
+            ctx.lineTo(invertedTangentPoint.x, invertedTangentPoint.y);
+            const newAngle3 = Math.atan((invertedTangentPoint.y - circle1.y) / (invertedTangentPoint.x - circle1.x));
+            const newAngle4 = Math.atan((tangentPoint.y - circle1.y) / (tangentPoint.x - circle1.x));
+            ctx.arc(circle1.x, circle1.y, circle1.radius, newAngle3, newAngle4 + Math.PI, true);
+            ctx.strokeStyle = '#000';
+            ctx.lineWidth = 5;
+            ctx.stroke();
+        }
+
+        function getIntersection(v1, v1End, domain) {
+            const intersections = getIntersections(v1, v1End, domain);
+
+            var best = {
+                x: v1End.x,
+                y: v1End.y,
+                dist: Math.sqrt((v1End.x - v1.x) ** 2 + (v1End.y - v1.y) ** 2)
+            }
+            for (const intersection of intersections) {
+                const dist = Math.sqrt((intersection.x - v1.x) ** 2 + (intersection.y - v1.y) ** 2);
+                if (dist < best.dist) {
+                    best = {
+                        x: intersection.x,
+                        y: intersection.y,
+                        dist: dist
+                    };
+                }
+            }
+
+            return best;
+        }
+
+        function getIntersections(v1, v1End, domain) {
+            const intersections = [];
+
+            for (const obj of domain) {
+                for (var i = 0; i < obj.vertices.length - 1; i++) {
+                    results = simulation.checkLineIntersection(v1, v1End, obj.vertices[i], obj.vertices[i + 1]);
+                    if (results.onLine1 && results.onLine2) intersections.push({ x: results.x, y: results.y });
+                }
+                results = simulation.checkLineIntersection(v1, v1End, obj.vertices[obj.vertices.length - 1], obj.vertices[0]);
+                if (results.onLine1 && results.onLine2) intersections.push({ x: results.x, y: results.y });
+            }
+
+            return intersections;
+        }
+
+        function circleLoS(pos, radius, domain) {
+
+            function allCircleLineCollisions(c, radius, domain) {
+                var lines = [];
+                for (const obj of domain) {
+                    //const obj = domain[0]
+                    for (var i = 0; i < obj.vertices.length - 1; i++) {
+                        lines.push(circleLineCollisions(obj.vertices[i], obj.vertices[i + 1], c, radius));
+                    }
+                    lines.push(circleLineCollisions(obj.vertices[obj.vertices.length - 1], obj.vertices[0], c, radius));
+                }
+
+                const collisionLines = [];
+                for (const line of lines) {
+                    if (line.length == 2) {
+                        const distance1 = Math.sqrt((line[0].x - c.x) ** 2 + (line[0].y - c.y) ** 2)
+                        const angle1 = Math.atan2(line[0].y - c.y, line[0].x - c.x);
+                        const queryPoint1 = {
+                            x: Math.cos(angle1) * (distance1 - 1) + c.x,
+                            y: Math.sin(angle1) * (distance1 - 1) + c.y
+                        }
+                        const distance2 = Math.sqrt((line[1].x - c.x) ** 2 + (line[1].y - c.y) ** 2)
+                        const angle2 = Math.atan2(line[1].y - c.y, line[1].x - c.x);
+                        const queryPoint2 = {
+                            x: Math.cos(angle2) * (distance2 - 1) + c.x,
+                            y: Math.sin(angle2) * (distance2 - 1) + c.y
+                        }
+
+                        collisionLines.push(line)
+                    }
+                }
+
+                return collisionLines;
+            }
+
+            function circleLineCollisions(a, b, c, radius) {
+                // calculate distances
+                const angleOffset = Math.atan2(b.y - a.y, b.x - a.x);
+                const sideB = Math.sqrt((a.x - c.x) ** 2 + (a.y - c.y) ** 2);
+                const sideC = Math.sqrt((b.x - a.x) ** 2 + (b.y - a.y) ** 2);
+                const sideA = Math.sqrt((c.x - b.x) ** 2 + (c.y - b.y) ** 2);
+
+                // calculate the closest point on line AB to point C
+                const angleA = Math.acos((sideB ** 2 + sideC ** 2 - sideA ** 2) / (2 * sideB * sideC)) * (a.x - c.x) / -Math.abs(a.x - c.x)
+                const sideAD = Math.cos(angleA) * sideB;
+                const d = { // closest point
+                    x: Math.cos(angleOffset) * sideAD + a.x,
+                    y: Math.sin(angleOffset) * sideAD + a.y
+                }
+                const distance = Math.sqrt((d.x - c.x) ** 2 + (d.y - c.y) ** 2);
+                if (distance == radius) {
+                    // tangent
+                    return [d];
+                } else if (distance < radius) {
+                    // secant
+                    const angleOffset = Math.atan2(d.y - c.y, d.x - c.x);
+                    const innerAngle = Math.acos(distance / radius);
+                    const intersection1 = {
+                        x: Math.cos(angleOffset + innerAngle) * radius + c.x,
+                        y: Math.sin(angleOffset + innerAngle) * radius + c.y
+                    }
+
+                    const intersection2 = {
+                        x: Math.cos(angleOffset - innerAngle) * radius + c.x,
+                        y: Math.sin(angleOffset - innerAngle) * radius + c.y
+                    }
+
+                    const distance1 = {
+                        a: Math.sqrt((intersection1.x - a.x) ** 2 + (intersection1.y - a.y) ** 2),
+                        b: Math.sqrt((intersection1.x - b.x) ** 2 + (intersection1.y - b.y) ** 2)
+                    }
+                    const distance2 = {
+                        a: Math.sqrt((intersection2.x - a.x) ** 2 + (intersection2.y - a.y) ** 2),
+                        b: Math.sqrt((intersection2.x - b.x) ** 2 + (intersection2.y - b.y) ** 2)
+                    }
+                    const result = [];
+                    if (Math.abs(sideC - (distance1.a + distance1.b)) < 0.01) {
+                        result.push(intersection1);
+                    } else {
+                        if (distance1.a < distance1.b) {
+                            if (sideB <= radius) result.push(a);
+                        } else {
+                            if (sideA <= radius) result.push(b)
+                        }
+                    }
+                    if (Math.abs(sideC - (distance2.a + distance2.b)) < 0.01) {
+                        result.push(intersection2);
+                    } else {
+                        if (distance2.a <= distance2.b) {
+                            if (sideB <= radius) result.push(a);
+                        } else {
+                            if (sideA <= radius) result.push(b)
+                        }
+                    }
+
+                    return result;
+                } else {
+                    // no intersection
+                    return [];
+                }
+            }
+
+            var vertices = [];
+            for (const obj of losDomain) {
+                for (var i = 0; i < obj.vertices.length; i++) {
+                    const vertex = obj.vertices[i];
+                    const angleToVertex = Math.atan2(vertex.y - pos.y, vertex.x - pos.x);
+                    const queryPoint = {
+                        x: Math.cos(angleToVertex + Math.PI) + vertex.x,
+                        y: Math.sin(angleToVertex + Math.PI) + vertex.y
+                    }
+
+                    if (Matter.Query.ray(domain, pos, queryPoint).length == 0) {
+                        var distance = Math.sqrt((vertex.x - pos.x) ** 2 + (vertex.y - pos.y) ** 2);
+                        var endPoint = {
+                            x: vertex.x,
+                            y: vertex.y
+                        }
+
+                        if (distance > radius) {
+                            const angle = Math.atan2(vertex.y - pos.y, vertex.x - pos.x);
+                            endPoint = {
+                                x: Math.cos(angle) * radius + pos.x,
+                                y: Math.sin(angle) * radius + pos.y
+                            }
+
+                            distance = radius
+                        }
+
+                        var best = getIntersection(pos, endPoint, domain);
+
+                        if (best.dist >= distance) {
+                            best = {
+                                x: endPoint.x,
+                                y: endPoint.y,
+                                dist: distance
+                            }
+                        }
+                        vertices.push(best)
+
+
+                        var angle = Math.atan2(vertex.y - pos.y, vertex.x - pos.x);
+                        endPoint = {
+                            x: Math.cos(angle + 0.001) * radius + pos.x,
+                            y: Math.sin(angle + 0.001) * radius + pos.y
+                        }
+
+                        best = getIntersection(pos, endPoint, domain);
+
+                        if (best.dist >= radius) {
+                            best = {
+                                x: endPoint.x,
+                                y: endPoint.y,
+                                dist: radius
+                            }
+                        }
+                        vertices.push(best)
+
+
+                        angle = Math.atan2(vertex.y - pos.y, vertex.x - pos.x);
+                        endPoint = {
+                            x: Math.cos(angle - 0.001) * radius + pos.x,
+                            y: Math.sin(angle - 0.001) * radius + pos.y
+                        }
+
+                        best = getIntersection(pos, endPoint, domain);
+
+                        if (best.dist >= radius) {
+                            best = {
+                                x: endPoint.x,
+                                y: endPoint.y,
+                                dist: radius
+                            }
+                        }
+                        vertices.push(best)
+                    }
+                }
+            }
+
+            const outerCollisions = allCircleLineCollisions(pos, radius, domain);
+            const circleCollisions = [];
+            for (const line of outerCollisions) {
+                for (const vertex of line) {
+                    const distance = Math.sqrt((vertex.x - pos.x) ** 2 + (vertex.y - pos.y) ** 2)
+                    const angle = Math.atan2(vertex.y - pos.y, vertex.x - pos.x);
+                    const queryPoint = {
+                        x: Math.cos(angle) * (distance - 1) + pos.x,
+                        y: Math.sin(angle) * (distance - 1) + pos.y
+                    }
+                    if (Math.abs(distance - radius) < 1 && Matter.Query.ray(domain, pos, queryPoint).length == 0) circleCollisions.push(vertex)
+                }
+            }
+
+            for (var i = 0; i < circleCollisions.length; i++) {
+                const vertex = circleCollisions[i];
+                var nextIndex = i + 1;
+                if (nextIndex == circleCollisions.length) nextIndex = 0;
+                const nextVertex = circleCollisions[nextIndex];
+                const angle1 = Math.atan2(vertex.y - pos.y, vertex.x - pos.x);
+                const angle2 = Math.atan2(nextVertex.y - pos.y, nextVertex.x - pos.x);
+                var newAngle;
+                if (Math.abs(angle1) > Math.PI / 2 && Math.abs(angle2) > Math.PI / 2 && angle1 / Math.abs(angle1) != angle2 / Math.abs(angle2)) {
+                    // if the arc between the to points crosses over the left side (+/- pi radians)
+                    const newAngle1 = (Math.PI - Math.abs(angle1)) * (angle1 / Math.abs(angle1));
+                    const newAngle2 = (Math.PI - Math.abs(angle2)) * (angle2 / Math.abs(angle2));
+                    newAngle = (newAngle1 + newAngle2) / 2;
+                    var multiplier;
+                    if (newAngle == 0) {
+                        multiplier = 1;
+                    } else {
+                        multiplier = newAngle / Math.abs(newAngle);
+                    }
+                    newAngle = Math.PI * multiplier - newAngle * multiplier;
+                    test = true;
+                } else {
+                    newAngle = (angle1 + angle2) / 2;
+                }
+
+                // shoot ray between them
+                var endPoint = {
+                    x: Math.cos(newAngle) * radius + pos.x,
+                    y: Math.sin(newAngle) * radius + pos.y
+                }
+
+                var best = getIntersection(pos, endPoint, domain);
+
+                vertices.push(vertex);
+
+                if (best.dist <= radius) vertices.push({ x: best.x, y: best.y })
+            }
+
+            vertices.sort((a, b) => Math.atan2(a.y - pos.y, a.x - pos.x) - Math.atan2(b.y - pos.y, b.x - pos.x));
+            return vertices;
+        }
+
+        function compareArrays(array1, array2) {
+            for (var i = 0; i < array1.length; i++) {
+                if (array1[i] != array2[i]) return false;
+            }
+
+            return true;
+        }
+
+        function generateIntersectMap() {
+            // include intersections in map elements to avoid LoS issues with overlapping
+            const intersectMap = [];
+            for (var i = 0; i < map.length; i++) {
+                const obj = map[i];
+                const newVertices = [];
+                const restOfMap = [...map].slice(0, i).concat([...map].slice(i + 1))
+                for (var j = 0; j < obj.vertices.length - 1; j++) {
+                    var intersections = getIntersections(obj.vertices[j], obj.vertices[j + 1], restOfMap);
+                    newVertices.push(obj.vertices[j]);
+                    for (const vertex of intersections) {
+                        newVertices.push({ x: vertex.x, y: vertex.y });
+                    }
+                }
+                intersections = getIntersections(obj.vertices[obj.vertices.length - 1], obj.vertices[0], restOfMap);
+                newVertices.push(obj.vertices[obj.vertices.length - 1]);
+                for (const vertex of intersections) {
+                    newVertices.push({ x: vertex.x, y: vertex.y });
+                }
+
+                intersectMap.push({ vertices: newVertices });
+            }
+
+            return intersectMap;
+        }
+
+        function addPartToMap(len) { // from "run" map
+            map[len].collisionFilter.category = cat.map;
+            map[len].collisionFilter.mask = cat.player | cat.map | cat.body | cat.bullet | cat.powerUp | cat.mob | cat.mobBullet;
+            Matter.Body.setStatic(map[len], true);
+            Composite.add(engine.world, map[len]);
+        }
+
+        level.setPosToSpawn(-500, -50);
+        spawn.mapRect(level.enter.x, level.enter.y + 20, 100, 20);
+        level.exit.x = 250;
+        level.exit.y = 720;
+        spawn.mapRect(level.exit.x, level.exit.y + 20, 100, 20);
+        level.defaultZoom = 1800;
+        simulation.zoomTransition(level.defaultZoom);
+        document.body.style.backgroundColor = "#d8dadf";
+
+        spawn.mapRect(-925, 0, 2650, 100);
+
+        spawn.mapRect(-925, -1700, 325, 1800);
+        spawn.mapRect(-650, -325, 325, 50);
+        spawn.mapRect(-650, -1400, 325, 50);
+        spawn.mapRect(-1700, -1700, 1100, 200);
+        spawn.mapRect(-1700, -4600, 300, 3100);
+        spawn.mapRect(-1700, -4600, 1250, 200);
+        spawn.mapRect(200, -4600, 2750, 200);
+        spawn.mapRect(-400, -4225, 200, 50);
+        spawn.mapRect(2800, -4600, 150, 1400);
+
+        spawn.mapRect(1350, -325, 100, 50);
+        spawn.mapRect(1400, -1500, 325, 1600);
+        spawn.mapRect(1400, -1500, 1550, 50);
+        spawn.mapRect(1250, -1900, 1050, 50);
+        spawn.mapRect(1250, -2900, 100, 1050);
+
+        spawn.mapRect(-600, -2900, 3550, 100);
+        spawn.mapRect(2850, -2900, 100, 700);
+        spawn.mapRect(2850, -2200, 100, 350);
+        map[map.length - 1].fallsOff2 = true; // this piece will fall off in the middle of cutscene
+
+        spawn.mapRect(2300, -1900, 500, 50);
+        map[map.length - 1].fallsOff = true; // this piece wall fall off at the start of cutscene
+
+        spawn.mapRect(2800, -1900, 200, 50);
+        spawn.mapRect(2900, -1900, 50, 450);
+        powerUps.directSpawn(2700, -1675, "tech");
+
+        spawn.mapRect(2800, -3300, 825, 100);
+        spawn.mapRect(3525, -3300, 100, 3000);
+        spawn.mapRect(3400, -2850, 225, 50);
+        spawn.mapRect(2875, -2525, 175, 25);
+        spawn.mapRect(3325, -2675, 150, 25);
+        spawn.mapRect(3400, -2850, 75, 200);
+        spawn.mapRect(3150, -2225, 100, 25);
+
+        spawn.mapRect(-2300, 750, 5450, 100);
+
+        pendulum1 = pendulum(400, -2500, 75, 1700, 50, 0.3, 0, 300);
+        const gear1 = mapGear(-1200, -2000, 100, 200, 0, -0.05, 5, 75);
+        const gear2 = mapGear(-700, -2500, 150, 270, -0.5, 0.05, 5, 50);
+        const gear3 = mapGear(-3500, -1000, 1100, 1500, -0.5, 0.005, 10, 150, 40);
+        const piston1 = customDoor(1650, -1850, 100, 350); // x, y, width, height, distance, speed = 1
+        const piston2 = customDoor(1950, -1850, 100, 350);
+        const piston3 = horizontalDoor(-2000, -4200, 300, 100, 300, 20);
+        const piston4 = horizontalDoor(-2000, -3800, 300, 100, 300, 20);
+        const piston5 = horizontalDoor(-2000, -3400, 300, 100, 300, 20);
+        const piston6 = horizontalDoor(-2000, -3000, 300, 100, 300, 20);
+        const piston7 = horizontalDoor(-2000, -2600, 300, 100, 300, 20);
+        const hand1 = clockHand(400, -3700, 75, 600);
+        const elevator1 = level.elevator(3200, 0, 150, 50, -1750, 0.0025, { up: 0.05, down: 0.2 });
+        const lightButton = level.button(1400, -1900);
+        lightButton.isUp = true;
+        var lightOn = false;
+        simulation.ephemera.push({
+            name: "lightWire",
+            do() {
+                if (level.levels[level.onLevel] == "clock") {
+                    // light wire
+                    ctx.beginPath();
+                    ctx.moveTo(1460, -1887);
+                    ctx.lineTo(1300, -1887);
+                    ctx.lineTo(1300, -2860);
+                    ctx.lineTo(400, -2860);
+                    ctx.lineTo(400, -2800);
+                    ctx.lineWidth = 6;
+                    ctx.strokeStyle = lightOn ? "#ffd700" : "000";
+                    ctx.stroke();
+                } else {
+                    simulation.removeEphemera(this.name);
+                }
+            },
+        })
+
+        spawn.debris(-300, 0, 1300, 6);
+        spawn.debris(0, -2900, 2500, 8);
+
+        spawn.randomSmallMob(-500, -500, 1);
+        spawn.randomMob(190, -1300, 1);
+        spawn.randomMob(200, -320, 0.3);
+        spawn.randomMob(1000, -1100, 1);
+        spawn.randomMob(-160, -2050, 1);
+        spawn.randomMob(-1100, -2900, 0.5);
+        // spawn.randomLevelBoss(1900, -3800, spawn.randomBossList.splice(0, spawn.randomBossList.indexOf("shieldingBoss"), 1).concat(spawn.randomBossList.splice(spawn.randomBossList.indexOf("shieldingBoss") + 1))); // shieldingBoss lags out the lighting system for some reason
+        spawn.randomLevelBoss(1900, -3800, [...spawn.randomBossList].splice(0, spawn.randomBossList.indexOf("shieldingBoss"), 1).concat([...spawn.randomBossList].splice(spawn.randomBossList.indexOf("shieldingBoss") + 1))); // shieldingBoss lags out the lighting system for some reason
+        spawn.randomMob(2500, -3500, 0.3);
+        spawn.randomMob(1300, -4100, 0.5);
+        spawn.randomMob(3400, -2450, 1);
+        spawn.randomMob(2850, -2050, 0.4);
+        spawn.randomGroup(-150, -2400, 0.5);
+        spawn.randomMob(-1250, -5150, 1);
+        spawn.randomMob(-2900, -4000, 0.4);
+        spawn.randomMob(-1350, -950, 1);
+        spawn.randomMob(2700, -850, 0.4);
+        spawn.randomMob(2500, -50, 0.4);
+
+        powerUps.addResearchToLevel() // needs to run after mobs are spawned
+
+        var dealtPiston1Damage = false;
+        var dealtPiston2Damage = false;
+        var dealtPiston1MobDamage = false;
+        var dealtPiston2MobDamage = false;
+        var lastPistonDirection = false;
+        var pistonsLocked = false;
+        var finishedGearFight = false;
+        var roofReadyToFall = false;
+        var roofFallCycle = 0;
+        var drawGear = false;
+        var gearCycle = simulation.cycle;
+        var gearPositions = [];
+        var pistonUnlockCycle = 0;
+
+        for (var i = 0; i < 15; i++) {
+            gearPositions.push({
+                x: 2400 + Math.random() * 200,
+                y: -3300 - Math.random() * 3000
+            });
+        }
+
+        var gearSizes = [];
+
+        for (var i = 0; i < 15; i++) {
+            const r1 = 30 + Math.random() * 50;
+            gearSizes.push({
+                r1: r1,
+                r2: r1 + 15 + Math.random() * 30
+            })
+        }
+
+        var circleHead = Matter.Bodies.polygon(m.pos.x, m.pos.y, 0, 31);
+        var losDomain = generateIntersectMap().concat(mob.filter((obj) => { return obj.isNotCloaked == null && (obj.isBoss || obj.label != 'Circle Body') }), [pendulum1, gear1, gear2, player, circleHead]);
+        var oldMap = [...map];
+        var oldMob = [...mob];
+        var spawnGearMobCycle = 0;
+        var gearsSpawned = 0;
+        var lastSmallGearRot = 0;
+        var smallGearRot = 0;
+        var smallGearPosRot = 0;
+        var bigGearRot = 0;
+        var finalGearRot;
+        var lastFinalGearRot;
+        var startCycle = simulation.cycle; // used to offset simulation.cycle to avoid the swing starting halfway through at the start of the level and messing up syncronization
+
+        level.custom = () => {
+            if (lightOn) {
+                Matter.Body.setPosition(circleHead, m.pos)
+                if (!(compareArrays(oldMap, map) && compareArrays(oldMob, mob))) losDomain = generateIntersectMap().concat(mob.filter((obj) => { return obj.isNotCloaked == null && (obj.isBoss || obj.label != 'Circle Body') }), [pendulum1, gear1, gear2, player, circleHead]);
+                oldMap = [...map];
+                oldMob = [...mob];
+            }
+            ctx.fillStyle = "#b0b0b2";
+            ctx.fillRect(-600, -1700, 2000, 1700);
+            ctx.fillRect(1350, -1851, 1550, 350);
+            ctx.fillRect(-1400, -2950, 4250, 1450);
+            ctx.fillRect(-1400, -4400, 4350, 1500);
+            ctx.fillRect(-450, -4600, 650, 250);
+            ctx.fillRect(2750, -3200, 200, 1300);
+            ctx.fillRect(2750, -3200, 200, 1300);
+            ctx.fillStyle = "#000";
+            ctx.fillRect(350, -2800, 100, 25);
+            // light
+            if (lightOn) {
+                var lightPos = { x: 400, y: -2775 };
+                var lightRadius = 2950;
+                const vertices = circleLoS(lightPos, lightRadius, map.concat(mob.filter((obj) => { return obj.isNotCloaked == null && (obj.isBoss || obj.label != 'Circle Body') }), [pendulum1, gear1, gear2, player, circleHead])); if (vertices.length > 0 && vertices[0].x) {
+                    ctx.beginPath();
+                    ctx.moveTo(vertices[0].x, vertices[0].y);
+                    for (var i = 1; i < vertices.length; i++) {
+                        var currentDistance = Math.sqrt((vertices[i - 1].x - lightPos.x) ** 2 + (vertices[i - 1].y - lightPos.y) ** 2);
+                        var newDistance = Math.sqrt((vertices[i].x - lightPos.x) ** 2 + (vertices[i].y - lightPos.y) ** 2);
+                        if (Math.abs(currentDistance - lightRadius) < 1 && Math.abs(newDistance - lightRadius) < 1) {
+                            const currentAngle = Math.atan2(vertices[i - 1].y - lightPos.y, vertices[i - 1].x - lightPos.x);
+                            const newAngle = Math.atan2(vertices[i].y - lightPos.y, vertices[i].x - lightPos.x);
+                            ctx.arc(lightPos.x, lightPos.y, lightRadius, currentAngle, newAngle);
+                        } else {
+                            ctx.lineTo(vertices[i].x, vertices[i].y)
+                        }
+                    }
+                    newDistance = Math.sqrt((vertices[0].x - lightPos.x) ** 2 + (vertices[0].y - lightPos.y) ** 2);
+                    currentDistance = Math.sqrt((vertices[vertices.length - 1].x - lightPos.x) ** 2 + (vertices[vertices.length - 1].y - lightPos.y) ** 2);
+                    if (Math.abs(currentDistance - lightRadius) < 1 && Math.abs(newDistance - lightRadius) < 1) {
+                        const currentAngle = Math.atan2(vertices[vertices.length - 1].y - lightPos.y, vertices[vertices.length - 1].x - lightPos.x);
+                        const newAngle = Math.atan2(vertices[0].y - lightPos.y, vertices[0].x - lightPos.x);
+                        ctx.arc(lightPos.x, lightPos.y, lightRadius, currentAngle, newAngle);
+                    } else {
+                        ctx.lineTo(vertices[0].x, vertices[0].y)
+                    }
+                    ctx.fillStyle = "rgba(216, 218, 223, 0.5)";
+                    ctx.fill();
+                }
+            }
+
+            ctx.beginPath();
+            ctx.moveTo(425, -2775);
+            ctx.arc(400, -2775, 25, 0, Math.PI);
+            ctx.fillStyle = lightOn ? "#ffe245" : "transparent";
+            ctx.fill();
+            ctx.strokeStyle = "#000000";
+            ctx.lineWidth = 1;
+            ctx.stroke();
+            pendulum1.rotate();
+            gear1.rotate();
+            gear2.rotate();
+            gear3.rotate();
+            hand1.rotate();
+            drawBackgroundGear(-1200, -2300, 75, 150, 0.3, "#ccc", -0.05);
+            drawBackgroundGear(-1010, -2380, 30, 100, -0.1, "#ccc", 0.05);
+
+            // pendulum gears
+            if (!m.isBodiesAsleep) smallGearPosRot += Math.sin((simulation.cycle - startCycle) / 50) * 0.3 - Math.sin((simulation.cycle - startCycle - 1) / 50) * 0.3;
+            if (smallGearPosRot > 0.1) smallGearPosRot = 0.1;
+            if (smallGearPosRot < -0.1) smallGearPosRot = -0.1;
+            var circ = 2 * Math.PI * 150;
+            var arcLength = ((smallGearPosRot - Math.sin((simulation.cycle - startCycle) / 50) * 0.2) / (Math.PI * 2)) * circ;
+            lastSmallGearRot = smallGearRot;
+            smallGearRot = arcLength / (2 * Math.PI * 50) * Math.PI * -2 + 0.6;
+
+            if (Math.abs(smallGearPosRot) == 0.1) {
+                bigGearRot += Math.abs((smallGearRot - lastSmallGearRot) * (50 / 75));
+            }
+
+            drawBackgroundGear(740, -2625, 270, 330, bigGearRot, "#d2d3d4", 0, 15, 20); // the big one in the background
+
+            drawBackgroundGear(400, -2500, 100, 150, Math.sin((simulation.cycle - startCycle) / 50) * -0.3, "#ccc", 0, 8, 20); // attached to pendulum
+
+            drawBackgroundGear(400 + Math.cos(smallGearPosRot) * 200, -2500 + Math.sin(smallGearPosRot) * 200, 50, 75, smallGearRot, "#ccc", 0, 7, 20);
+            ctx.beginPath();
+            ctx.arc(400 + Math.cos(smallGearPosRot) * 200, -2500 + Math.sin(smallGearPosRot) * 200, 10, 0, 2 * Math.PI);
+            ctx.strokeStyle = "#444";
+            ctx.lineWidth = 10;
+            ctx.stroke();
+            ctx.beginPath();
+            ctx.arc(400, -2500, 200, -0.1, 0.1);
+            ctx.strokeStyle = "#444";
+            ctx.lineWidth = 10;
+            ctx.stroke();
+
+            drawBackgroundGear(740, -2625, 75, 110, bigGearRot, "#ccc", 0, 8, 20);
+            ctx.beginPath();
+            ctx.arc(740, -2625, 40, 0, 2 * Math.PI);
+            ctx.fillStyle = "#bbb";
+            ctx.fill();
+            ctx.strokeStyle = "#000";
+            ctx.lineWidth = 2;
+            ctx.stroke();
+            drawBackgroundGear(740, -2375, 75, 110, bigGearRot * -1, "#ccc", 0, 8, 20);
+            ctx.beginPath();
+            ctx.arc(740, -2375, 40, 0, 2 * Math.PI);
+            ctx.fillStyle = "#bbb";
+            ctx.fill();
+            ctx.strokeStyle = "#000";
+            ctx.lineWidth = 2;
+            ctx.stroke();
+
+            drawDiagonalBelt({ x: 740, y: -2625, radius: 40 }, { x: 740, y: -2375, radius: 40 })
+
+            if (finalGearRot != null) lastFinalGearRot = finalGearRot;
+            finalGearRot = Math.round((-bigGearRot * 294.72 / 25) * 100) / 100 + Math.PI / 2;
+
+            drawBackgroundGear(1080, -2650, 10, 20, finalGearRot, "#ccc", 0, 5, 50);
+            ctx.beginPath();
+            ctx.arc(1080, -2650, 10, 0, 2 * Math.PI);
+            ctx.fillStyle = "#bbb";
+            ctx.fill();
+            ctx.strokeStyle = "#000";
+            ctx.lineWidth = 2;
+            ctx.stroke();
+            drawBackgroundGear(1650, -2550, 300, 360, finalGearRot, "#ccc", 0, 6, 50);
+            ctx.beginPath();
+            ctx.arc(1650, -2550, 100, 0, 2 * Math.PI);
+            ctx.fillStyle = "#bbb";
+            ctx.fill();
+            ctx.strokeStyle = "#000";
+            ctx.lineWidth = 2;
+            ctx.stroke();
+            drawBelt({ x: 1080, y: -2650, radius: 10 }, { x: 1650, y: -2550, radius: 100 });
+            ctx.beginPath();
+            ctx.arc(Math.cos(-finalGearRot) * 294 + 1650, Math.sin(-finalGearRot) * 294 - 2550, 25, 0, 2 * Math.PI);
+            ctx.fillStyle = "#000";
+            ctx.fill();
+            drawBackgroundGear(2300, -2550, 300, 360, -finalGearRot + 0.5, "#ccc", 0, 6, 50);
+            ctx.beginPath();
+            ctx.arc(Math.cos(finalGearRot) * 294 + 2300, Math.sin(finalGearRot) * 294 - 2550, 25, 0, 2 * Math.PI);
+            ctx.fillStyle = "#000";
+            ctx.fill();
+
+            ctx.beginPath();
+            ctx.arc(1630, -2215, 15, 0, 2 * Math.PI);
+            ctx.fillStyle = "#000";
+            ctx.fill();
+            ctx.beginPath();
+            ctx.arc(1670, -2215, 15, 0, 2 * Math.PI);
+            ctx.fillStyle = "#000";
+            ctx.fill();
+
+            ctx.beginPath();
+            ctx.arc(1940, -2250, 15, 0, 2 * Math.PI);
+            ctx.fillStyle = "#000";
+            ctx.fill();
+            ctx.beginPath();
+            ctx.arc(2300, -2215, 15, 0, 2 * Math.PI);
+            ctx.fillStyle = "#000";
+            ctx.fill();
+
+            if (!finishedGearFight && !pistonsLocked && m.pos.x > 2100 && m.pos.x < 2900 && m.pos.y > -1850 && m.pos.y < -1500) {
+                pistonsLocked = true;
+                roofFallCycle = simulation.cycle + 250;
+                roofReadyToFall = true;
+            }
+
+            if (roofReadyToFall && simulation.cycle >= roofFallCycle) {
+                // section of roof is deleted
+                for (var i = 0; i < map.length; i++) {
+                    if (map[i].fallsOff) {
+                        Matter.Composite.remove(engine.world, map[i]);
+                        map.splice(i, 1);
+                    }
+                }
+
+                // replace it with a block
+                spawn.bodyRect(2310, -1900, 480, 50);
+                if (body[body.length-1] !== m.holdingTarget && !body[body.length-1].isNoSetCollision) {
+                  body[body.length-1].collisionFilter.category = cat.body;
+                  body[body.length-1].collisionFilter.mask = cat.player | cat.map | cat.body | cat.bullet | cat.mob | cat.mobBullet
+                }
+                body[body.length-1].classType = "body";
+                Composite.add(engine.world, body[body.length-1]); //add to world
+                roofReadyToFall = false;
+                drawGear = true;
+                gearCycle = simulation.cycle + 100;
+            }
+
+            //draw some background gears falling when roof falls
+            if (drawGear && simulation.cycle >= gearCycle) {
+                for (var i = 0; i < 15; i++) {
+                    drawFallingBackgroundGear(gearPositions[i].x, gearPositions[i].y, gearSizes[i].r1, gearSizes[i].r2, simulation.cycle, "#ccc", 0.1, 25, gearCycle);
+                }
+
+                if (spawnGearMobCycle == 0) {
+                    spawnGearMobCycle = simulation.cycle + 100;
+                }
+            }
+
+            if (spawnGearMobCycle > 0 && simulation.cycle >= spawnGearMobCycle) {
+                if (gearsSpawned < 40) {
+                    gearMob(1600 + Math.random() * 1000, -2300 - Math.random() * 300, false, true);
+                    gearsSpawned++;
+                    spawnGearMobCycle = simulation.cycle + 25 - (simulation.difficulty - simulation.difficultyMode) / 2;
+                } else if (pistonUnlockCycle == 0) {
+                    pistonUnlockCycle = simulation.cycle + 50;
+                }
+            }
+
+            if (!finishedGearFight && pistonUnlockCycle > 0 && simulation.cycle > pistonUnlockCycle) {
+                pistonsLocked = false;
+                finishedGearFight = true;
+
+                for (var i = 0; i < map.length; i++) {
+                    if (map[i].fallsOff2) {
+                        Matter.Composite.remove(engine.world, map[i]);
+                        map.splice(i, 1);
+                    }
+                }
+
+                spawn.bodyRect(2850, -2180, 100, 280);
+                if (body[body.length-1] !== m.holdingTarget && !body[body.length-1].isNoSetCollision) {
+                  body[body.length-1].collisionFilter.category = cat.body;
+                  body[body.length-1].collisionFilter.mask = cat.player | cat.map | cat.body | cat.bullet | cat.mob | cat.mobBullet
+                }
+                body[body.length-1].classType = "body";
+                Composite.add(engine.world, body[body.length-1]); //add to world
+                Matter.Body.setAngularVelocity(body[body.length - 1], 0.025);
+            }
+
+            if (Math.sin((simulation.cycle + 15) / 25) < 0 && !lastPistonDirection) { // 15 cycles early to line up better with pendulum
+                piston3.isClosing = true;
+                piston4.isClosing = false;
+                piston5.isClosing = true;
+                piston6.isClosing = false;
+                piston7.isClosing = true;
+            } else if (Math.sin((simulation.cycle + 15) / 25) > 0 && lastPistonDirection) {
+                piston3.isClosing = false;
+                piston4.isClosing = true;
+                piston5.isClosing = false;
+                piston6.isClosing = true;
+                piston7.isClosing = false;
+            }
+
+            if (Math.sin(-finalGearRot) - Math.sin(-lastFinalGearRot) < -0.01) {
+                dealtPiston1Damage = false;
+                dealtPiston1MobDamage = false;
+            }
+            if (Math.sin(-finalGearRot) - Math.sin(-lastFinalGearRot) > 0.01) {
+                dealtPiston2Damage = false;
+                dealtPiston2MobDamage = false;
+            }
+
+            piston3.openClose();
+            piston4.openClose();
+            piston5.openClose();
+            piston6.openClose();
+            piston7.openClose();
+
+            if (!pistonsLocked) {
+                piston1.isLocked = false;
+            }
+
+            if (!pistonsLocked || ((Math.sin(-finalGearRot) - Math.sin(-lastFinalGearRot) != 0 || piston1.position.y < -1850) && !piston1.isLocked)) {
+                piston1.setPos(1650, -1850 + Math.sin(-finalGearRot) * 175);
+            } else {
+                piston1.isLocked = true;
+            }
+
+            piston2.setPos(1950, -1850 + Math.sin(finalGearRot) * 175);
+            ctx.beginPath();
+            ctx.moveTo(Math.cos(-finalGearRot) * 294 + 1650, Math.sin(-finalGearRot) * 294 - 2550);
+            ctx.lineTo(1650, -2230);
+            ctx.lineTo(piston1.position.x, piston1.position.y - 175)
+            ctx.strokeStyle = "#777";
+            ctx.lineWidth = 10;
+            ctx.stroke();
+
+            var circle1;
+            var circle2;
+            if (Math.cos(finalGearRot) * 294 > 0) {
+                circle1 = {
+                    x: Math.cos(finalGearRot) * 294 + 2300,
+                    y: Math.sin(finalGearRot) * 294 - 2550,
+                    radius: -25
+                }
+
+                circle2 = {
+                    x: 2300,
+                    y: -2215,
+                    radius: -15
+                }
+            } else {
+                circle1 = {
+                    x: Math.cos(finalGearRot) * 294 + 2300,
+                    y: Math.sin(finalGearRot) * 294 - 2550,
+                    radius: 25
+                }
+
+                circle2 = {
+                    x: 2300,
+                    y: -2215,
+                    radius: 15
+                }
+            }
+
+            // same method used in drawBelt()
+            var distance = Math.sqrt((circle2.x - circle1.x) ** 2 + (circle2.y - circle1.y) ** 2);
+            var distanceToIntersection = (-circle1.radius * distance) / (-circle1.radius + circle2.radius);
+            var slopeAngle = Math.atan((circle2.y - circle1.y) / (circle2.x - circle1.x));
+            var angleToTangent = Math.acos(-circle1.radius / distanceToIntersection);
+            const tangentPoint = {
+                x: Math.cos(angleToTangent + slopeAngle) * -circle2.radius + circle2.x,
+                y: Math.sin(angleToTangent + slopeAngle) * -circle2.radius + circle2.y
+            }
+
+            // same method used in drawDiagonalBelt()
+            const circle3 = {
+                x: 1940,
+                y: -2250,
+                radius: 15
+            }
+
+            distance = Math.sqrt((circle2.x - circle3.x) ** 2 + (circle2.y - circle3.y) ** 2);
+            distanceToIntersection = (circle3.radius * distance) / (circle3.radius + circle2.radius);
+            slopeAngle = Math.atan((circle2.y - circle3.y) / (circle2.x - circle3.x));
+            angleToTangent = Math.acos(circle3.radius / distanceToIntersection);
+            const invertedTangentPoint2 = {
+                x: Math.cos(-angleToTangent + slopeAngle) * circle3.radius + circle3.x,
+                y: Math.sin(-angleToTangent + slopeAngle) * circle3.radius + circle3.y
+            }
+
+            const tangentPoint3 = {
+                x: Math.cos(angleToTangent + slopeAngle) * -circle2.radius + circle2.x,
+                y: Math.sin(angleToTangent + slopeAngle) * -circle2.radius + circle2.y
+            }
+
+            distance = Math.sqrt((piston2.position.y - 175 - circle3.y) ** 2 + (piston2.position.x - 50 - circle3.x) ** 2);
+            slopeAngle = Math.atan((piston2.position.y - 175 - circle3.y) / (piston2.position.x - 50 - circle3.x));
+            angleToTangent = Math.acos(circle3.radius / distance);
+            const tangentPoint4 = {
+                x: Math.cos(angleToTangent) * distance + circle3.x,
+                y: Math.sin(angleToTangent) * distance + circle3.y
+            }
+
+            // draw
+            ctx.beginPath();
+            ctx.moveTo(circle1.x, circle1.y);
+            ctx.lineTo(tangentPoint.x, tangentPoint.y);
+            const newAngle = Math.atan((tangentPoint.y - circle2.y) / (tangentPoint.x - circle2.x));
+            const newAngle2 = Math.atan((tangentPoint3.y - circle2.y) / (tangentPoint3.x - circle2.x));
+            ctx.arc(circle2.x, circle2.y, Math.abs(circle2.radius), newAngle, -newAngle2);
+            ctx.lineTo(invertedTangentPoint2.x, invertedTangentPoint2.y);
+            const newAngle3 = Math.atan((invertedTangentPoint2.y - circle3.y) / (invertedTangentPoint2.x - circle3.x));
+            ctx.arc(circle3.x, circle3.y, circle3.radius, newAngle3, Math.PI / 2 + angleToTangent, true);
+            ctx.lineTo(tangentPoint4.x, tangentPoint4.y);
+            ctx.strokeStyle = '#777';
+            ctx.lineWidth = 10;
+            ctx.stroke();
+
+            lastPistonDirection = Math.sin((simulation.cycle + 15) / 25) < 0;
+
+            if (Matter.Query.ray([player], Matter.Vector.create(piston1.position.x - 50, piston1.position.y + 175), Matter.Vector.create(piston1.position.x + 50, piston1.position.y + 175), 5).length > 0 && !dealtPiston1Damage && Math.sin(-finalGearRot) - Math.sin(-lastFinalGearRot) > 0.01) {
+                m.damage(0.1);
+                dealtPiston1Damage = true;
+            }
+
+            var piston1MobCollisions = Matter.Query.ray(mob, Matter.Vector.create(piston1.position.x - 50, piston1.position.y + 175), Matter.Vector.create(piston1.position.x + 50, piston1.position.y + 175), 5);
+            if (piston1MobCollisions.length > 0 && !dealtPiston1MobDamage && Math.sin(-finalGearRot) - Math.sin(-lastFinalGearRot) > 0.01) {
+                for (var mobHit of piston1MobCollisions) {
+                    mobHit.body.damage(1);
+                }
+                dealtPiston1MobDamage = true;
+            }
+
+            if (Matter.Query.ray([player], Matter.Vector.create(piston2.position.x - 50, piston2.position.y + 175), Matter.Vector.create(piston2.position.x + 50, piston2.position.y + 175), 5).length > 0 && !dealtPiston2Damage && Math.sin(-finalGearRot) - Math.sin(-lastFinalGearRot) < -0.01) {
+                m.damage(0.1);
+                dealtPiston2Damage = true;
+            }
+
+            var piston2MobCollisions = Matter.Query.ray(mob, Matter.Vector.create(piston2.position.x - 50, piston2.position.y + 175), Matter.Vector.create(piston2.position.x + 50, piston2.position.y + 175), 5);
+            if (piston2MobCollisions.length > 0 && !dealtPiston2MobDamage && Math.sin(-finalGearRot) - Math.sin(-lastFinalGearRot) > 0.01) {
+                for (var mobHit of piston2MobCollisions) {
+                    mobHit.body.damage(1);
+                }
+                dealtPiston2MobDamage = true;
+            }
+
+            // clock
+            ctx.beginPath();
+            ctx.arc(400, -3700, 600, 0, 2 * Math.PI);
+            ctx.fillStyle = "#e9e9e9";
+            ctx.fill();
+            ctx.strokeStyle = "#3a3f20";
+            ctx.lineWidth = 2;
+            ctx.stroke();
+
+            ctx.lineCap = "butt";
+            ctx.beginPath();
+            ctx.moveTo(350, -4275);
+            ctx.lineTo(390, -4150);
+            ctx.strokeStyle = "#000";
+            ctx.lineWidth = 20;
+            ctx.stroke();
+            ctx.beginPath();
+            ctx.moveTo(390, -4275);
+            ctx.lineTo(350, -4150);
+            ctx.stroke();
+            ctx.beginPath();
+            ctx.moveTo(420, -4275);
+            ctx.lineTo(420, -4150);
+            ctx.stroke();
+            ctx.beginPath();
+            ctx.moveTo(450, -4275);
+            ctx.lineTo(450, -4150);
+            ctx.stroke();
+
+            var numberOffset = {
+                x: 400 + Math.cos(-Math.PI / 3) * 510,
+                y: -3700 + Math.sin(-Math.PI / 3) * 510
+            }
+            ctx.beginPath();
+            ctx.moveTo(numberOffset.x, numberOffset.y - 62);
+            ctx.lineTo(numberOffset.x, numberOffset.y + 63);
+            ctx.stroke();
+
+            var numberOffset = {
+                x: 400 + Math.cos(-Math.PI / 6) * 510,
+                y: -3700 + Math.sin(-Math.PI / 6) * 510
+            }
+            ctx.beginPath();
+            ctx.moveTo(numberOffset.x - 20, numberOffset.y - 62);
+            ctx.lineTo(numberOffset.x - 20, numberOffset.y + 63);
+            ctx.stroke();
+            ctx.beginPath();
+            ctx.moveTo(numberOffset.x + 20, numberOffset.y - 62);
+            ctx.lineTo(numberOffset.x + 20, numberOffset.y + 63);
+            ctx.stroke();
+
+            ctx.beginPath();
+            ctx.moveTo(870, -3762);
+            ctx.lineTo(870, -3637);
+            ctx.stroke();
+            ctx.beginPath();
+            ctx.moveTo(910, -3762);
+            ctx.lineTo(910, -3637);
+            ctx.stroke();
+            ctx.beginPath();
+            ctx.moveTo(950, -3762);
+            ctx.lineTo(950, -3637);
+            ctx.stroke();
+
+            var numberOffset = {
+                x: 400 + Math.cos(Math.PI / 6) * 535,
+                y: -3700 + Math.sin(Math.PI / 6) * 535
+            }
+            ctx.beginPath();
+            ctx.moveTo(numberOffset.x - 50, numberOffset.y - 62);
+            ctx.lineTo(numberOffset.x - 50, numberOffset.y + 63);
+            ctx.stroke();
+            ctx.beginPath();
+            ctx.moveTo(numberOffset.x - 20, numberOffset.y - 62);
+            ctx.lineTo(numberOffset.x, numberOffset.y + 53);
+            ctx.lineTo(numberOffset.x + 20, numberOffset.y - 62);
+            ctx.stroke();
+
+            var numberOffset = {
+                x: 400 + Math.cos(Math.PI / 3) * 515,
+                y: -3700 + Math.sin(Math.PI / 3) * 515
+            }
+            ctx.beginPath();
+            ctx.moveTo(numberOffset.x - 20, numberOffset.y - 62);
+            ctx.lineTo(numberOffset.x, numberOffset.y + 53);
+            ctx.lineTo(numberOffset.x + 20, numberOffset.y - 62);
+            ctx.stroke();
+
+            var numberOffset = {
+                x: 400 + Math.cos(Math.PI / 2) * 515,
+                y: -3700 + Math.sin(Math.PI / 2) * 515
+            }
+            ctx.beginPath();
+            ctx.moveTo(numberOffset.x - 35, numberOffset.y - 62);
+            ctx.lineTo(numberOffset.x - 15, numberOffset.y + 53);
+            ctx.lineTo(numberOffset.x + 5, numberOffset.y - 62);
+            ctx.stroke();
+            ctx.beginPath();
+            ctx.moveTo(numberOffset.x + 35, numberOffset.y - 62);
+            ctx.lineTo(numberOffset.x + 35, numberOffset.y + 63);
+            ctx.stroke();
+
+            var numberOffset = {
+                x: 400 + Math.cos(Math.PI * 2 / 3) * 500,
+                y: -3700 + Math.sin(Math.PI * 2 / 3) * 500
+            }
+            ctx.beginPath();
+            ctx.moveTo(numberOffset.x - 65, numberOffset.y - 62);
+            ctx.lineTo(numberOffset.x - 45, numberOffset.y + 53);
+            ctx.lineTo(numberOffset.x - 25, numberOffset.y - 62);
+            ctx.stroke();
+            ctx.beginPath();
+            ctx.moveTo(numberOffset.x + 5, numberOffset.y - 62);
+            ctx.lineTo(numberOffset.x + 5, numberOffset.y + 63);
+            ctx.stroke();
+            ctx.beginPath();
+            ctx.moveTo(numberOffset.x + 35, numberOffset.y - 62);
+            ctx.lineTo(numberOffset.x + 35, numberOffset.y + 63);
+            ctx.stroke();
+
+            var numberOffset = {
+                x: 400 + Math.cos(Math.PI * 5 / 6) * 500,
+                y: -3700 + Math.sin(Math.PI * 5 / 6) * 500
+            }
+            ctx.beginPath();
+            ctx.moveTo(numberOffset.x - 65, numberOffset.y - 62);
+            ctx.lineTo(numberOffset.x - 45, numberOffset.y + 53);
+            ctx.lineTo(numberOffset.x - 25, numberOffset.y - 62);
+            ctx.stroke();
+            ctx.beginPath();
+            ctx.moveTo(numberOffset.x + 5, numberOffset.y - 62);
+            ctx.lineTo(numberOffset.x + 5, numberOffset.y + 63);
+            ctx.stroke();
+            ctx.beginPath();
+            ctx.moveTo(numberOffset.x + 35, numberOffset.y - 62);
+            ctx.lineTo(numberOffset.x + 35, numberOffset.y + 63);
+            ctx.stroke();
+            ctx.beginPath();
+            ctx.moveTo(numberOffset.x + 65, numberOffset.y - 62);
+            ctx.lineTo(numberOffset.x + 65, numberOffset.y + 63);
+            ctx.stroke();
+
+            var numberOffset = {
+                x: 400 + Math.cos(Math.PI) * 500,
+                y: -3700 + Math.sin(Math.PI) * 500
+            }
+            ctx.beginPath();
+            ctx.moveTo(numberOffset.x - 5, numberOffset.y - 62);
+            ctx.lineTo(numberOffset.x + 35, numberOffset.y + 63);
+            ctx.stroke();
+            ctx.beginPath();
+            ctx.moveTo(numberOffset.x - 5, numberOffset.y + 63);
+            ctx.lineTo(numberOffset.x + 35, numberOffset.y - 62);
+            ctx.stroke();
+            ctx.beginPath();
+            ctx.moveTo(numberOffset.x - 35, numberOffset.y - 62);
+            ctx.lineTo(numberOffset.x - 35, numberOffset.y + 63);
+            ctx.stroke();
+
+            var numberOffset = {
+                x: 400 + Math.cos(-Math.PI * 5 / 6) * 500,
+                y: -3700 + Math.sin(-Math.PI * 5 / 6) * 500
+            }
+            ctx.beginPath();
+            ctx.moveTo(numberOffset.x - 25, numberOffset.y - 62);
+            ctx.lineTo(numberOffset.x + 25, numberOffset.y + 63);
+            ctx.stroke();
+            ctx.beginPath();
+            ctx.moveTo(numberOffset.x - 25, numberOffset.y + 63);
+            ctx.lineTo(numberOffset.x + 25, numberOffset.y - 62);
+            ctx.stroke();
+
+            var numberOffset = {
+                x: 400 + Math.cos(-Math.PI * 2 / 3) * 500,
+                y: -3700 + Math.sin(-Math.PI * 2 / 3) * 500
+            }
+            ctx.beginPath();
+            ctx.moveTo(numberOffset.x - 10, numberOffset.y - 62);
+            ctx.lineTo(numberOffset.x + 40, numberOffset.y + 63);
+            ctx.stroke();
+            ctx.beginPath();
+            ctx.moveTo(numberOffset.x - 10, numberOffset.y + 63);
+            ctx.lineTo(numberOffset.x + 40, numberOffset.y - 62);
+            ctx.stroke();
+            ctx.beginPath();
+            ctx.moveTo(numberOffset.x - 40, numberOffset.y + 63);
+            ctx.lineTo(numberOffset.x - 40, numberOffset.y - 62);
+            ctx.stroke();
+
+            ctx.lineCap = "round";
+
+            level.exit.drawAndCheck();
+            level.enter.draw();
+        }
+
+        var lastBlock = Math.sin(simulation.cycle / 50) < 0;
+
+        level.customTopLayer = () => {
+            if (!lightOn) lightButton.query();
+            if (!lightButton.isUp) lightOn = true;
+            lightButton.draw();
+            elevator1.move();
+
+            ctx.beginPath();
+            ctx.moveTo(pendulum1.parts[2].vertices[0].x, pendulum1.parts[2].vertices[0].y);
+            for (var i = 0; i < pendulum1.parts[2].vertices.length; i++) {
+                ctx.lineTo(pendulum1.parts[2].vertices[i].x, pendulum1.parts[2].vertices[i].y);
+            }
+            ctx.lineTo(pendulum1.parts[2].vertices[0].x, pendulum1.parts[2].vertices[0].y);
+            ctx.fillStyle = "#999";
+            ctx.fill();
+            ctx.lineWidth = 2
+            ctx.strokeStyle = color.blockS;
+            ctx.stroke();
+
+            ctx.beginPath();
+            ctx.moveTo(gear3.parts[1].vertices[0].x, gear3.parts[1].vertices[0].y);
+            for (var i = 0; i < gear3.parts[1].vertices.length; i++) {
+                ctx.lineTo(gear3.parts[1].vertices[i].x, gear3.parts[1].vertices[i].y);
+            }
+            ctx.lineTo(gear3.parts[1].vertices[0].x, gear3.parts[1].vertices[0].y);
+            ctx.fillStyle = "#999";
+            ctx.fill();
+            ctx.lineWidth = 2
+            ctx.strokeStyle = color.blockS;
+            ctx.stroke();
+
+            ctx.fillStyle = "#444";
+            ctx.fillRect(3275, -1750, 1, 1750);
+
+            ctx.fillStyle = "#888";
+
+            if (Math.sin(simulation.cycle / 50) < 0 && !lastBlock) {
+                // remove old elements
+                for (var i = 0; i < map.length; i++) {
+                    if (map[i].isRemove) {
+                        Matter.Composite.remove(engine.world, map[i]);
+                        map.splice(i, 1);
+                    }
+                }
+
+                // add new element
+                spawn.mapRect(-200, -600, 275, 50);
+                addPartToMap(map.length - 1);
+                map[map.length - 1].isRemove = true;
+            } else if (Math.sin(simulation.cycle / 50) * 0.3 >= 0 && lastBlock) {
+                for (var i = 0; i < map.length; i++) {
+                    if (map[i].isRemove) {
+                        Matter.Composite.remove(engine.world, map[i]);
+                        map.splice(i, 1);
+                    }
+                }
+
+                spawn.mapRect(825, -600, 275, 50);
+                addPartToMap(map.length - 1);
+                map[map.length - 1].isRemove = true;
+            }
+
+            simulation.draw.setPaths();
+            lastBlock = Math.sin(simulation.cycle / 50) * 0.3 < 0;
+        }
     },
     
     // ********************************************************************************************************
