@@ -13,7 +13,7 @@ const level = {
     cgonLevels: ["descent", "split"],
     communityLevels: ["stronghold", "basement", "crossfire", "vats", "n-gon", "house", "perplex", "coliseum", "tunnel", "islands"],
     modernCommunityLevels: ["dripp"], // todo: backport
-    gimmickLevels: ["run", "testChamber2", "temple"],
+    gimmickLevels: ["run", "testChamber2", "temple", "biohazard"],
     trainingLevels: ["walk", "crouch", "jump", "hold", "throw", "throwAt", "deflect", "heal", "fire", "nailGun", "shotGun", "superBall", "matterWave", "missile", "stack", "mine", "grenades", "harpoon"],
     levels: [],
     announceMobTypes() {
@@ -14519,6 +14519,1154 @@ const level = {
             DrawHandler.waveTimer();
             DrawHandler.room2Top();
         };
+    },
+    biohazard() {
+        // MAP BY INOOBBOI AND THESHWARMA
+        simulation.makeTextLog(`<strong>biohazard</strong> by <span class='color-var'>INOOBBOI</span> and <span class='color-var'>THESHWARMA</span>`);
+
+        // set here for the cutscene later
+        level.setPosToSpawn(-2800, -150)
+
+        // set up cutscenes
+        simulation.cutscene = (locations, speed, stay, xPos = m.pos.x, yPos = m.pos.y) => {
+            // locations: an array of location vectors, reversed for the pop ahead
+            locations.reverse()
+            // speed: the speed of the cutscene transition (0 to 1)
+            // stay: how much to stay in the destination (ticks)
+            // xPos & yPos: the initial location, also used as the current location
+
+            // start by disabling the default camera draw. Don't worry, it's backed up
+            const camera = simulation.camera
+            // create a new camera function
+            simulation.camera = () => {
+                ctx.save()
+                ctx.translate(canvas.width2, canvas.height2) //center
+                ctx.scale(simulation.zoom, simulation.zoom)
+                const xScaled = canvas.width2 - xPos
+                const yScaled = canvas.height2 - yPos
+                ctx.translate(-canvas.width2 + xScaled, -canvas.height2 + yScaled) //translate
+            }
+
+            // and set a restoring function
+            const restore = () => (simulation.camera = camera)
+
+            // then choose the next destination. There should be always at least one destination,
+            // if there isn't there's no point checking, the game should and will crash
+            let dest = locations.pop()
+            // animate the camera
+            const lerp = (first, second, percent) => first * (1 - percent) + second * percent
+            const speedDelta = speed / 5
+            // wait timer
+            let wait = 0
+            // polls the animation, should be called every tick
+            const poll = () => {
+                // update position
+                xPos = lerp(xPos, dest.x, speedDelta)
+                yPos = lerp(yPos, dest.y, speedDelta)
+                // if position is close enough, wait and go to the next position
+                const TOO_CLOSE = 100
+                if (Math.abs(dest.x - xPos) < TOO_CLOSE && Math.abs(dest.y - yPos) < TOO_CLOSE) {
+                    // wait for a bit
+                    if (++wait > stay) {
+                        // if there is another target, reset the wait timer and go there
+                        // otherwise end the cutscene
+                        wait = 0
+                        if (!(dest = locations.pop())) {
+                            // no more locations! End
+                            restore()
+                            return true
+                        }
+                    }
+                }
+                // early return if the player skips by fielding
+                if (input.field) {
+                    restore()
+                    return true
+                }
+                return false
+            }
+            return poll
+        }
+
+        const boost1 = level.boost(-1400, -100, 900)
+        const boost2 = level.boost(500, -900, 2500)
+        const boost3 = level.boost(4200, -100, 900)
+        const boost4 = level.boost(2200, -900, 2500)
+
+        const toggle = level.toggle(1340, -600, false, true)
+
+        let bossInit = false
+
+        const cutscenePoll = simulation.cutscene([{
+            x: 230,
+            y: -2700
+        }, {
+            x: 3500,
+            y: -1400
+        }, {
+            x: 1450,
+            y: -1150
+        }, m.pos], 0.1, 10)
+        let hasEnded = false
+
+        // ** PROPS ** 
+        // create some drips
+        const rndInRange = (min, max) => Math.random() * (max - min) + min
+
+        const amount = Math.round(5 + 20 * Math.random())
+        const drips = []
+        for (let i = 0; i < amount; i++) {
+            const locX = rndInRange(-2000, 4800)
+            drips.push(level.drip(locX, -3100, 1500, 200 + Math.random() * 500))
+        }
+
+        // a barrel of radioactive waste, which can drop ammo and heals
+        const barrelMob = (x, y, dirVector) => {
+            const MAX_WIDTH = 150
+            const personalWidth = MAX_WIDTH / 2
+            mobs.spawn(x, y, 4, personalWidth, 'rgb(232, 191, 40)')
+            const me = mob[mob.length - 1]
+            // steal some vertices
+            const betterVertices = Matter.Bodies.rectangle(x, y, personalWidth, personalWidth * 1.7).vertices
+            me.vertices = betterVertices
+            me.collisionFilter.mask = cat.player | cat.map | cat.body | cat.mob | cat.bullet
+            me.g = simulation.g
+            me.leaveBody = me.isDropPowerUp = false
+            me.do = function () {
+                this.gravity()
+                // apply shock damage when touching the map, if it's fast
+                if (this.speed > 5) {
+                    const collision = Matter.Query.collides(this, map)
+                    if (collision.length > 0) {
+                        // on collision reduce health
+                        this.health = this.health - this.speed / 250
+                        // die when it's too low, doesn't register for some reason
+                    }
+                }
+                // becomes more radioactive as it gets damaged!
+                this.fill = `rgb(${232 * this.health}, 191, 40)`
+            }
+
+            me.onDeath = function () {
+                const END = Math.floor(input.down ? 10 : 7)
+                const totalBullets = 10
+                const angleStep = (input.down ? 0.4 : 1.3) / totalBullets
+                let dir = m.angle - (angleStep * totalBullets) / 2
+                for (let i = 0; i < totalBullets; i++) {
+                    //5 -> 7
+                    dir += angleStep
+                    const me = bullet.length
+                    bullet[me] = Bodies.rectangle(
+                        this.position.x + 50 * Math.cos(this.angle),
+                        this.position.y + 50 * Math.sin(this.angle),
+                        17,
+                        4,
+                        b.fireAttributes(dir)
+                    )
+                    const end = END + Math.random() * 4
+                    bullet[me].endCycle = 2 * end + simulation.cycle
+                    const speed = (25 * end) / END
+                    const dirOff = dir + (Math.random() - 0.5) * 3
+                    Matter.Body.setVelocity(bullet[me], {
+                        x: speed * Math.cos(dirOff),
+                        y: speed * Math.sin(dirOff)
+                    })
+                    bullet[me].onEnd = function () {
+                        b.explosion(
+                            this.position,
+                            150 + (Math.random() - 0.5) * 40
+                        ) //makes bullet do explosive damage at end
+                    }
+                    bullet[me].beforeDmg = function () {
+                        this.endCycle = 0 //bullet ends cycle after hitting a mob and triggers explosion
+                    }
+                    bullet[me].do = function () { }
+                    Composite.add(engine.world, bullet[me]) //add bullet to world
+                }
+                // barrels drop a ton of ammo and some heals, scales up with difficulty because I have mercy
+                const amount = ~~(5 * Math.random() * simulation.difficulty / 10)
+                for (let i = 0; i < amount; i++) {
+                    powerUps.spawn(this.position.x, this.position.y, 'ammo', true)
+                    if (Math.random() > 0.7) {
+                        powerUps.spawn(this.position.x, this.position.y, 'heal', true)
+                    }
+                }
+            }
+            Matter.Body.rotate(me, Math.random() * Math.PI)
+            Matter.Body.setVelocity(me, dirVector)
+        }
+
+        // creates a platform with shadow
+        const platformShadow = (x, y, width, height, shadowList) => {
+            // faster than making manual shadows... Why not just calculate them semi-realsitically?
+            // the shadows are calculated on the object creation, so if you add map blocks it won't update.
+            // shadowList is an array of shadows that'll be rendered. When the platform shadow is ready,
+            // it is added to the list.
+            // some helper functions first
+            const perpCollision = point => {
+                // takes a point, and finds a collision with the map downwards
+                // the end of the ray, 3000 units down
+                const lowerPoint = Vector.add(point, {
+                    x: 0,
+                    y: 3000
+                })
+                // the destination point. If a collision was not found, then it defaults to some
+                // arbiterary point 3000 units down.
+                let dest = lowerPoint
+                for (const mapBody of map) {
+                    const check = simulation.checkLineIntersection(point, lowerPoint, mapBody.vertices[0], mapBody.vertices[1])
+                    // a collision was found
+                    if (check.onLine1 && check.onLine2) {
+                        dest = {
+                            x: check.x,
+                            y: check.y
+                        }
+                        break
+                    }
+                }
+                return dest
+            }
+            const boundsToRectangle = (firstBound, secondBound) => {
+                // takes two bounds and returns an (x, y, width, height) rectangle. The first one
+                // must be the top left, and the second one must be the bottom right
+                // sub to find the width and height
+                const width = Math.abs(firstBound.x - secondBound.x)
+                const height = Math.abs(firstBound.y - secondBound.y)
+                // compile to an object
+                return {
+                    x: firstBound.x,
+                    y: firstBound.y,
+                    width,
+                    height
+                }
+            }
+            // create the actual platform
+            spawn.mapRect(x, y, width, height)
+            const me = map[map.length - 1]
+            // the bottom vertices are the third and fourth ones
+            const first = me.vertices[3]
+            const second = me.vertices[2]
+            // cast shadows to find the last shadow location.
+            // iterate over all map objects, and check for collisions between a perpendicular ray
+            // cast from the vertex down to the map object's top panel
+            // const firstDown = perpCollision(first) // not needed in a rectangle settings
+            const secondDown = perpCollision(second)
+            // possible TODO: make it multirect for efficiency
+            // create a single rectangle and return
+            shadowList.push(boundsToRectangle(first, secondDown))
+        }
+
+        // cages with mobs, One of them holds the boss pre mutation
+        const cage = (x, y, maxChainLength, drawList, mobType = null, isTheBoss = false) => {
+            // the drawList is an array that the drawing function is added to
+            // if the cage containing the boss it has a 50% chance to just not spawn. Spices things a bit
+            if (!isTheBoss && Math.random() > 0.5) {
+                return
+            }
+            if (!mobType) {
+                // if mob type is null, then it picks a random mob
+                mobType = spawn.fullPickList[~~(Math.random() * spawn.fullPickList.length)]
+            }
+            // create the chain length, must take into account the radius of the mob.
+            // therefore, it'll create a pseudo mob of that type, take it radius and instantly kill it
+            const chainLength = maxChainLength / 5 + maxChainLength * Math.random()
+
+            // spawn and insantly kill a mob of the same type to get the radius.
+            // this is used to prevent spawning the mob too short, it's a horrible
+            // solution but it works
+            spawn[mobType](0, 0)
+            mob[mob.length - 1].leaveBody = mob[mob.length - 1].isDropPowerUp = false
+            const radius = mob[mob.length - 1].radius
+            mob[mob.length - 1].alive = false
+            // spawn the mob. Disable shields first
+            spawn.allowShields = false
+            spawn[mobType](x, y + chainLength + radius * 2)
+            const trappedMob = mob[mob.length - 1]
+            // destroy its mind so it won't attack
+            trappedMob.do = () => { }
+            // spawn the cage
+            mobs.spawn(x, y + chainLength + radius * 2, 4, trappedMob.radius + 50, 'rgba(150, 255, 150, 0.3)')
+            const cage = mob[mob.length - 1]
+            cage.g = simulation.g
+            cage.do = function () {
+                this.gravity()
+            }
+            // label it
+            cage.label = 'Cage'
+            // a special orb when hit
+            let damageTick = 0
+            cage.onDamage = (dmg) => {
+                // add some damage ticks, if the trapped mob is still alive.
+                // activating the boss by this method is almost impossible, since you need 10x damage
+                if (trappedMob.alive) damageTick += ~~(isTheBoss ? 5 * dmg : 50 * dmg)
+            }
+            // collision filter
+            trappedMob.collisionFilter.mask = cage.collisionFilter.mask = cat.player | cat.map | cat.bullet
+            // constrain together
+            spawn.constrain2AdjacentMobs(2, 0.05, false)
+            // move them to be together
+            trappedMob.position = Vector.clone(cage.position) // make sure you clone... Otherwise........
+            // invincibility, make homing bullets not hit these, remove health bar
+            trappedMob.health = cage.health = Infinity
+            trappedMob.isBadTarget = cage.isBadTarget = true
+            trappedMob.showHealthBar = cage.showHealthBar = false
+            trappedMob.leaveBody = trappedMob.isDropPowerUp = cage.leaveBody = cage.isDropPowerUp = false
+            // cross all edges of the cage with the rope, and see where it collides. Attach the rope there
+            const verts = cage.vertices
+            // the crossing location, doesn't stay null
+            let cross = null
+            for (let i = 0; i < verts.length; i++) {
+                // iterate over all vertices to form lines
+                const v1 = verts[i]
+                const v2 = verts[(i + 1) % verts.length]
+                const result = simulation.checkLineIntersection(cage.position, {
+                    x,
+                    y
+                }, v1, v2)
+                if (result.onLine1 && result.onLine2) {
+                    // both lines cross!
+                    cross = result
+                    break
+                }
+            }
+
+            if (!cross) {
+                // for some odd reason, sometimes it never finds a collision. I have no idea why
+                // just default to the center then
+                console.error("Couldn't find a cross... Origin: ", {
+                    x,
+                    y
+                }, " center: ", cage.position, ' vertices: ', cage.vertices)
+                cross = cage.position
+            }
+            // create the rope
+            const rope = Constraint.create({
+                pointA: {
+                    x,
+                    y
+                },
+                // offset the point be in the attachment point
+                pointB: Vector.sub(cross, cage.position),
+                bodyB: cage,
+                // the longer the rope, the looser it is
+                stiffness: Math.max(0.0005 - chainLength / 10000000, 0.00000001),
+                length: chainLength
+            })
+            Matter.Composite.add(engine.world, rope)
+            // create and return a function for drawing the rope
+            const draw = () => {
+                // draw a little recantagle at the base
+                ctx.fillStyle = color.map
+                ctx.fillRect(x - 20, y - 5, 40, 25)
+                // if the cage was destroyed... Do nothing beyond
+                if (!cage.alive) {
+                    return
+                }
+                // draw the rope
+                ctx.beginPath()
+                ctx.moveTo(x, y)
+                // line to the crossing point
+                // ctx.lineTo(cons[i].bodyB.position.x, cons[i].bodyB.position.y);
+                ctx.lineTo(cage.position.x + rope.pointB.x, cage.position.y + rope.pointB.y);
+                ctx.lineWidth = 7
+                ctx.strokeStyle = 'rgba(0, 0, 0, 0.5)'
+                ctx.stroke()
+                // now draw a mystic hit orb if touched
+                if (damageTick) damageTick-- // reduce the ticks
+                ctx.beginPath()
+                ctx.arc(cage.position.x, cage.position.y, cage.radius + 30, 0, Math.PI * 2)
+                ctx.lineWidth = 10
+                ctx.fillStyle = `rgba(255, 0, 0, ${Math.min(1, damageTick / 2000)})`
+                ctx.strokeStyle = `rgba(255, 100, 0, ${Math.min(1, damageTick / 1000)})`
+                ctx.setLineDash([125 * Math.random(), 125 * Math.random()])
+                ctx.stroke()
+                ctx.setLineDash([])
+                ctx.fill()
+                // if it's the boss, draw sucking arcs
+                if (isTheBoss && bossInit) {
+                    for (const entity of mob) {
+                        // suck the health of all mobs
+                        // I hate string manipulation in control flow but heh
+                        if (entity.alive) {
+                            ctx.beginPath()
+                            ctx.moveTo(entity.position.x, entity.position.y)
+                            ctx.lineTo(trappedMob.position.x, trappedMob.position.y)
+                            ctx.lineWidth = 10
+                            ctx.strokeStyle = 'rgba(38, 0, 255, 0.67)'
+                            ctx.stroke()
+                            // damage the mob
+                            entity.damage(1)
+                            // damage itself bonus
+                            cage.damage(1)
+                        }
+                    }
+                    cage.damage(5)
+                }
+
+                // ok if it's too much, explode
+                if (damageTick > 2000) {
+                    b.explosion(cage.position, cage.radius * 10)
+                    // die a silent death
+                    trappedMob.alive = cage.alive = false
+                    damageTick = 0
+                    if (isTheBoss) {
+                        // become the real boss
+                        geneticBoss(trappedMob.position.x, trappedMob.position.y)
+                    }
+                }
+            }
+            // restore the shields
+            spawn.allowShields = true
+            // add the drawing function
+            drawList.push(draw)
+        }
+
+        // platform shadows
+        const shadows = []
+        // cages
+        const cages = []
+
+        level.custom = () => {
+            level.exit.drawAndCheck() //draws the exit
+            level.enter.draw() //draws the entrance
+
+            player.force.y -= player.mass * simulation.g * 0.25 //this gets rid of some gravity on player
+
+            // if the cutscene is yet to end, continue polling
+            if (!hasEnded) {
+                hasEnded = cutscenePoll()
+            }
+
+            for (const drip of drips) drip.draw()
+            // throw some barrels after the boss spawns
+            if (Math.random() > 0.999 && bossInit && !hasEnded) {
+                const spawnLocs = [-1415, -30, 1345, 2815, 4285]
+                // const randVec = Vector.mult({ x: Math.cos(randAngle), y: Math.sin(randAngle) }, Math.random() * 15)
+                barrelMob(spawnLocs[~~(spawnLocs.length * Math.random())], -4200, {
+                    x: 0,
+                    y: 0
+                })
+            }
+
+            // platform shadow
+            ctx.beginPath()
+            for (const shadow of shadows) {
+                ctx.rect(shadow.x, shadow.y, shadow.width, shadow.height)
+            }
+            ctx.fillStyle = 'rgba(0,10,30,0.1)'
+            ctx.fill()
+
+            // player pressed lever
+            if (toggle.isOn && !bossInit) {
+                bossInit = true
+            }
+            // draw the cage
+        } //for dynamic stuff that updates while playing that is one Z layer below the player
+
+        level.customTopLayer = () => {
+            boost1.query()
+            boost2.query()
+            boost3.query()
+            boost4.query()
+            toggle.query()
+
+            // shadow holes
+            ctx.fillStyle = 'rgba(68, 68, 68,0.95)'
+            ctx.fillRect(-1450 - 10, -4350, 150 + 20, 1250)
+            ctx.fillRect(-50 - 10, -4350, 150 + 20, 1250)
+            ctx.fillRect(1325 - 10, -4350, 150 + 20, 1250)
+            ctx.fillRect(2800 - 10, -4350, 150 + 20, 1250)
+            ctx.fillRect(4275 - 10, -4350, 150 + 20, 1250)
+
+            for (const drawCage of cages) {
+                drawCage()
+            }
+        } //for dynamic stuff that updates while playing that is one Z layer above the player
+
+        const anotherBoss = (x, y) => {
+            if (tech.isDuplicateMobs && Math.random() < tech.duplicationChance()) {
+                spawn.historyBoss(x, y)
+            }
+        }
+
+        //GENETICBOSS
+        function drawEnergyBar(mob) {
+            if (mob.seePlayer.recall && mob.energy > 0) {
+                const h = mob.radius * 0.3
+                const w = mob.radius * 2
+                const x = mob.position.x - w / 2
+                const y = mob.position.y - w * 0.9
+                ctx.fillStyle = 'rgba(100, 100, 100, 0.3)'
+                ctx.fillRect(x, y, w, h)
+                ctx.fillStyle = '#0cf'
+                ctx.fillRect(x, y, w * mob.energy, h)
+            }
+        }
+
+        function generateGenome() {
+            // creates a random genome and returns it
+            const genome = {
+                density: Math.random() * 0.001,
+                size: 15 + Math.random() * 15,
+                speed: Math.random() * 0.1,
+                // color and vertex properties are "trash" genes as they don't really contribute to the orb
+                color: [Math.random() * 255, Math.random() * 255, Math.random() * 255, 50 + Math.random() * 205],
+                vertexCount: Math.floor(Math.random() * 5) + 3,
+                // TODO fix possible concaving
+                vertexOffset: null // placeholder
+            }
+            // initialized here as it depends on vertexCount. I could use `new function()` but nah.
+            genome.vertexOffset = Array(genome.vertexCount)
+                .fill()
+                .map(() => ({
+                    x: Math.random() - 0.5,
+                    y: Math.random() - 0.5
+                }))
+            return genome
+        }
+
+        function mutateGenome(genome) {
+            // takes an existing genome and applies tiny changes
+            const randomInRange = (min, max) => Math.random() * (max - min) + min
+            const tinyChange = x => randomInRange(-x, x)
+
+            const vertexMutator = x => ({
+                x: x.x + tinyChange(0.5),
+                y: x.y + tinyChange(0.5)
+            })
+            // mutates a genome and returns the mutated version.
+            const newGenome = {
+                density: genome.density + tinyChange(0.0005),
+                size: genome.size + tinyChange(5),
+                speed: genome.speed + tinyChange(0.05),
+                color: genome.color.map(x => (x + tinyChange(10)) % 255), // wrap around
+                vertexCount: Math.max(genome.vertexCount + Math.round(tinyChange(1)), 3),
+                vertexOffset: genome.vertexOffset.map(vertexMutator)
+            }
+            if (genome.vertexOffset.length < newGenome.vertexCount) {
+                const vo = newGenome.vertexOffset
+                vo.push(vertexMutator(vo[~~(vo.length * Math.random())]))
+            } else if (genome.vertexOffset.length > newGenome.vertexCount) {
+                newGenome.vertexOffset.pop()
+            }
+
+            return newGenome
+        }
+
+        function calculateGenomeCost(genome) {
+            // calculates the cost of a genome and returns it. The cost is used to
+            // determine how "costly" the genome is to make, and after the orb's life ends it
+            // is used together with the orb success score to determine the fittest orb.
+            const score = (1 / (genome.density * genome.size * genome.speed)) * 0.000001
+            return score
+        }
+        // distance functions
+        const dist2 = (a, b) => (a.x - b.x) ** 2 + (a.y - b.y) ** 2
+        const dist = (a, b) => Math.sqrt(dist2(a, b))
+
+        // ** MAP SPECIFIC MOBS **
+        function energyTransferBall(origin, target, boss, charge) {
+            // transports energy to the boss
+            // when the boss is hit by it, how much of the energy stored the boss actually recives
+            const ENERGY_TRANSFER_RATE = 80 /*%*/
+            // add 1 to the active ball list
+            boss.activeBalls++
+            const color = `rgba(${150 + 105 * charge}, 81, 50, 0.6)`
+            mobs.spawn(origin.x, origin.y, 12, 20 + 20 * charge, color)
+            const me = mob[mob.length - 1]
+            me.end = function () {
+                simulation.drawList.push({
+                    // some nice graphics
+                    x: this.position.x,
+                    y: this.position.y,
+                    radius: this.radius,
+                    color: '#f3571d',
+                    time: ~~(Math.random() * 20 + 10)
+                })
+                // on death spawn and explode a bomb
+                if (Math.random() > 0.95) {
+                    spawn.bomb(this.position.x, this.position.y, this.radius, this.vertices.length)
+                    mob[mob.length - 1].death()
+                }
+                // remove 1 from the active ball list
+                boss.activeBalls--
+                this.death()
+            }
+            me.collisionFilter.mask = cat.player | cat.map
+            // me.onHit = this.end
+            me.life = 0
+            me.isDropPowerUp = false
+            me.leaveBody = false
+            me.do = function () {
+                // die on collision with the map
+                if (Matter.Query.collides(this, map).length > 0) {
+                    this.end()
+                }
+                // die if too much time passes. Stronger bullets explode earlier
+                if (++this.life > 200 - charge * 100) {
+                    this.end()
+                }
+                // if the orb collides with the boss, die but give energy to the boss
+                if (Matter.Query.collides(this, [boss]).length > 0) {
+                    boss.energy = Math.min(charge * (ENERGY_TRANSFER_RATE / 100) + boss.energy, 1)
+                    // also make the boss fire once regardless of energy
+                    boss.spawnOrbs()
+                    this.end()
+                }
+                const movement = Vector.normalise(Vector.sub(target, origin))
+                Matter.Body.setVelocity(this, {
+                    x: this.velocity.x + movement.x,
+                    y: this.velocity.y + movement.y
+                })
+                // nice graphics
+                simulation.drawList.push({
+                    x: this.position.x,
+                    y: this.position.y,
+                    radius: this.radius,
+                    color: '#e81e1e',
+                    time: 3
+                })
+                simulation.drawList.push({
+                    x: this.position.x,
+                    y: this.position.y,
+                    radius: this.radius,
+                    color: '#e87f1e',
+                    time: 6
+                })
+                simulation.drawList.push({
+                    x: this.position.x,
+                    y: this.position.y,
+                    radius: this.radius,
+                    color: '#e8e41e',
+                    time: 9
+                })
+            }
+            me.onDamage = me.end
+        }
+
+        function energyBeacon(x, y, parentBoss) {
+            // an unmoving beacon that charges the genetic boss with energy either stolen
+            // from the player or generated. That energy is used to create stronger mobs.
+            mobs.spawn(x, y, 3, 50, '') // default color, changed an instant later
+            const me = mob[mob.length - 1]
+            me.laserRange = 500
+            me.leaveBody = false
+            me.isDropPowerUp = false
+            // custom variables
+            // max energy is 1
+            me.energy = 0
+            me.seed = simulation.cycle // seed to make sure this mob is unique render wise
+            me.chargeTicks = 0 // used to time charging the boss
+            me.bossPos = null // the position that the mob remembers when charging
+            me.density = me.density * 2
+            Matter.Body.setDensity(me, 0.0022 * 3 + 0.0002 * Math.sqrt(simulation.difficulty)) //extra dense
+            me.do = function () {
+                // if the boss is dead, die
+                if (!parentBoss.alive) {
+                    this.death()
+                }
+                // slowly rotate
+                Matter.Body.setAngularVelocity(this, 0.01)
+                this.fill = `rgba(${this.energy * 255}, 29, 136, 0.80)`
+                this.seePlayerCheck()
+                // steal energy from player
+                // this.harmZone() // regular harmZone
+                // custom effects on top of that
+                if (this.distanceToPlayer() < this.laserRange) {
+                    if (m.immuneCycle < m.cycle) {
+                        // suck extra energy from the player if it's in range
+                        if (m.energy > 0.1 && this.energy < 1 - 0.012) {
+                            m.energy -= 0.012
+                            this.energy += 0.012
+                        }
+                        // special "sucking" graphics
+                        ctx.beginPath()
+                        ctx.moveTo(this.position.x, this.position.y)
+                        ctx.lineTo(m.pos.x, m.pos.y)
+                        ctx.lineWidth = 3 + Math.abs(Math.sin((simulation.cycle + this.seed) / 100)) * 2
+                        ctx.strokeStyle = `rgb(${(
+                            Math.abs(Math.sin((simulation.cycle + this.seed + 100) / 100)) * 255
+                        ).toFixed(3)}, 204, 255)`
+                        ctx.setLineDash([125 * Math.random(), 125 * Math.random()])
+                        ctx.stroke()
+                        ctx.setLineDash([])
+                    }
+                }
+                // if the mob's energy is at least 50% full, try to send that energy to the boss.
+                // don't send that energy yet if more than 5 other transfer balls are active
+                if (this.energy > 0.5 && parentBoss.energy < 1 && parentBoss.activeBalls <= 5 && this.chargeTicks === 0) {
+                    const seesBoss = Matter.Query.ray(map, this.position, parentBoss.position).length === 0
+                    if (seesBoss) {
+                        this.chargeTicks = 100
+                        this.bossPos = Vector.clone(parentBoss.position)
+                    }
+                }
+                if (this.chargeTicks > 0) {
+                    if (--this.chargeTicks === 0) {
+                        // spawn the orb
+                        const location = Vector.add(
+                            Vector.mult(Vector.normalise(Vector.sub(this.bossPos, this.position)), this.radius * 3),
+                            this.position
+                        )
+                        energyTransferBall(location, this.bossPos, parentBoss, this.energy)
+                        this.energy = 0
+                    }
+                    // create a beam and aim it at the bossPos
+                    ctx.beginPath()
+                    ctx.moveTo(this.position.x, this.position.y)
+                    ctx.lineTo(this.bossPos.x, this.bossPos.y)
+                    ctx.lineWidth = 10 + Math.abs(Math.sin((simulation.cycle + this.seed) / 100)) * 5
+                    ctx.strokeStyle = `rgb(${(
+                        Math.abs(Math.sin((simulation.cycle + this.seed + 100) / 100)) * 255
+                    ).toFixed(3)}, 204, 255)`
+                    ctx.setLineDash([125 * Math.random(), 125 * Math.random()])
+                    ctx.stroke()
+                    ctx.setLineDash([])
+                }
+                // generate (0.15 * difficulty / 4)% energy per tick
+                if (this.energy < 1) this.energy += 0.0015 * (simulation.difficulty / 4)
+                // draw energy bar
+                drawEnergyBar(this)
+            }
+            me.onDeath = function () {
+                // remove itself from the list
+                const beacons = parentBoss.energyBeacons
+                beacons.splice(beacons.indexOf(this), 1)
+                // explode with the strength of its energy!
+                this.alive = false // to prevent retriggering infinitly
+                b.explosion(this.position, this.energy * this.radius * 15)
+                // when it dies, it reduces some of the boss' energy
+                parentBoss.energy -= 0.025
+                // and stuns it
+                mobs.statusStun(parentBoss, 70 + ~~(100 / simulation.difficulty))
+            }
+        }
+
+        function geneticSeeker(x, y, genome, parentBoss) {
+            // special bullets that get score based on their performance.
+            mobs.spawn(x, y, genome.vertexCount, genome.size, '#' + genome.color.map(it => (~~it).toString(16)).join(''))
+            const me = mob[mob.length - 1]
+            // apply genome
+            Matter.Body.setDensity(me, genome.density)
+            me.accelMag = genome.speed
+            // apply vertex offset
+            for (let i = 0; i < me.vertices.length; i++) {
+                const vertex = me.vertices[i]
+                const offset = genome.vertexOffset[i]
+                if (!offset) console.log(genome, me)
+                vertex.x += offset.x
+                vertex.y += offset.y
+            }
+
+            me.stroke = 'transparent'
+            Matter.Body.setDensity(me, 0.00001) //normal is 0.001
+            // increased if the orb done things that are deemed successful
+            me.score = 30
+            me.timeLeft = 9001 / 9
+            me.accelMag = 0.00017 * simulation.accelScale //* (0.8 + 0.4 * Math.random())
+            me.frictionAir = 0.01
+            me.restitution = 0.5
+            me.leaveBody = false
+            me.isDropPowerUp = false
+            me.isBadTarget = true
+            me.isMobBullet = true
+            me.showHealthBar = false
+            me.collisionFilter.category = cat.mobBullet
+            me.collisionFilter.mask = cat.player | cat.map | cat.body | cat.bullet
+            me.do = function () {
+                this.alwaysSeePlayer()
+                this.attraction()
+                this.timeLimit()
+
+                if (Matter.Query.collides(this, map).length > 0) {
+                    // colliding with the map gives a score reduction, 0.5 per tick
+                    this.score -= 0.5
+                }
+                // default score is slowly reduced every tick to give mobs that reached the player faster a benefit
+                this.score -= 0.05
+                if (this.score < 0) {
+                    this.alive = false // no point continuing if this orb is that bad! Silent death
+                }
+                // give a bonus if some projectile is nearby or the mouse position is close (like laser pointing)
+                // if a mob survives this for long, then it gets a score benefit.
+                const bulletCloseToOrb = bullet.some(it => dist2(this.position, it.position) < 10000 /* 100 ^ 2 */)
+                // player shoots and aims close
+                const mouseCloseToOrb = dist2(this.position, simulation.mouseInGame) < 10000 && input.fire
+                if (bulletCloseToOrb || mouseCloseToOrb) {
+                    this.score += 1
+                }
+                // die if too far from the boss... It would be incredibly difficult to dodge otherwise
+                if (dist2(this.position, parentBoss.position) > 2000 * 2000) {
+                    this.alive = false
+                }
+                // DEBUG score printer
+                // ctx.font = '48px sans-serif'
+                // ctx.fillStyle = 'rgba(252, 0, 143, 1)'
+                // ctx.fillText(~~this.score, this.position.x - this.radius, this.position.y - this.radius)
+            }
+            me.onHit = function () {
+                // hitting the player gives a 50 points score bonus
+                this.score += 50
+                this.score += this.mass * 2 // bigger mass = bigger damage, add that too
+                // a marker for later
+                this.hitPlayer = true
+                this.explode(this.mass)
+            }
+            me.onDeath = function () {
+                if (!this.hitPlayer) {
+                    // if it didn't hit the player, give it a score based on its distance
+                    this.score += 10000 / this.distanceToPlayer()
+                }
+                // 3% chance to drop ammo
+                if (Math.random() > 0.97) {
+                    powerUps.spawn(this.position.x, this.position.y, 'ammo', true)
+                }
+                parentBoss.deadOrbs.push({
+                    genome: genome,
+                    score: this.score
+                })
+            }
+        }
+
+        function geneticBoss(x, y, radius = 130, spawnBossPowerUp = true) {
+            // a modified orb shooting boss that evolves its orbs.
+            // the way this boss works is different from the regular orb shooting boss,
+            // because the orbs have evolving properties via a "machine learning" scoring algorithm.
+            const MAX_BEACONS = Math.round(3 + Math.random() * simulation.difficulty / 3)
+            mobs.spawn(x, y, 8, radius, 'rgb(83, 32, 58)')
+            let me = mob[mob.length - 1]
+            me.isBoss = true
+
+            me.accelMag = 0.0001 * simulation.accelScale
+            me.fireFreq = Math.floor((330 * simulation.CDScale) / simulation.difficulty)
+            me.frictionStatic = 0
+            me.friction = 0
+            me.frictionAir = 0.02
+            me.memory = (420 / 69) * 42 // 🧌
+            me.repulsionRange = 1000000
+            me.energyBeacons = []
+            me.activeBalls = 0
+            // starts by random, or by the stored genomes if they exist
+            const init = () => ({
+                genome: generateGenome(),
+                score: 0
+            })
+            me.fittestOrbs = (localStorage && localStorage.genome) ? JSON.parse(localStorage.genome) : [init(), init(), init()] // best genomes so far. Size of three
+            // when an orb died it's moved here. When a new spawn cycle starts, their scores get calculated
+            // and they get put in the fittest orbs array, if they are better than the old ones.
+            me.deadOrbs = []
+            me.energy = 1
+            // this boss has no orbitals, because it's not meant to ever attack on its own
+            me.damageReduction = 0.25
+            // has a shield and sustains that shield
+            spawn.shield(me, x, y, Infinity)
+            me.fireFreq = 30
+            me.ionizeFreq = 20
+            me.ionized = []
+            me.laserRange = radius * 4
+
+            Matter.Body.setDensity(me, 0.0022 * 4 + 0.0002 * Math.sqrt(simulation.difficulty)) //extra dense //normal is 0.001 //makes effective life much larger
+            me.onDeath = function () {
+                if (spawnBossPowerUp) {
+                    powerUps.spawnBossPowerUp(this.position.x, this.position.y)
+                    const amount = ~~(5 * Math.random() * simulation.difficulty / 10) * 2
+                    for (let i = 0; i < amount; i++) {
+                        powerUps.spawn(this.position.x, this.position.y, 'ammo', true)
+                        if (Math.random() > 0.7) {
+                            powerUps.spawn(this.position.x, this.position.y, 'heal', true)
+                        }
+                    }
+                }
+                // keep the best genome and use it next fight...
+                if (localStorage) {
+                    localStorage.setItem("genome", JSON.stringify(this.fittestOrbs))
+                }
+
+                // stop spawning barrels
+                bossInit = false
+            }
+            me.onDamage = function () { }
+            me.spawnBeacon = function () {
+                // the vertex to spawn the beacon from
+                const vert = this.vertices[~~(Math.random() * this.vertices.length)]
+                // the position should be a little to the side to prevent crashing into the boss
+                // TODO check for collisions with the wall
+                const spawnPos = Vector.add(vert, Vector.mult(Vector.normalise(Vector.sub(this.position, vert)), -60))
+                // some velocity
+                const velocity = Vector.mult(Vector.normalise(Vector.sub(this.position, vert)), -5)
+                energyBeacon(spawnPos.x, spawnPos.y, this) // spawn the beacon, a bit ahead
+                const beacon = mob[mob.length - 1]
+                this.energyBeacons.push(beacon)
+                Matter.Body.setVelocity(beacon, {
+                    x: this.velocity.x + velocity.x,
+                    y: this.velocity.y + velocity.y
+                })
+            }
+            me.spawnOrbs = function () {
+                Matter.Body.setAngularVelocity(this, 0.11)
+                // sort the vertices by the distance to the player
+                const sorted = [...this.vertices].sort(dist2)
+                // spawn the bullets based on how close they are to the player.
+                // the way it works is it picks the fittest three orbs and clones them.
+                // but start by taking old mobs and checking if they are better than the new ones
+                let next
+                while ((next = this.deadOrbs.pop())) {
+                    // material costs are calculated as a contra to the score
+                    const cost = calculateGenomeCost(next.genome) * 500 // normalize via multiplication
+                    const totalScore = next.score - cost
+                    // try to insert itself into the best orbs, if it can
+                    for (let i = 0; i < this.fittestOrbs.length; i++) {
+                        const fitEntry = this.fittestOrbs[i]
+                        if (fitEntry.score < totalScore) {
+                            this.fittestOrbs[i] = next
+                            break
+                        }
+                    }
+                }
+                // finally sort them using their score
+                this.fittestOrbs.sort((a, b) => a.score - b.score)
+                // only take the genome, the score doesn't matter here
+                const bestOrbs = this.fittestOrbs.map(it => it.genome)
+                for (let vertex of sorted) {
+                    // pick a random fit orb and try to spawn it. If the cost is too high, it'll attempt
+                    // to generate a new random orb instead. If that orb is too expensive too, just ignore this vertex.
+                    // the evolution part comes here, as the genome is mutated first.
+                    let randGenome = mutateGenome(bestOrbs[~~(Math.random() * bestOrbs.length)])
+                    const cost = calculateGenomeCost(randGenome) * 2
+                    if (this.energy - cost < 0) {
+                        // okay this orb is too expensive for the boss to spawn,
+                        // make a new orb from scratch
+                        randGenome = generateGenome()
+                        const secondCost = calculateGenomeCost(randGenome)
+                        if (this.energy - secondCost < 0) {
+                            // that was too expensive too, heh
+                            continue
+                        }
+                    } else {
+                        // alright the boss can afford that
+                        this.energy -= Math.abs(cost) // TODO: Fix this, why the heck can it even be negative??
+                    }
+
+                    geneticSeeker(vertex.x, vertex.y, randGenome, this)
+                    // give the bullet a rotational velocity as if they were attached to a vertex
+                    const velocity = Vector.mult(
+                        Vector.perp(Vector.normalise(Vector.sub(this.position, vertex))),
+                        -10
+                    )
+                    Matter.Body.setVelocity(mob[mob.length - 1], {
+                        x: this.velocity.x + velocity.x,
+                        y: this.velocity.y + velocity.y
+                    })
+                }
+            }
+            me.do = function () {
+                this.seePlayerCheck()
+                this.checkStatus()
+                this.attraction()
+                this.repulsion()
+                // draw laser arcs if it sees the player
+                this.harmZone()
+                // 
+                const regularChance = Math.random() > 0.99
+                const biggerChance = Math.random() > 0.95 && this.energy > 0.25
+                // start by making sure there is always at least one beacon
+                if (this.energyBeacons.length === 0) {
+                    this.spawnBeacon()
+                }
+                // then, spawn some energy beacons if there are less than the maximum.
+                // small chance if there's no energy, bigger chance if there is at least 10% (which is drained)
+                if ((this.energyBeacons.length < MAX_BEACONS && biggerChance) || regularChance) {
+                    if (biggerChance) {
+                        // if the spawn was a selection of bigger chance, reduce 10% energy
+                        this.energy -= 0.10
+                    }
+                    this.spawnBeacon()
+                }
+                // then, spawn genetic seekers
+                if (this.seePlayer.recall && !(simulation.cycle % this.fireFreq)) {
+                    // fire a bullet from each vertex if there's enough energy
+                    if (this.energy > 0.15) {
+                        this.spawnOrbs()
+                    }
+                }
+
+                if (this.energy > 1) {
+                    // clean excess energy
+                    this.energy -= 0.003
+                } else {
+                    // or slowly generate energy
+                    this.energy += 0.001
+                }
+                // the boss will ionize every bullet in its radius, but that will cause its energy to deplete
+                if (!(simulation.cycle % this.ionizeFreq)) {
+                    for (let i = 0; i < bullet.length; i++) {
+                        const it = bullet[i]
+                        // if it's not a bot and it's close
+                        if (!it.botType && dist(this.position, it.position) < this.laserRange) {
+                            // add it to the ionized list
+                            this.ionized.push({
+                                target: it,
+                                ticks: 0
+                            })
+                        }
+                    }
+                }
+
+                for (let i = 0; i < this.ionized.length; i++) {
+                    const entry = this.ionized[i]
+
+                    // skip if there's not enough energy
+                    if (this.energy <= 0) break
+
+                    // terminate if it's no longer in the radius
+                    if (dist(this.position, entry.target.position) > this.laserRange) {
+                        this.ionized.splice(i, 1)
+                        continue
+                    }
+                    // terminate after some ticks
+                    if (++entry.ticks === 10) {
+                        entry.target.endCycle = 0
+                        // draw nice popping graphics
+                        simulation.drawList.push({
+                            x: entry.target.position.x,
+                            y: entry.target.position.y,
+                            radius: 5,
+                            color: '#f24',
+                            time: ~~(Math.random() * 20 + 10)
+                        })
+                        // and remove
+                        this.ionized.splice(i, 1)
+                        continue
+                    }
+                    // draw line
+                    ctx.beginPath()
+                    ctx.moveTo(this.position.x, this.position.y)
+                    ctx.lineTo(entry.target.position.x, entry.target.position.y)
+                    ctx.lineWidth = 7
+                    ctx.strokeStyle = `rgb(${60 - entry.ticks * 2}, 50, 50)`
+                    ctx.stroke()
+                    // reduce energy, as it's hard to ionize
+                    this.energy -= entry.target.mass / 25
+                }
+
+                // if it has energy, shield itself and drain energy
+                if (!this.isShielded && this.energy > 0.5) {
+                    spawn.shield(this, this.position.x, this.position.y, Infinity)
+                    this.energy -= 0.25
+                }
+                drawEnergyBar(this)
+                // change fill color
+                this.fill = `rgb(${((Math.sin(simulation.cycle / 100) + 1) / 2) * 100}, 32, 58)`
+            }
+            // start by spawning several beacons to gain initial energy
+            const amount = Math.ceil(2 + Math.random() * simulation.difficulty / 5)
+            for (let i = 0; i < amount; i++)
+                me.spawnBeacon()
+        }
+
+        // LEVEL SETUP
+        spawn.mapRect(level.enter.x, level.enter.y + 20, 100, 20) //don't change this
+
+        level.exit.x = 5700 //you exit at x
+        level.exit.y = -130 //you exit at y
+        spawn.mapRect(5800, -110, -100, 10)
+
+        level.defaultZoom = 2000 //how far out you want the image to be zoomed at (lower = zoom in, higher = zoom out)
+        simulation.zoomTransition(level.defaultZoom) //makes the level transition to have the zoom at the start of a level
+        document.body.style.backgroundColor = 'hsl(138, 3%, 74%)' //sets background color
+
+        //LEVEL STRUCTURE
+        spawn.mapRect(-3100, -100, 9200, 100)
+        spawn.mapRect(-3100, -600, 100, 500)
+        spawn.mapRect(-3100, -600, 1100, 100)
+        spawn.mapRect(-2100, -3100, 100, 2700)
+        spawn.mapRect(4800, -3100, 100, 2600)
+        spawn.mapRect(4800, -600, 1300, 100)
+        spawn.mapRect(6000, -600, 100, 600)
+
+        spawn.mapRect(400, -200, 2000, 100)
+        spawn.mapRect(600, -300, 1600, 100)
+        spawn.mapRect(800, -400, 1200, 100)
+        spawn.mapRect(1000, -500, 800, 100)
+        spawn.mapRect(1200, -600, 400, 100)
+        // roof
+        spawn.mapRect(-2100, -4350, 650, 1250)
+        spawn.mapRect(-1300, -4350, 1250, 1250)
+        spawn.mapRect(100, -4350, 1225, 1250)
+        spawn.mapRect(1475, -4350, 1325, 1250)
+        spawn.mapRect(2950, -4350, 1325, 1250)
+        spawn.mapRect(4425, -4350, 475, 1250)
+
+        // arc
+        // spawn.mapVertex(1400, -892, '700, -800, 700, -900, 1000, -1000, 1800, -1000, 2100, -900, 2100, -800')
+
+
+        //PLATFORMS
+        platformShadow(-1200, -500, 300, 100, shadows)
+        platformShadow(-400, -700, 300, 100, shadows)
+        platformShadow(400, -900, 300, 100, shadows)
+        platformShadow(-2000, -800, 300, 100, shadows)
+        platformShadow(-1000, -1000, 300, 100, shadows)
+        platformShadow(-400, -1300, 300, 100, shadows)
+        platformShadow(-1600, -1300, 300, 100, shadows)
+        platformShadow(-1300, -1600, 300, 100, shadows)
+        platformShadow(-2000, -1700, 300, 100, shadows)
+        platformShadow(-700, -1800, 300, 100, shadows)
+        platformShadow(-1500, -2100, 300, 100, shadows)
+        platformShadow(-600, -2200, 300, 100, shadows)
+        platformShadow(-2000, -2500, 300, 100, shadows)
+        platformShadow(-1100, -2400, 300, 100, shadows)
+        platformShadow(-500, -2700, 300, 100, shadows)
+        platformShadow(100, -2400, 300, 100, shadows)
+        platformShadow(700, -2700, 300, 100, shadows)
+
+        platformShadow(3700, -500, 300, 100, shadows)
+        platformShadow(2900, -700, 300, 100, shadows)
+        platformShadow(2100, -900, 300, 100, shadows)
+        platformShadow(4500, -800, 300, 100, shadows)
+        platformShadow(3500, -1000, 300, 100, shadows)
+        platformShadow(4100, -1300, 300, 100, shadows)
+        platformShadow(2900, -1300, 300, 100, shadows)
+        platformShadow(3800, -1600, 300, 100, shadows)
+        platformShadow(4500, -1700, 300, 100, shadows)
+        platformShadow(3200, -1800, 300, 100, shadows)
+        platformShadow(4000, -2100, 300, 100, shadows)
+        platformShadow(3100, -2200, 300, 100, shadows)
+        platformShadow(4500, -2500, 300, 100, shadows)
+        platformShadow(3600, -2400, 300, 100, shadows)
+        platformShadow(3000, -2700, 300, 100, shadows)
+        platformShadow(2400, -2400, 300, 100, shadows)
+        platformShadow(1800, -2700, 300, 100, shadows)
+
+        // cages
+        cage(-1492, -1200, 100, cages)
+        cage(-875, -2300, 300, cages)
+        cage(-1600, -3100, 1000, cages)
+        cage(225, -2300, 1000, cages)
+        cage(-750, -3100, 700, cages)
+        cage(-625, -1700, 1200, cages)
+        cage(2200, -3100, 500, cages)
+        cage(3275, -1700, 500, cages)
+        cage(3650, -900, 300, cages)
+        cage(2500, -2300, 300, cages)
+        cage(3625, -2300, 300, cages)
+        cage(3875, -1500, 300, cages)
+        cage(4025, -3100, 300, cages)
+
+        // boss cage
+        platformShadow(1275, -2150, 250, 100, shadows)
+        cage(1400, -2050, 500, cages, 'starter', true)
+        map[map.length] = Bodies.trapezoid(1400, -2193, 250, 100, 0.5)
+        //DEBRIS
+        //idk just put the debris wherever you want
+        spawn.debris(-550, -225, 100)
+        spawn.debris(-1150, -1725, 75)
+        spawn.debris(-275, -1400, 50)
+        spawn.debris(2850, -2075, 150)
+        spawn.debris(4250, -2250, 150)
+        //BOSS
+        // geneticBoss(1400, -3800)
+        anotherBoss(0, 0) //will only spawn historyBoss if there is an additional boss
     },
 
     // ********************************************************************************************************
