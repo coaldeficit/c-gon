@@ -13,7 +13,7 @@ const level = {
     cgonLevels: ["descent", "split"],
     communityLevels: ["stronghold", "basement", "crossfire", "vats", "n-gon", "house", "perplex", "coliseum", "tunnel", "islands"],
     modernCommunityLevels: ["dripp", "fortress", "commandeer", "clock", "buttonbutton", "downpour"], // todo: backport
-    gimmickLevels: ["run", "testChamber2", "temple", "biohazard", "stereoMadness", "yingYang", "staircase", "superNgonBros", "underpass"],
+    gimmickLevels: ["run", "testChamber2", "temple", "biohazard", "stereoMadness", "yingYang", "staircase", "superNgonBros", "underpass", "cantilever", "tlinat", "ruins"],
     trainingLevels: ["walk", "crouch", "jump", "hold", "throw", "throwAt", "deflect", "heal", "fire", "nailGun", "shotGun", "superBall", "matterWave", "missile", "stack", "mine", "grenades", "harpoon"],
     levels: [],
     announceMobTypes() {
@@ -23937,6 +23937,1374 @@ const level = {
         };
         const obj = { restoreBoss };
         Object.assign(spawn, obj); //for next map, gonna be a rpg-like thingy I think
+    },
+    cantilever() { // made by Eclipse#7932 on discord, (TheSpudguy)(@PurpleSunsetGames on github)
+        // simulation.enableConstructMode();
+        simulation.makeTextLog(`<strong>underpass</strong> by <span class='color-var'>Eclipse#7932</span>`);
+
+        level.setPosToSpawn(0, -50); //normal spawn
+        level.exit.x = 5500;
+        level.exit.y = 950;
+        spawn.mapRect(level.enter.x, level.enter.y + 20, 100, 20); //bump for level entrance
+        spawn.mapRect(level.exit.x, level.exit.y + 20, 100, 20); //bump for level exit
+        spawn.mapRect(level.exit.x - 50, level.exit.y + 30, 200, 100); // exit platform
+        spawn.mapRect(level.exit.x - 50, level.exit.y - 300, 200, 100); // exit platform roof
+        const endElevator = level.elevator(level.exit.x - 150, level.exit.y - 300, 100, 425, level.exit.y - 300); // end access door
+
+        spawn.randomMob(-200, 350, Infinity); // random mob at the beginning
+
+        spawn.mapRect(-100, 0, 600, 100); // main platform at start
+        spawn.bodyRect(0, 300, 50, 50); // little squares at start (one of these should be taken while crossing the cantilever to complete the level more easily)
+        spawn.bodyRect(100, 200, 50, 50);
+        spawn.bodyRect(50, 250, 50, 50);
+        spawn.mapRect(450, -20, 50, 20); // main platform ledge
+        spawn.mapRect(-200, 500, 2200, 100); // lower platform
+        spawn.mapRect(1850, 380, 100, 50); // cantilever block
+        spawn.bodyRect(80, -1300, 70, 1300, 1, { friction: .03, frictionAir: .001 }); // cantilever
+
+        spawn.mapRect(3400, 500, 300, 100); // lever platform
+        spawn.mapRect(3650, 500, 100, 800); // pit
+        spawn.mapRect(3650, 1300, 2600, 100);
+        spawn.mapRect(6150, 600, 100, 800);
+        spawn.mapRect(5650, 600, 100, 650);
+        spawn.randomMob(4700, 550, Infinity);
+        spawn.randomMob(4700, 450, Infinity);
+        spawn.randomMob(4600, 550, Infinity);
+
+        const toggle = level.toggle(3500, 500, false); // first lever
+        const button = level.button(5900, 1300);
+        const slidingWall = level.elevator(3750, -1200, 100, 1800, -1200); // first sliding wall
+
+        level.defaultZoom = 1500;
+        simulation.zoomTransition(level.defaultZoom);
+        document.body.style.backgroundColor = "#d8badf";
+        // color.map = "#444" //custom map color
+
+        level.custom = () => {
+            level.exit.drawAndCheck();
+
+            level.enter.draw();
+        };
+
+        level.customTopLayer = () => {
+            toggle.query();
+            button.query();
+            button.draw();
+
+            if (toggle.isOn) {
+                slidingWall.force.y -= 400;
+            }
+            if (!button.isUp) {
+                endElevator.force.y -= 100;
+            }
+            slidingWall.move();
+            endElevator.move()
+        };
+        powerUps.addResearchToLevel(); //needs to run after mobs are spawned
+    },
+    tlinat() { // _Destined_ formerly Richard0820#2652
+        simulation.makeTextLog(`<strong>tlinat</strong> by <span class='color-var'>Richard0820</span>`);
+        simulation.fallHeight = 1 / 0, level.setPosToSpawn(0, -1e3), level.exit.x = 5100, level.exit.y = 3770, spawn.mapRect(level.enter.x, level.enter.y + 20, 100, 20), spawn.mapRect(level.exit.x, level.exit.y + 20, 100, 20), level.defaultZoom = 3000, simulation.zoomTransition(level.defaultZoom), document.body.style.backgroundColor = "#d8dadf";
+        let e = 0,
+            t = 0;
+        const boidsFlocking = function (mob, otherMobs) {
+            const cohesionFactor = 0.01;
+            const separationFactor = 0.0001;
+            const alignmentFactor = 0.04;
+            let averagePosition = { x: 0, y: 0 };
+            let averageVelocity = { x: 0, y: 0 };
+            let nearbyMobsCount = 0;
+            for (const otherMob of otherMobs) {
+                if (otherMob !== mob) {
+                    const distanceSquared = Vector.magnitudeSquared(Vector.sub(mob.position, otherMob.position));
+                    const boidRangeSquared = 300 * 300; // Adjust boid range as needed
+                    if (distanceSquared < boidRangeSquared) {
+                        averagePosition = Vector.add(averagePosition, otherMob.position);
+                        averageVelocity = Vector.add(averageVelocity, otherMob.velocity);
+                        nearbyMobsCount++;
+                    }
+                }
+            }
+            if (nearbyMobsCount > 0) {
+                averagePosition = Vector.div(averagePosition, nearbyMobsCount);
+                averageVelocity = Vector.div(averageVelocity, nearbyMobsCount);
+                const cohesionForce = Vector.mult(Vector.sub(averagePosition, mob.position), cohesionFactor);
+                mob.force = Vector.add(mob.force, cohesionForce);
+                const separationForce = Vector.mult(Vector.sub(mob.position, averagePosition), separationFactor);
+                mob.force = Vector.add(mob.force, separationForce);
+                const alignmentForce = Vector.mult(Vector.sub(averageVelocity, mob.velocity), alignmentFactor);
+                mob.force = Vector.add(mob.force, alignmentForce);
+            }
+        };
+        function ghoster(x, y, radius = 50 + Math.ceil(Math.random() * 90)) {
+            mobs.spawn(x, y, 7, radius, "transparent");
+            let me = mob[mob.length - 1];
+            me.seeAtDistance2 = 300000;
+            me.accelMag = 0.00004 + 0.00015 * simulation.accelScale;
+            if (map.length) me.searchTarget = map[Math.floor(Math.random() * (map.length - 1))].position; //required for search
+            // Matter.Body.setDensity(me, 0.0015); //normal is 0.001
+            me.damageReduction = 0.5
+            me.stroke = "transparent"; //used for drawGhost
+            me.alpha = 1; //used in drawGhost
+            me.isNotCloaked = false; //used in drawGhost
+            me.isBadTarget = true;
+            // me.leaveBody = false;
+            me.collisionFilter.mask = cat.bullet //| cat.body
+            me.showHealthBar = false;
+            me.memory = 600;
+            me.do = function () {
+                boidsFlocking(me, mob);//Stack, increase power.
+                if (this.speed > 7) {
+                    Matter.Body.setVelocity(this, {
+                        x: this.velocity.x * 0.8,
+                        y: this.velocity.y * 0.8
+                    });
+                }
+                this.seePlayerCheckByDistance();
+                this.checkStatus();
+                this.attraction();
+                this.search();
+                //draw
+                if (this.distanceToPlayer2() < this.seeAtDistance2) {
+                    if (this.alpha < 1) this.alpha += 0.011 * simulation.CDScale; //near player go solid
+                } else {
+                    if (this.alpha > 0) this.alpha -= 0.05; ///away from player, hide
+                }
+                if (this.alpha > 0) {
+                    if (this.alpha > 0.7 && this.seePlayer.recall) {
+                        this.healthBar();
+                        if (!this.isNotCloaked) {
+                            this.isNotCloaked = true;
+                            this.isBadTarget = false;
+                            this.collisionFilter.mask = cat.player | cat.bullet
+                        }
+                    }
+                    //draw body
+                    ctx.beginPath();
+                    const vertices = this.vertices;
+                    ctx.moveTo(vertices[0].x, vertices[0].y);
+                    for (let j = 1, len = vertices.length; j < len; ++j) {
+                        ctx.lineTo(vertices[j].x, vertices[j].y);
+                    }
+                    ctx.lineTo(vertices[0].x, vertices[0].y);
+                    // ctx.lineWidth = 1;
+                    ctx.fillStyle = `rgba(255,255,255,${this.alpha * this.alpha})`;
+                    ctx.fill();
+                } else if (this.isNotCloaked) {
+                    this.isNotCloaked = false;
+                    this.isBadTarget = true;
+                    this.collisionFilter.mask = cat.bullet; //can't touch player or walls
+                }
+            };
+        }
+        function o(e, t, o) {
+            const l = {
+                J: [" #### ", "    # ", "    # ", "    # ", " #  # ", " #  # ", "  ##  "],
+                I: ["  #  ", "  #  ", "  #  ", "  #  ", "  #  ", "  #  ", "  #  "],
+                N: [" #  # ", " ## # ", " ## # ", " # ## ", " # ## ", " #  # ", " #  # "],
+                " ": ["      ", "      ", "      ", "      ", "      ", "      ", "      "],
+                O: ["   ##   ", "  #  #  ", " #    # ", " #    # ", " #    # ", "  #  #  ", "   ##   "],
+                U: [" #   # ", " #   # ", " #   # ", " #   # ", " #   # ", " #   # ", "  ###  "],
+                R: [" #### ", " #   #", " #### ", " # #  ", " #  # ", " #   #", " #   #"],
+                D: [" ###   ", " #  ## ", " #   # ", " #   # ", " #   # ", " #  ## ", " ###   "],
+                S: ["  #### ", " #     ", " #     ", "  ###  ", "    ## ", "     # ", " ##### "],
+                C: [" ##### ", " #     ", " #     ", " #     ", " #     ", " #     ", " ##### "],
+                V: [" #   # ", " #   # ", " #   # ", " #   # ", " #   # ", "  # #  ", "   #   "],
+                E: [" ##### ", " #     ", " #     ", " ##### ", " #     ", " #     ", " ##### "],
+                ".": ["       ", "       ", "       ", "       ", "       ", "   ##  ", "   ##  "],
+                "/": ["      #", "     # ", "    #  ", "   #   ", "  #    ", " #     ", "#      "],
+                G: [" ###### ", " #      ", " #      ", " #  ### ", " #    # ", " #    # ", " ###### "],
+                Q: ["  ######   ", " #      #  ", " #      #  ", " #      #  ", " #    # #  ", "  #    #   ", "   #### #  ", "         # "],
+                8: ["  #####  ", " #     # ", " #     # ", "  #####  ", " #     # ", " #     # ", "  #####  "],
+                g: ["  #####  ", " #     # ", " #     # ", "  #####  ", "       # ", "       # ", " ######  "],
+                Y: [" #     # ", "  #   #  ", "   # #   ", "    #    ", "    #    ", "    #    ", "    #    "],
+                4: [" #       ", " #    #  ", " #    #  ", " #    #  ", "  ###### ", "      #  ", "      #  "],
+                W: [" #     # ", " #     # ", " #     # ", " #  #  # ", " # # # # ", " ##   ## ", " #     # "],
+                e: ["  ######  ", " #      # ", " #      # ", " #######  ", " #        ", "  #       ", "  ######  "],
+                c: [" ###### ", "#       ", "#       ", "#       ", "#       ", "#       ", " ###### ", "        "],
+                m: [" #       ", " ### ### ", " #  #  # ", " #  #  # ", " #  #  # ", " #  #  # ", " #  #  # "]
+            },
+                a = (e, t) => {
+                    ctx.fillStyle = "black", ctx.fillRect(e, t, 50, 50)
+                },
+                n = (e, t, o) => {
+                    const n = l[e];
+                    if (n)
+                        for (let e = 0; e < n.length; e++) {
+                            const l = n[e];
+                            for (let n = 0; n < l.length; n++) {
+                                if ("#" === l[n]) {
+                                    a(t + 20 * n, o + 20 * e)
+                                }
+                            }
+                        }
+                };
+            for (let l = 0; l < o.length; l++) {
+                n(o[l], e + 250 * l - Math.abs(1.5 * e), t)
+            }
+        }
+        simulation.makeTextLog(`<img src="https://raw.githubusercontent.com/Whyisthisnotavalable/image-yy/main/Hotpot-removed.png" width="100" height="100" style="background-image: radial-gradient(circle, gray, black, transparent)"><br>Look up<br><em>Walk right to tp to maze</em><br><b>Exit is at the bottom left</b>`), Matter.Body.scale(player.parts[3], 2, 2), level.custom = () => {
+            if (level.exit.drawAndCheck(), level.enter.draw(), player.position.y > 1e5 && Matter.Body.setPosition(player, {
+                x: 5100,
+                y: -5925
+            }), player.position.x > 2500 && 0 == e) {
+                Matter.Body.setPosition(player, {
+                    x: 5100,
+                    y: -5925
+                }), e++;
+                for (let e = 0; e < map.length; e++) Math.random() < .75 && ghoster(map[e].position.x, map[e].position.y);
+                simulation.makeTextLog("Watch out for <b>ghosters</b><br>Peace ✌️")
+            }
+            player.position.x > level.exit.x && player.position.x < level.exit.x + 100 && player.position.y > level.exit.y - 150 && player.position.y < level.exit.y - 0 && player.velocity.y < .15 && 0 == t && (t++, Matter.Body.scale(player.parts[3], .5, .5))
+        }, level.customTopLayer = () => {
+            player.position.x > -1200 && player.position.x < 4500 && (o(2e3, -3e3, "JOIN OUR DISCORD SERVER"), o(1500, -2700, "DISCORD.GG/Q8gY4WeUcm"))
+        }, spawn.mapRect(-1e3, -950, 5950, 100), spawn.mapRect(-1325, -3450, 100, 2575), spawn.mapRect(-1325, -950, 350, 100), spawn.mapRect(4850, -3400, 100, 2550), spawn.mapRect(-1325, -3450, 6275, 100),
+            function (e, t, o, l, a) {
+                const n = o / a,
+                    s = l / a,
+                    i = e - o / 2,
+                    p = t - l / 2,
+                    r = [];
+                for (let e = 0; e < a; e++) {
+                    r[e] = [];
+                    for (let t = 0; t < a; t++) r[e][t] = 1
+                }
+                const c = [];
+                (function e(t, o) {
+                    r[t][o] = 0;
+                    const l = [{
+                        dx: 0,
+                        dy: -1
+                    }, {
+                        dx: 1,
+                        dy: 0
+                    }, {
+                        dx: 0,
+                        dy: 1
+                    }, {
+                        dx: -1,
+                        dy: 0
+                    }];
+                    l.sort((() => Math.random() - .5));
+                    for (const n of l) {
+                        const l = t + 2 * n.dx,
+                            s = o + 2 * n.dy;
+                        l >= 0 && l < a && s >= 0 && s < a && 1 === r[l][s] && (r[t + n.dx][o + n.dy] = 0, r[l][s] = 0, c.push({
+                            x: t + n.dx,
+                            y: o + n.dy
+                        }), e(l, s))
+                    }
+                })(0, 0), r[a - 1][a - 1] = 1;
+                for (let e = -1; e < a + 1; e++) {
+                    let t = -1,
+                        o = -1;
+                    for (let l = -1; l < a + 1; l++)
+                        if (e >= 0 && e < a && l >= 0 && l < a && 1 === r[e][l]) - 1 === t && (t = l), o = l;
+                        else if (-1 !== t) {
+                            const l = i + e * n,
+                                a = p + t * s,
+                                r = n,
+                                c = (o - t + 1) * s;
+                            c !== s && spawn.mapRect(l, a, r, c), t = -1, o = -1
+                        }
+                }
+                for (let e = -1; e < a + 1; e++) {
+                    let t = -1,
+                        o = -1;
+                    for (let l = -1; l < a + 1; l++)
+                        if (l >= 0 && l < a && e >= 0 && e < a && 1 === r[l][e]) - 1 === t && (t = l), o = l;
+                        else if (-1 !== t) {
+                            const l = i + t * n,
+                                a = p + e * s,
+                                r = (o - t + 1) * n,
+                                c = s;
+                            r !== n && spawn.mapRect(l, a, r, c), t = -1, o = -1
+                        }
+                }
+                spawn.mapRect(i - n, p - s, n * a, s), spawn.mapRect(i - n, p - s, n, s * a), spawn.mapRect(i + (a - 1) * n, p - s, n, s * (a + 1)), spawn.mapRect(i - n, p + (a - 1) * s, n * (a + 1), s)
+            }(1e4, -1e3, 1e4, 1e4, 50);
+    },
+    ruins() { // by SiddhUPe
+        // simulation.enableConstructMode()
+        simulation.makeTextLog(`<strong>ruins</strong> by <span class='color-var'>SiddhUPe</span>`);
+
+        level.setPosToSpawn(0, -50); //normal spawn
+        level.exit.x = 19531;
+        level.exit.y = 882 + 70;
+        spawn.mapRect(level.enter.x, level.enter.y + 20, 100, 20); //bump for level entrance
+        spawn.mapRect(level.exit.x, level.exit.y + 20, 100, 20); //bump for level exit
+        level.defaultZoom = 1800
+        simulation.zoomTransition(level.defaultZoom)
+        document.body.style.backgroundColor = "#d8dadf";
+        // color.map = "#444" //custom map color
+
+
+        level.customTopLayer = () => { };
+        spawn.mapRect(875, 0, 1000, 100);
+        spawn.mapRect(1825, -400, 50, 225);
+        spawn.mapRect(1825, -400, 675, 50);
+        spawn.mapRect(1825, 0, 675, 100);
+        spawn.mapRect(2500, -575, 50, 225);
+        spawn.mapRect(2500, -575, 850, 50);
+        spawn.mapRect(2500, -100, 875, 175);
+        spawn.mapRect(2500, 75, 875, 25);
+        spawn.mapRect(3350, -575, 25, 50);
+        spawn.mapRect(2450, -50, 75, 75);
+        spawn.mapRect(2425, -25, 25, 25);
+        spawn.mapRect(2475, -75, 25, 25);
+        spawn.mapRect(3375, -575, 75, 325);
+        spawn.mapRect(3375, -100, 75, 300);
+        spawn.mapRect(3450, -50, 25, 250);
+        spawn.mapRect(3475, -25, 25, 225);
+        spawn.mapRect(3500, 0, 25, 200);
+        spawn.mapRect(3525, 25, 25, 175);
+        spawn.mapRect(3550, 75, 25, 125);
+        spawn.mapRect(3550, 50, 25, 150);
+        spawn.mapRect(3575, 75, 25, 125);
+        spawn.mapRect(3600, 100, 25, 100);
+        spawn.mapRect(3625, 150, 25, 50);
+        spawn.mapRect(2875, -1375, 350, 75);
+        spawn.mapRect(3150, -1375, 75, 350);
+        spawn.mapRect(3100, -1300, 50, 50);
+        spawn.mapRect(3075, -1300, 25, 25);
+        spawn.mapRect(3125, -1250, 25, 25);
+        spawn.mapRect(2825, -1375, 50, 125);
+        spawn.mapRect(3100, -1025, 125, 50);
+        spawn.mapRect(2800, -1350, 25, 75);
+        spawn.mapRect(3125, -975, 75, 25);
+        spawn.mapRect(3225, -1350, 25, 300);
+        spawn.mapRect(2875, -1400, 275, 25);
+        spawn.mapRect(2900, -1425, 225, 25);
+        spawn.mapRect(3250, -1325, 25, 250);
+        spawn.mapRect(2875, -1300, 25, 25);
+        spawn.mapRect(3125, -1050, 50, 25);
+        spawn.mapRect(5325, 800, 50, 225);
+        spawn.mapRect(5325, 975, 300, 50);
+        spawn.mapRect(5375, 925, 50, 50);
+        spawn.mapRect(5375, 900, 25, 25);
+        spawn.mapRect(5425, 950, 25, 25);
+        spawn.mapRect(5325, 775, 100, 25);
+        spawn.mapRect(5625, 925, 25, 100);
+        spawn.mapRect(5350, 800, 50, 25);
+        spawn.mapRect(5600, 950, 25, 50);
+        spawn.mapRect(5300, 800, 25, 175);
+        spawn.mapRect(5400, 1025, 225, 25);
+        spawn.mapRect(5450, 1050, 125, 25);
+        spawn.mapRect(5275, 850, 25, 100);
+        spawn.mapRect(5350, 750, 50, 25);
+        spawn.mapRect(5650, 950, 25, 50);
+        spawn.mapRect(16775, -975, 275, 50);
+        spawn.mapRect(17000, -975, 50, 200);
+        spawn.mapRect(16775, -975, 25, 100);
+        spawn.mapRect(17000, -775, 50, 50);
+        spawn.mapRect(16975, -725, 75, 25);
+        spawn.mapRect(16950, -925, 50, 50);
+        spawn.mapRect(16925, -925, 75, 25);
+        spawn.mapRect(17000, -925, 25, 75);
+        spawn.mapRect(16975, -925, 25, 50);
+        spawn.mapRect(16975, -925, 25, 75);
+        spawn.mapRect(16800, -1000, 200, 25);
+        spawn.mapRect(16850, -1025, 100, 25);
+        spawn.mapRect(17050, -925, 25, 200);
+        spawn.mapRect(17075, -925, 25, 150);
+        spawn.mapRect(16775, -925, 50, 25);
+        spawn.mapRect(17000, -750, 25, 25);
+        spawn.mapRect(16975, -750, 25, 50);
+        spawn.mapRect(16950, -725, 75, 25);
+        spawn.mapRect(9475, -1150, 50, 200);
+        spawn.mapRect(9475, -1150, 25, 25);
+        spawn.mapRect(9475, -1150, 300, 50);
+        spawn.mapRect(9725, -1150, 25, 25);
+        spawn.mapRect(9725, -1150, 50, 200);
+        spawn.mapRect(9500, -975, 25, 25);
+        spawn.mapRect(9500, -975, 75, 25);
+        spawn.mapRect(9700, -975, 25, 25);
+        spawn.mapRect(9675, -975, 75, 25);
+        spawn.mapRect(9525, -1175, 200, 25);
+        spawn.mapRect(9550, -1200, 150, 100);
+        spawn.mapRect(9450, -1125, 50, 150);
+        spawn.mapRect(9750, -1125, 50, 150);
+        spawn.mapRect(9525, -1100, 50, 50);
+        spawn.mapRect(9675, -1100, 50, 50);
+        spawn.mapRect(9575, -1100, 25, 25);
+        spawn.mapRect(9650, -1100, 25, 25);
+        spawn.mapRect(9500, -1050, 50, 25);
+        spawn.mapRect(9700, -1100, 25, 75);
+        spawn.mapRect(11925, -1175, 75, 275);
+        spawn.mapRect(11925, -1175, 475, 75);
+        spawn.mapRect(12325, -1175, 75, 275);
+        spawn.mapRect(11925, -925, 175, 25);
+        spawn.mapRect(12225, -925, 175, 25);
+        spawn.mapRect(11950, -925, 125, 50);
+        spawn.mapRect(12275, -925, 100, 50);
+        spawn.mapRect(11925, -1200, 475, 25);
+        spawn.mapRect(11975, -1225, 375, 25);
+        spawn.mapRect(12000, -1225, 50, 25);
+        spawn.mapRect(12000, -1275, 325, 75);
+        spawn.mapRect(11900, -1175, 50, 250);
+        spawn.mapRect(12375, -1175, 50, 250);
+        spawn.mapRect(11900, -1150, 50, 150);
+        spawn.mapRect(11875, -1150, 50, 200);
+        spawn.mapRect(12375, -1150, 75, 200);
+        spawn.mapRect(11975, -1100, 50, 25);
+        spawn.mapRect(12300, -1100, 75, 25);
+        spawn.mapRect(12300, -950, 25, 50);
+        spawn.mapRect(12000, -950, 25, 75);
+
+        spawn.mapRect(3625, 125, 25, 50);
+        spawn.mapRect(3650, 150, 25, 50);
+        spawn.mapRect(3675, 175, 25, 25);
+        spawn.mapRect(3450, -75, 25, 50);
+        spawn.mapRect(3475, -50, 25, 125);
+        spawn.mapRect(3500, -25, 25, 125);
+        spawn.mapRect(3500, 0, 50, 125);
+        spawn.mapRect(3550, 25, 25, 125);
+        spawn.mapRect(3575, 50, 25, 125);
+        spawn.mapRect(3600, 75, 25, 75);
+        spawn.mapRect(3600, 100, 50, 75);
+        spawn.mapRect(3650, 125, 25, 75);
+        spawn.mapRect(3675, 150, 25, 50);
+        spawn.mapRect(3675, 150, 75, 450);
+        spawn.mapRect(3675, 525, 700, 75);
+        spawn.mapRect(4300, 150, 75, 450);
+        mover = level.mover(3375, -100, 75, 100);
+        pool = level.hazard(3750, 200, 550, 325);
+        spawn.mapRect(-150, -225, 75, 325);
+        spawn.mapRect(-150, -325, 425, 100);
+        spawn.mapRect(-100, -400, 300, 75);
+        spawn.mapRect(-25, -475, 150, 75);
+        spawn.mapRect(200, -350, 25, 50);
+        spawn.mapRect(-50, -425, 25, 100);
+        spawn.mapRect(-125, -350, 25, 100);
+        spawn.mapRect(100, -425, 50, 125);
+        spawn.mapRect(1875, -450, 625, 50);
+        spawn.mapRect(1950, -500, 550, 50);
+        spawn.mapRect(2025, -525, 475, 25);
+        spawn.mapRect(2025, -550, 525, 25);
+        spawn.mapRect(2125, -575, 400, 25);
+        spawn.mapRect(2125, -600, 1325, 50);
+        spawn.mapRect(2475, -550, 950, 200);
+        spawn.mapRect(1825, -350, 100, 175);
+        spawn.mapRect(3350, -375, 25, 125);
+        spawn.mapRect(1850, -425, 50, 25);
+        spawn.mapRect(1925, -475, 125, 25);
+        spawn.mapRect(2000, -525, 125, 25);
+        spawn.mapRect(2100, -575, 200, 25);
+        spawn.mapRect(2400, -650, 725, 75);
+        spawn.mapRect(2500, -675, 475, 75);
+        spawn.mapRect(2625, -725, 225, 100);
+        spawn.mapRect(2675, -750, 125, 25);
+        spawn.mapRect(2600, -700, 25, 50);
+        spawn.mapRect(2850, -700, 25, 75);
+        spawn.mapRect(3075, -625, 75, 50);
+        spawn.mapRect(2375, -625, 50, 75);
+        spawn.mapRect(1900, -350, 100, 75);
+        spawn.mapRect(1925, -300, 50, 50);
+        spawn.mapRect(1975, -350, 75, 50);
+        spawn.mapRect(3325, -350, 50, 25);
+        spawn.mapRect(150, -25, 1425, 50);
+        spawn.mapRect(175, 75, 1200, 50);
+        spawn.mapRect(400, -25, 575, 25);
+        spawn.mapRect(425, -50, 750, 75);
+        spawn.mapRect(1250, -50, 125, 100);
+        spawn.mapRect(1175, -50, 100, 25);
+        spawn.mapRect(725, 100, 500, 50);
+        spawn.mapRect(625, -75, 300, 50);
+        spawn.mapRect(250, -25, 225, 25);
+        spawn.mapRect(1400, 75, 225, 50);
+        spawn.mapRect(950, -75, 200, 25);
+        spawn.mapRect(1200, -75, 125, 25);
+        spawn.mapRect(425, -50, 100, 25);
+        spawn.mapRect(450, -75, 100, 50);
+        spawn.mapRect(250, -50, 125, 50);
+        spawn.mapRect(250, 125, 125, 25);
+        spawn.mapRect(475, 100, 100, 50);
+        spawn.mapRect(650, 125, 25, 25);
+        spawn.mapRect(675, 100, 75, 50);
+        spawn.mapRect(825, 125, 200, 50);
+        spawn.mapRect(-75, 75, 325, 50);
+        spawn.mapRect(0, 100, 175, 50);
+        spawn.mapRect(775, -100, 275, 50);
+        spawn.mapRect(2475, 0, 925, 125);
+        spawn.mapRect(2500, 50, 875, 100);
+        spawn.mapRect(2550, 100, 775, 75);
+        spawn.mapRect(2625, 150, 600, 50);
+        spawn.mapRect(3225, 125, 275, 75);
+        spawn.mapRect(1750, -225, 150, 50);
+        spawn.mapRect(1800, -275, 50, 75);
+        spawn.mapRect(1775, -250, 75, 75);
+        spawn.mapRect(3200, -625, 250, 50);
+        spawn.mapRect(3275, -650, 75, 25);
+        spawn.mapRect(3175, -625, 25, 25);
+        spawn.mapRect(3250, -700, 100, 100);
+        spawn.mapRect(3200, -650, 75, 50);
+        spawn.mapRect(3225, -675, 75, 100);
+        spawn.mapRect(3325, -675, 50, 100);
+        spawn.mapRect(3375, -650, 25, 75);
+        spawn.mapRect(1575, -25, 100, 25);
+        spawn.mapRect(1450, 100, 125, 50);
+        spawn.mapRect(250, -300, 50, 50);
+        spawn.mapRect(275, -275, 50, 25);
+        spawn.mapRect(200, -275, 125, 50);
+        spawn.mapRect(3725, 200, 50, 375);
+        spawn.mapRect(3750, 275, 50, 300);
+        spawn.mapRect(3800, 350, 25, 200);
+        spawn.mapRect(3825, 425, 25, 150);
+        spawn.mapRect(3850, 500, 25, 75);
+        spawn.mapRect(4275, 250, 50, 325);
+        spawn.mapRect(4250, 300, 50, 300);
+        spawn.mapRect(4225, 375, 75, 200);
+        spawn.mapRect(4200, 450, 75, 150);
+        spawn.mapRect(4175, 500, 75, 75);
+        spawn.mapRect(3950, 500, 150, 50);
+        spawn.mapRect(4000, 500, 50, 25);
+        spawn.mapRect(3875, 500, 425, 25);
+        spawn.mapRect(3625, 200, 50, 75);
+        spawn.mapRect(3575, 200, 50, 25);
+        spawn.mapRect(3675, 275, 25, 25);
+        spawn.mapRect(3650, 275, 25, 25);
+        spawn.mapRect(3600, 200, 25, 50);
+        spawn.mapRect(2600, 175, 25, 25);
+        spawn.mapRect(2700, 175, 425, 100);
+        spawn.mapRect(2650, 200, 75, 50);
+        spawn.mapRect(3100, 200, 75, 50);
+        spawn.mapRect(2675, 250, 25, 25);
+        spawn.mapRect(2625, 200, 100, 25);
+        spawn.mapRect(3150, 200, 75, 25);
+        spawn.mapRect(3175, 225, 25, 25);
+        spawn.mapRect(3775, 250, 25, 50);
+        spawn.mapRect(3800, 275, 25, 125);
+        spawn.mapRect(3800, 325, 50, 225);
+        spawn.mapRect(3875, 400, 25, 200);
+        spawn.mapRect(3825, 425, 50, 125);
+        spawn.mapRect(3850, 375, 25, 100);
+        spawn.mapRect(3900, 450, 25, 75);
+        spawn.mapRect(3925, 475, 25, 50);
+        spawn.mapRect(3450, -600, 25, 325);
+        spawn.mapRect(3475, -575, 25, 275);
+        spawn.mapRect(3500, -525, 25, 200);
+        spawn.mapRect(3525, -500, 25, 150);
+        spawn.mapRect(3550, -475, 25, 100);
+        spawn.mapRect(2725, 250, 350, 50);
+        spawn.mapRect(2750, 275, 300, 50);
+        spawn.mapRect(3150, 250, 25, 25);
+        spawn.mapRect(4325, 150, 975, 75);
+        spawn.mapRect(4375, 225, 900, 25);
+        spawn.mapRect(4375, 175, 875, 100);
+        spawn.mapRect(4375, 225, 850, 75);
+        spawn.mapRect(4375, 225, 825, 100);
+        spawn.mapRect(4375, 275, 800, 75);
+        spawn.mapRect(4350, 325, 800, 50);
+        spawn.mapRect(4375, 350, 750, 50);
+        spawn.mapRect(4375, 350, 725, 75);
+        spawn.mapRect(4350, 375, 725, 75);
+        spawn.mapRect(4350, 400, 700, 75);
+        spawn.mapRect(4350, 425, 675, 75);
+        spawn.mapRect(4350, 475, 650, 50);
+        spawn.mapRect(4375, 500, 600, 50);
+        spawn.mapRect(4375, 500, 575, 75);
+        spawn.mapRect(4375, 550, 550, 50);
+        spawn.mapRect(4425, 125, 775, 75);
+        spawn.mapRect(5300, 175, 75, 50);
+        spawn.mapRect(4475, 100, 150, 25);
+        spawn.mapRect(4825, 125, 300, 25);
+        spawn.mapRect(4800, 100, 250, 25);
+        spawn.mapRect(5100, 100, 50, 25);
+        spawn.mapRect(4650, 100, 75, 25);
+        spawn.mapRect(5475, 225, 125, 300);
+        spawn.mapRect(5450, 275, 25, 125);
+        spawn.mapRect(5450, 450, 25, 75);
+        spawn.mapRect(5425, 325, 25, 75);
+        spawn.mapRect(5425, 475, 25, 50);
+        spawn.mapRect(5575, 250, 50, 150);
+        spawn.mapRect(5575, 450, 50, 50);
+        spawn.mapRect(5475, 525, 125, 25);
+        spawn.mapRect(5500, 550, 75, 25);
+        spawn.mapRect(5525, 575, 25, 25);
+        spawn.mapRect(3675, 575, 1050, 50);
+        spawn.mapRect(4175, 600, 250, 50);
+        spawn.mapRect(3850, 625, 100, 25);
+        spawn.mapRect(3700, 625, 75, 25);
+        spawn.mapRect(4050, 625, 50, 25);
+        spawn.mapRect(4500, 625, 225, 25);
+        spawn.mapRect(5725, 150, 75, 225);
+        spawn.mapRect(5700, 175, 25, 150);
+        spawn.mapRect(5775, 250, 50, 100);
+        spawn.mapRect(5950, 325, 75, 75);
+        spawn.mapRect(5925, 375, 25, 25);
+        spawn.mapRect(6000, 350, 50, 50);
+        spawn.mapRect(6125, 425, 1050, 75);
+        spawn.mapRect(6425, 0, 750, 75);
+        spawn.mapRect(6400, 25, 50, 50);
+        spawn.mapRect(6500, -25, 675, 75);
+        spawn.mapRect(6550, -25, 275, 25);
+        spawn.mapRect(6475, -25, 125, 75);
+        spawn.mapRect(6450, -25, 100, 100);
+        spawn.mapRect(6475, -75, 700, 75);
+        spawn.mapRect(6500, -75, 75, 25);
+        spawn.mapRect(6500, -125, 675, 125);
+        spawn.mapRect(6525, -150, 650, 125);
+        spawn.mapRect(6550, -175, 625, 50);
+        spawn.mapRect(6900, -200, 275, 75);
+        spawn.mapRect(6925, -250, 250, 175);
+        spawn.mapRect(6950, -275, 225, 75);
+        spawn.mapRect(6975, -300, 200, 50);
+        spawn.mapRect(7025, -325, 125, 125);
+        spawn.mapRect(6400, 50, 75, 175);
+        spawn.mapRect(6450, 50, 100, 100);
+        spawn.mapRect(6475, 150, 25, 25);
+        spawn.mapRect(6550, 75, 25, 25);
+        spawn.mapRect(6375, 75, 25, 150);
+        spawn.mapRect(6350, 100, 25, 75);
+        spawn.mapRect(6650, 50, 225, 50);
+        spawn.mapRect(6975, 75, 75, 25);
+        spawn.mapRect(6625, -175, 225, 25);
+        spawn.mapRect(6675, -200, 275, 25);
+        spawn.mapRect(6750, -225, 250, 25);
+        spawn.mapRect(6200, 475, 575, 50);
+        spawn.mapRect(6925, 500, 125, 25);
+        spawn.mapRect(6325, 400, 475, 25);
+        spawn.mapRect(6950, 400, 200, 25);
+        spawn.mapRect(7100, 75, 75, 100);
+        spawn.mapRect(7075, 75, 25, 25);
+        spawn.mapRect(7175, -300, 1650, 350);
+        spawn.mapRect(7325, -700, 100, 450);
+        spawn.mapRect(7600, -700, 100, 450);
+        spawn.mapRect(7900, -700, 100, 450);
+        spawn.mapRect(8200, -700, 100, 425);
+        spawn.mapRect(8500, -700, 100, 425);
+        spawn.mapRect(7275, -825, 1375, 125);
+        spawn.mapRect(7400, -700, 50, 25);
+        spawn.mapRect(7575, -700, 50, 25);
+        spawn.mapRect(7875, -700, 150, 25);
+        spawn.mapRect(8175, -700, 150, 25);
+        spawn.mapRect(8475, -700, 150, 25);
+        spawn.mapRect(7300, -325, 150, 75);
+        spawn.mapRect(7575, -325, 150, 75);
+        spawn.mapRect(7875, -325, 150, 75);
+        spawn.mapRect(8175, -325, 150, 75);
+        spawn.mapRect(8475, -325, 150, 75);
+        spawn.mapRect(7700, -700, 25, 25);
+        spawn.mapRect(7300, -700, 75, 25);
+        spawn.mapRect(7150, 50, 75, 50);
+        spawn.mapRect(7175, 100, 25, 25);
+        spawn.mapRect(7225, 50, 25, 25);
+        spawn.mapRect(7300, -850, 1325, 75);
+        spawn.mapRect(7325, -875, 1275, 50);
+        spawn.mapRect(7375, -900, 1200, 25);
+        spawn.mapRect(7350, -900, 25, 25);
+        spawn.mapRect(7375, -900, 200, 25);
+
+        spawn.mapRect(7375, -925, 1175, 25);
+        spawn.mapRect(7400, -950, 1125, 25);
+        spawn.mapRect(7425, -975, 1075, 25);
+        spawn.mapRect(7450, -1000, 1025, 25);
+        spawn.mapRect(7675, -1050, 525, 50);
+        spawn.mapRect(7700, -1050, 100, 25);
+        spawn.mapRect(7700, -1075, 450, 25);
+        spawn.mapRect(7725, -1100, 400, 25);
+        spawn.mapRect(7775, -1125, 300, 25);
+        spawn.mapRect(7650, -1025, 75, 25);
+        spawn.mapRect(8200, -1025, 25, 25);
+        spawn.mapRect(8825, -275, 25, 300);
+        spawn.mapRect(8825, -225, 50, 125);
+        spawn.mapRect(8850, -50, 25, 75);
+        spawn.mapRect(7150, 425, 100, 425);
+        spawn.mapRect(7150, 775, 1600, 100);
+        spawn.mapRect(8750, 400, 75, 475);
+        spawn.mapRect(8825, 400, 25, 475);
+        spawn.mapRect(7225, 450, 50, 325);
+        spawn.mapRect(7250, 500, 50, 275);
+        spawn.mapRect(7300, 550, 25, 225);
+        spawn.mapRect(7325, 600, 25, 175);
+        spawn.mapRect(7350, 650, 25, 125);
+        spawn.mapRect(7375, 675, 25, 100);
+        spawn.mapRect(7400, 700, 25, 75);
+        spawn.mapRect(7425, 725, 25, 50);
+        spawn.mapRect(7450, 750, 25, 25);
+        spawn.mapRect(8725, 425, 50, 375);
+        spawn.mapRect(8700, 450, 75, 375);
+        spawn.mapRect(8675, 475, 100, 375);
+        spawn.mapRect(8650, 500, 125, 375);
+        spawn.mapRect(8600, 525, 100, 350);
+        spawn.mapRect(8575, 550, 100, 275);
+        spawn.mapRect(8550, 575, 150, 250);
+        spawn.mapRect(8525, 625, 100, 225);
+        spawn.mapRect(8500, 675, 100, 125);
+        spawn.mapRect(8625, 825, 25, 25);
+        spawn.mapRect(8475, 700, 75, 75);
+        spawn.mapRect(8450, 725, 50, 50);
+        spawn.mapRect(8425, 750, 100, 25);
+        wastepool = level.hazard(7250, 575, 1450, 200);
+        spawn.mapRect(7375, 0, 250, 75);
+        spawn.mapRect(7700, 0, 725, 75);
+        spawn.mapRect(8575, 50, 150, 25);
+        spawn.mapRect(7750, 50, 475, 50);
+        spawn.mapRect(7425, 50, 175, 50);
+        spawn.mapRect(8600, 50, 50, 50);
+        spawn.mapRect(7200, 850, 875, 50);
+        spawn.mapRect(8225, 850, 125, 50);
+        spawn.mapRect(8475, 850, 275, 50);
+        spawn.mapRect(7300, 875, 375, 50);
+        spawn.mapRect(7925, 875, 100, 50);
+        spawn.mapRect(8525, 875, 125, 50);
+        spawn.mapRect(8250, 875, 75, 50);
+        spawn.mapRect(7800, 900, 50, 25);
+        spawn.mapRect(8125, 875, 50, 50);
+        spawn.mapRect(8075, 875, 50, 50);
+        spawn.mapRect(7125, 500, 25, 325);
+        spawn.mapRect(7100, 475, 25, 300);
+        spawn.mapRect(7075, 600, 50, 125);
+        spawn.mapRect(7075, 500, 50, 25);
+        spawn.mapRect(8850, 425, 75, 450);
+        spawn.mapRect(8925, 475, 75, 400);
+        spawn.mapRect(9000, 550, 75, 325);
+        spawn.mapRect(9075, 650, 75, 25);
+        spawn.mapRect(9075, 625, 75, 250);
+        spawn.mapRect(9150, 675, 75, 200);
+        spawn.mapRect(9225, 750, 75, 125);
+        spawn.mapRect(8925, 450, 25, 25);
+        spawn.mapRect(9000, 500, 25, 75);
+        spawn.mapRect(9000, 525, 25, 100);
+        spawn.mapRect(9000, 525, 50, 100);
+        spawn.mapRect(9050, 575, 50, 100);
+        spawn.mapRect(9075, 600, 50, 75);
+        spawn.mapRect(9150, 650, 25, 100);
+        spawn.mapRect(9225, 725, 50, 100);
+        spawn.mapRect(9225, 700, 25, 100);
+        spawn.mapRect(9300, 800, 1375, 75);
+        spawn.mapRect(9300, 775, 25, 50);
+        spawn.mapRect(9425, 775, 200, 25);
+        spawn.mapRect(9500, 875, 200, 25);
+        spawn.mapRect(9725, 825, 200, 75);
+        spawn.mapRect(10000, 850, 125, 50);
+        spawn.mapRect(10225, 850, 400, 50);
+        spawn.mapRect(9775, 775, 125, 25);
+        spawn.mapRect(10100, 775, 75, 75);
+        spawn.mapRect(10275, 750, 225, 75);
+        spawn.mapRect(9975, 775, 25, 50);
+        spawn.mapRect(10000, 775, 25, 50);
+        spawn.mapRect(10025, 775, 25, 75);
+        spawn.mapRect(10675, 775, 50, 100);
+        spawn.mapRect(10725, 725, 50, 150);
+        spawn.mapRect(10775, 650, 50, 225);
+        spawn.mapRect(10825, 575, 50, 300);
+        spawn.mapRect(10875, 500, 50, 375);
+        spawn.mapRect(10925, 425, 275, 450);
+        spawn.mapRect(11200, 500, 50, 375);
+        spawn.mapRect(11250, 575, 50, 300);
+        spawn.mapRect(11300, 650, 50, 225);
+        spawn.mapRect(11350, 725, 50, 150);
+        spawn.mapRect(11400, 775, 50, 100);
+        spawn.mapRect(10700, 750, 75, 75);
+        spawn.mapRect(10775, 700, 25, 25);
+        spawn.mapRect(10750, 700, 75, 75);
+        spawn.mapRect(10800, 625, 125, 75);
+        spawn.mapRect(10850, 550, 125, 50);
+        spawn.mapRect(10900, 475, 150, 75);
+        spawn.mapRect(11125, 475, 100, 50);
+        spawn.mapRect(11200, 550, 75, 50);
+        spawn.mapRect(11275, 625, 50, 75);
+        spawn.mapRect(11325, 700, 50, 75);
+        spawn.mapRect(11375, 750, 50, 75);
+        spawn.mapRect(11550, 225, 1525, 75);
+        spawn.mapRect(11450, 825, 1625, 50);
+        spawn.mapRect(11450, 800, 1625, 75);
+        spawn.mapRect(11525, -350, 50, 650);
+        spawn.mapRect(11850, -350, 50, 650);
+        spawn.mapRect(12225, -350, 50, 650);
+        spawn.mapRect(12600, -350, 50, 650);
+        spawn.mapRect(13000, -350, 75, 650);
+        spawn.mapRect(11525, -200, 1525, 50);
+        spawn.mapRect(11525, 50, 1550, 50);
+        spawn.mapRect(11525, -400, 1550, 50);
+        spawn.mapRect(11575, -425, 1450, 50);
+        spawn.mapRect(11625, -450, 1325, 75);
+        spawn.mapRect(11700, -475, 1175, 75);
+        spawn.mapRect(11725, -500, 1125, 75);
+        spawn.mapRect(11825, -400, 100, 75);
+        spawn.mapRect(11825, 200, 100, 75);
+        spawn.mapRect(12200, -375, 100, 50);
+        spawn.mapRect(12200, 200, 100, 75);
+        spawn.mapRect(12575, 200, 100, 75);
+        spawn.mapRect(12575, -375, 100, 50);
+        spawn.mapRect(11500, 825, 50, 25);
+        spawn.mapRect(11550, 775, 175, 25);
+        spawn.mapRect(11525, 875, 250, 25);
+        spawn.mapRect(11875, 750, 225, 50);
+        spawn.mapRect(11950, 850, 375, 50);
+        spawn.mapRect(12500, 775, 250, 75);
+        spawn.mapRect(12750, 850, 175, 50);
+
+
+        // books
+        spawn.bodyRect(11575, -300, 25, 100);
+        spawn.bodyRect(11600, -300, 25, 100);
+        spawn.bodyRect(11625, -300, 25, 100);
+        spawn.bodyRect(11650, -300, 25, 100);
+        spawn.bodyRect(11675, -300, 25, 100);
+        spawn.bodyRect(11700, -300, 25, 100);
+        spawn.bodyRect(11725, -300, 25, 100);
+        spawn.bodyRect(11750, -300, 25, 100);
+        spawn.bodyRect(11775, -300, 25, 100);
+        spawn.bodyRect(11800, -300, 25, 100);
+        spawn.bodyRect(11825, -300, 25, 100);
+        spawn.bodyRect(11900, -50, 25, 100);
+        spawn.bodyRect(11925, -50, 25, 100);
+        spawn.bodyRect(11950, -50, 25, 100);
+        spawn.bodyRect(11975, -50, 50, 100);
+        spawn.bodyRect(12025, -50, 50, 100);
+        spawn.bodyRect(12075, -50, 25, 100);
+        spawn.bodyRect(12100, -50, 50, 100);
+        spawn.bodyRect(12150, -50, 25, 100);
+        spawn.bodyRect(12175, -50, 25, 100);
+        spawn.bodyRect(12200, -50, 25, 100);
+        spawn.bodyRect(11900, -300, 25, 100);
+        spawn.bodyRect(11925, -300, 25, 100);
+        spawn.bodyRect(11950, -225, 75, 25);
+        spawn.bodyRect(12650, -50, 25, 100);
+        spawn.bodyRect(12675, -50, 25, 100);
+        spawn.bodyRect(12725, -50, 25, 100);
+        spawn.bodyRect(12750, -50, 50, 100);
+        spawn.bodyRect(12650, -275, 25, 75);
+        spawn.bodyRect(12675, -275, 25, 75);
+        spawn.bodyRect(12700, -275, 50, 75);
+        spawn.bodyRect(12750, -275, 25, 75);
+        spawn.bodyRect(12775, -275, 25, 75);
+        spawn.bodyRect(12800, -275, 25, 75);
+        spawn.bodyRect(12825, -275, 25, 75);
+        spawn.bodyRect(12850, -275, 50, 75);
+        spawn.bodyRect(12900, -275, 50, 75);
+        spawn.bodyRect(12950, -275, 50, 75);
+        spawn.mapRect(12200, 775, 175, 50);
+        spawn.mapRect(11550, 250, 1500, 75);
+        spawn.mapRect(11575, 275, 1450, 75);
+        spawn.mapRect(11600, 325, 1400, 50);
+        spawn.mapRect(11625, 350, 1350, 50);
+        spawn.mapRect(11725, 375, 1150, 50);
+        spawn.mapRect(11900, 400, 800, 50);
+        spawn.mapRect(12100, 425, 425, 50);
+        spawn.mapRect(12125, 475, 375, 25);
+        spawn.mapRect(12200, 475, 225, 50);
+        spawn.mapRect(11475, -400, 50, 700);
+        spawn.mapRect(11450, -375, 50, 625);
+        spawn.mapRect(11425, -350, 100, 600);
+        spawn.mapRect(11400, -300, 75, 525);
+        spawn.mapRect(11375, -250, 100, 400);
+        spawn.mapRect(11350, -150, 50, 200);
+        spawn.mapRect(13075, 825, 25, 50);
+        spawn.mapRect(13100, 850, 25, 25);
+        spawn.mapRect(13200, 700, 100, 225);
+        spawn.mapRect(13300, 775, 25, 100);
+        spawn.mapRect(13325, 825, 25, 50);
+        spawn.mapRect(13175, 775, 25, 125);
+        spawn.mapRect(13225, 675, 50, 25);
+        spawn.mapRect(13225, 925, 50, 25);
+        spawn.mapRect(9250, 75, 1400, 150);
+        spawn.mapRect(9250, -225, 150, 300);
+        spawn.mapRect(9250, -275, 575, 50);
+        spawn.mapRect(9675, -225, 150, 300);
+        spawn.mapRect(9325, -325, 400, 50);
+        spawn.mapRect(9400, -350, 250, 25);
+        spawn.mapRect(9475, -375, 125, 25);
+        spawn.mapRect(9825, -225, 150, 300);
+        spawn.mapRect(10225, -225, 150, 300);
+        spawn.mapRect(9825, -275, 550, 50);
+        spawn.mapRect(9900, -325, 375, 50);
+        spawn.mapRect(9950, -350, 275, 25);
+        spawn.mapRect(10000, -375, 175, 25);
+        spawn.mapRect(10350, -275, 50, 375);
+        spawn.mapRect(10400, -250, 25, 325);
+        spawn.mapRect(10425, -225, 25, 375);
+        spawn.mapRect(10450, -200, 25, 325);
+        spawn.mapRect(10475, -175, 25, 350);
+        spawn.mapRect(10500, -150, 25, 300);
+        spawn.mapRect(10525, -125, 25, 300);
+        spawn.mapRect(10550, -100, 25, 225);
+        spawn.mapRect(10575, -75, 25, 200);
+        spawn.mapRect(10600, -50, 25, 150);
+        spawn.mapRect(10625, -25, 25, 175);
+        spawn.mapRect(9225, -225, 25, 450);
+        spawn.mapRect(9200, -175, 25, 400);
+        spawn.mapRect(9175, -150, 50, 375);
+        spawn.mapRect(9150, -125, 50, 350);
+        spawn.mapRect(9400, -175, 25, 275);
+        spawn.mapRect(9425, -125, 25, 200);
+        spawn.mapRect(9650, -175, 25, 250);
+        spawn.mapRect(9625, -125, 25, 275);
+        spawn.mapRect(9975, -175, 25, 300);
+        spawn.mapRect(10000, -125, 25, 250);
+        spawn.mapRect(10200, -175, 25, 300);
+        spawn.mapRect(10175, -125, 25, 225);
+        spawn.mapRect(9325, 225, 225, 25);
+        spawn.mapRect(9675, 225, 250, 50);
+        spawn.mapRect(10075, 225, 200, 25);
+        spawn.mapRect(10400, 200, 175, 50);
+        spawn.mapRect(13425, 675, 1425, 100);
+        spawn.mapRect(13450, 725, 375, 75);
+        spawn.mapRect(13850, 775, 225, 50);
+        spawn.mapRect(14150, 750, 300, 50);
+        spawn.mapRect(14575, 750, 200, 75);
+        spawn.mapRect(13550, 800, 150, 25);
+        spawn.mapRect(14250, 800, 225, 25);
+        spawn.mapRect(13425, 275, 1425, 100);
+        spawn.mapRect(13475, 250, 1325, 75);
+        spawn.mapRect(13550, 225, 1125, 75);
+        spawn.mapRect(13600, 200, 1025, 25);
+        spawn.mapRect(13650, 150, 925, 50);
+        spawn.mapRect(13725, 100, 775, 100);
+        spawn.mapRect(13825, 50, 525, 100);
+        spawn.mapRect(13900, 0, 350, 75);
+        spawn.mapRect(13975, -25, 175, 75);
+        spawn.mapRect(13875, 25, 50, 50);
+        spawn.mapRect(13800, 75, 75, 50);
+        spawn.mapRect(13700, 125, 75, 50);
+        spawn.mapRect(13625, 200, 50, 25);
+        spawn.mapRect(13650, 175, 25, 25);
+        spawn.mapRect(13625, 175, 125, 75);
+        spawn.mapRect(14350, 75, 25, 50);
+        spawn.mapRect(14250, 0, 25, 75);
+        spawn.mapRect(14275, 50, 25, 50);
+        spawn.mapRect(14275, 25, 25, 75);
+        spawn.mapRect(14500, 125, 25, 75);
+        spawn.mapRect(14575, 175, 25, 75);
+        spawn.mapRect(13475, 650, 400, 50);
+        spawn.mapRect(13975, 675, 75, 25);
+        spawn.mapRect(14000, 650, 50, 50);
+        spawn.mapRect(14150, 625, 675, 100);
+        spawn.mapRect(14325, 625, 100, 25);
+        spawn.mapRect(14300, 600, 325, 25);
+        spawn.mapRect(13525, 325, 375, 100);
+        spawn.mapRect(13975, 375, 400, 25);
+        spawn.mapRect(14500, 325, 100, 75);
+        spawn.mapRect(14850, 675, 50, 200);
+        spawn.mapRect(14875, 700, 50, 175);
+        spawn.mapRect(14925, 725, 50, 150);
+        spawn.mapRect(14975, 750, 50, 125);
+        spawn.mapRect(15025, 775, 50, 100);
+        spawn.mapRect(15075, 750, 1150, 100);
+        spawn.mapRect(15100, 825, 225, 50);
+        spawn.mapRect(15500, 850, 225, 25);
+        spawn.mapRect(15925, 775, 275, 100);
+        spawn.mapRect(15775, 825, 50, 50);
+        spawn.mapRect(15225, 250, 1050, 125);
+        spawn.mapRect(15250, 200, 1000, 50);
+        spawn.mapRect(15275, 175, 950, 50);
+        spawn.mapRect(15300, 150, 900, 50);
+        spawn.mapRect(15325, 125, 850, 25);
+        spawn.mapRect(15350, 100, 800, 25);
+        spawn.mapRect(15375, 75, 750, 25);
+        spawn.mapRect(15400, 50, 700, 100);
+        spawn.mapRect(15425, 25, 650, 75);
+        spawn.mapRect(15450, 0, 600, 50);
+        spawn.mapRect(15475, -25, 550, 75);
+        spawn.mapRect(15500, -50, 500, 75);
+        spawn.mapRect(15525, -75, 450, 75);
+        spawn.mapRect(15550, -100, 400, 75);
+        spawn.mapRect(15575, -125, 350, 75);
+        spawn.mapRect(15600, -150, 300, 50);
+        spawn.mapRect(15625, -175, 250, 50);
+        spawn.mapRect(15650, -200, 200, 25);
+        spawn.mapRect(15675, -225, 150, 75);
+        spawn.mapRect(15700, -250, 100, 75);
+        spawn.mapRect(16275, 250, 25, 125);
+        spawn.mapRect(16250, 225, 25, 25);
+        spawn.mapRect(15200, 250, 25, 125);
+        spawn.mapRect(15225, 225, 25, 25);
+        spawn.mapRect(15275, 350, 175, 50);
+        spawn.mapRect(15550, 350, 425, 75);
+        spawn.mapRect(16100, 375, 175, 25);
+        spawn.mapRect(14700, -375, 50, 325);
+        spawn.mapRect(14700, -425, 375, 50);
+        spawn.mapRect(14750, -375, 125, 100);
+        spawn.mapRect(14750, -275, 75, 75);
+        spawn.mapRect(14850, -375, 100, 50);
+        spawn.mapRect(14825, -275, 25, 25);
+        spawn.mapRect(14950, -375, 25, 25);
+        spawn.mapRect(14875, -325, 25, 25);
+        spawn.mapRect(14725, -200, 50, 25);
+        spawn.mapRect(14700, -75, 100, 25);
+        spawn.mapRect(15050, -425, 25, 100);
+        spawn.mapRect(14725, -450, 325, 25);
+        spawn.mapRect(14775, -475, 225, 25);
+        spawn.mapRect(14825, -500, 125, 25);
+        spawn.mapRect(14675, -350, 25, 100);
+        spawn.mapRect(14675, -175, 25, 75);
+        spawn.mapRect(14850, 325, 25, 50);
+        spawn.mapRect(5700, -725, 375, 50);
+        spawn.mapRect(6025, -725, 50, 325);
+        spawn.mapRect(5775, -675, 250, 25);
+        spawn.mapRect(6000, -675, 25, 225);
+        spawn.mapRect(5950, -650, 50, 75);
+        spawn.mapRect(5900, -650, 75, 25);
+        spawn.mapRect(6000, -575, 25, 25);
+        spawn.mapRect(6050, -700, 50, 275);
+        spawn.mapRect(5925, -625, 75, 25);
+        spawn.mapRect(5775, -750, 100, 25);
+        spawn.mapRect(5950, -750, 100, 25);
+        spawn.mapRect(5675, -725, 25, 150);
+        spawn.mapRect(5975, -400, 100, 25);
+        spawn.mapRect(5650, -700, 25, 75);
+        spawn.mapRect(5700, -675, 25, 50);
+        spawn.mapRect(5700, -600, 25, 25);
+        spawn.mapRect(15275, 750, 225, 25);
+        spawn.mapRect(15225, 725, 250, 25);
+        spawn.mapRect(15675, 725, 275, 100);
+        spawn.mapRect(16075, 725, 125, 50);
+        spawn.pulsar(5775.349354333542, -594.9058498351887)
+        spawn.pulsar(5852.915433009502, -545.5679375496002)
+        spawn.pulsar(5921.99534574469, -480.69487503053097)
+        spawn.mapRect(3725, -975, 1525, 100);
+        spawn.mapRect(3750, -650, 300, 75);
+        spawn.mapRect(4300, -650, 300, 75);
+        spawn.mapRect(4950, -650, 300, 75);
+        spawn.mapRect(5250, -975, 75, 400);
+        spawn.mapRect(3725, -975, 75, 400);
+        spawn.mapRect(4325, -600, 250, 50);
+        spawn.mapRect(4350, -550, 200, 25);
+        spawn.mapRect(3800, -575, 225, 25);
+        spawn.mapRect(3825, -550, 175, 25);
+        spawn.mapRect(4975, -600, 275, 50);
+        spawn.mapRect(5025, -550, 175, 25);
+        spawn.mapRect(3800, -1025, 1450, 50);
+        spawn.mapRect(3875, -1075, 1275, 50);
+        spawn.mapRect(3975, -1125, 1000, 50);
+        spawn.mapRect(3950, -1100, 50, 25);
+        spawn.mapRect(3850, -1050, 150, 25);
+        spawn.mapRect(3775, -1000, 200, 25);
+        spawn.mapRect(5225, -975, 75, 25);
+        spawn.mapRect(4950, -1100, 75, 125);
+        spawn.mapRect(5100, -1050, 75, 75);
+        spawn.mapRect(5225, -1000, 50, 100);
+        spawn.mapRect(4350, -675, 150, 75);
+        spawn.mapRect(4525, -650, 50, 25);
+        spawn.mapRect(4550, -675, 50, 75);
+        spawn.mapRect(3825, -650, 50, 25);
+        spawn.mapRect(3825, -675, 150, 50);
+        spawn.mapRect(4025, -675, 25, 100);
+        spawn.mapRect(4950, -675, 75, 50);
+        spawn.mapRect(5075, -675, 75, 75);
+        spawn.mapRect(5200, -675, 75, 50);
+        spawn.pulsar(4068.196906578167, -653.550201356403)
+        spawn.pulsar(4147.672553167598, -651.0093457935446)
+        spawn.pulsar(4228.863663369247, -653.4768859607283)
+        spawn.pulsar(4619.092688319791, -657.3942377732394)
+        spawn.pulsar(4724.821759138369, -653.4213864043036)
+        spawn.pulsar(4873.583205330713, -657.4103118310311)
+        spawn.pulsar(3871.920598597728, -804.0595760512573)
+        spawn.pulsar(4053.019377134256, -778.0061810623848)
+        spawn.pulsar(4211.732836201937, -780.4633597161928)
+        spawn.pulsar(4380.7768131190005, -776.3400515412312)
+        spawn.pulsar(4533.031170401828, -791.1397513503708)
+        spawn.pulsar(4663.577749297493, -789.0488615794887)
+        spawn.pulsar(4965.48351658387, -809.0025104385204)
+        spawn.pulsar(5122.782442346123, -810.2526936643312)
+        spawn.mapRect(3700, -875, 25, 250);
+        spawn.mapRect(5325, -900, 25, 250);
+        spawn.mapRect(5325, -850, 50, 150);
+        spawn.mapRect(5375, -825, 25, 75);
+        spawn.pulsar(14786.058375868968, -140.5759223979466)
+        spawn.pulsar(14862.320083571307, -177.02507110101413)
+        spawn.pulsar(14888.982047411475, -216.4856450590454)
+        spawn.pulsar(14950.503812885598, -280.9333882582806)
+        spawn.pulsar(15003.202057456116, -316.6767970823471)
+        spawn.spinner(759.4093972764956, -356.0541595435453)
+        spawn.spinner(1467.1412487475097, -617.4326431210314)
+        spawn.mapRect(11850, 775, 50, 50);
+        spawn.mapRect(12075, 775, 50, 50);
+        spawn.mapRect(16225, 750, 75, 325);
+        spawn.mapRect(16300, 775, 50, 325);
+        spawn.mapRect(16350, 800, 50, 275);
+        spawn.mapRect(16375, 825, 50, 200);
+        spawn.mapRect(16450, 875, 25, 150);
+        spawn.mapRect(16450, 875, 25, 225);
+        spawn.mapRect(16400, 875, 50, 150);
+        spawn.mapRect(16225, 1025, 250, 75);
+        spawn.mapRect(16475, 925, 25, 175);
+        spawn.mapRect(16500, 975, 25, 125);
+        spawn.mapRect(16525, 1025, 25, 50);
+        spawn.mapRect(16425, 1075, 150, 25);
+        spawn.mapRect(16225, 1100, 1175, 75);
+        spawn.mapRect(17200, 1050, 25, 50);
+        spawn.mapRect(17225, 950, 25, 200);
+        spawn.mapRect(17250, 800, 25, 300);
+        spawn.mapRect(17275, 725, 25, 400);
+        spawn.mapRect(17300, 750, 75, 400);
+        spawn.mapRect(17300, 725, 100, 450);
+        spawn.mapRect(16300, 250, 1075, 125);
+        spawn.mapRect(16450, -75, 100, 400);
+        spawn.mapRect(17100, -75, 100, 400);
+        spawn.mapRect(16425, 200, 150, 50);
+        spawn.mapRect(17075, 200, 150, 50);
+        spawn.mapRect(16425, -75, 150, 25);
+        spawn.mapRect(17075, -75, 150, 50);
+        spawn.mapRect(16425, -50, 150, 50);
+        spawn.mapRect(16575, -75, 525, 50);
+        spawn.mapRect(17075, -50, 150, 50);
+        spawn.mapRect(16550, -100, 550, 25);
+        spawn.mapRect(16575, -125, 500, 75);
+        spawn.mapRect(16600, -150, 450, 75);
+        spawn.mapRect(16625, -175, 400, 75);
+        spawn.mapRect(16675, -200, 275, 50);
+        spawn.mapRect(16750, -225, 125, 100);
+        spawn.mapRect(19700, 675, 50, 325);
+        spawn.mapRect(19725, 700, 50, 250);
+        spawn.mapRect(19750, 750, 25, 175);
+        spawn.mapRect(16775, -25, 100, 275);
+        spawn.mapRect(16750, -25, 150, 25);
+        spawn.mapRect(16750, 225, 150, 50);
+        spawn.pulsar(3037.797768861211, -1242.9871362505041)
+        spawn.pulsar(3070.307596879197, -1219.5627538123044)
+        spawn.pulsar(3111.2633762820287, -1107.7297980154415)
+        spawn.pulsar(5417.516810698634, 842.824851834252)
+        spawn.pulsar(5484.672534515589, 883.9519420960905)
+        spawn.pulsar(5588.5457723826075, 907.389646857348)
+        spawn.pulsar(16845.139047921595, -885.6942536135854)
+        spawn.pulsar(16892.187197333486, -849.5235136465661)
+        spawn.pulsar(16912.323783455256, -764.5275187038021)
+        powerUps.spawn(2571.591711269197, -145.6717604789277, 'heal')
+        powerUps.spawn(4415.693974666946, -15.077304620299628, 'heal')
+        powerUps.spawn(7505.795753124317, -360.0330849392626, 'heal')
+        powerUps.spawn(7809.5145838152075, -388.5517653996709, 'heal')
+        powerUps.spawn(8049.726318297545, 534.4543327703304, 'heal')
+        powerUps.spawn(8514.444440033667, 551.0268033205841, 'heal')
+        powerUps.spawn(8927.146055851512, 407.25359241772685, 'heal')
+        powerUps.spawn(9730.170170158563, 463.5594890235955, 'ammo')
+        powerUps.spawn(9998.34942087522, 434.9511651200589, 'ammo')
+        powerUps.spawn(10119.083720019844, 437.4195779326937, 'ammo')
+        powerUps.spawn(10346.197135080345, 423.1868836972815, 'ammo')
+        powerUps.spawn(1853.3194789931017, -36.87254038474242, 'ammo')
+        powerUps.spawn(4491.396397908616, 40.2862012621236, 'ammo')
+        powerUps.spawn(4954.207518897743, 50.27790416201856, 'ammo')
+        spawn.mapRect(9125, -50, 75, 275);
+        spawn.mapRect(9100, 0, 50, 225);
+        spawn.mapRect(9075, 75, 75, 150);
+        spawn.mapRect(9050, 150, 125, 50);
+        spawn.mapRect(9050, 200, 225, 25);
+        mover1 = level.mover(4000, -1125, 975, 25);
+        mover2 = level.mover(15675, 725, 275, 25);
+        spawn.mapRect(15025, -375, 25, 25);
+        spawn.mapRect(12200, -150, 100, 25);
+        spawn.mapRect(11825, -150, 100, 25);
+        spawn.mapRect(11825, 75, 100, 50);
+        spawn.mapRect(12200, 75, 100, 50);
+        spawn.mapRect(12575, 100, 75, 25);
+        spawn.mapRect(12625, 50, 50, 75);
+        spawn.mapRect(12600, -175, 75, 50);
+        spawn.mapRect(12575, -175, 75, 50);
+        spawn.mapRect(14125, 650, 75, 25);
+        spawn.mapRect(13875, 375, 50, 25);
+        spawn.mapRect(13300, -525, 325, 50);
+        spawn.mapRect(13575, -525, 50, 250);
+        spawn.mapRect(13550, -300, 75, 25);
+        spawn.mapRect(13300, -525, 25, 75);
+        spawn.mapRect(13525, -475, 50, 50);
+        spawn.mapRect(13500, -475, 100, 25);
+        spawn.mapRect(13550, -475, 25, 100);
+        spawn.mapRect(13325, -550, 275, 25);
+        spawn.mapRect(13350, -575, 200, 25);
+        spawn.mapRect(13625, -500, 25, 175);
+        spawn.mapRect(13650, -450, 25, 75);
+        spawn.mapRect(13500, 375, 75, 25);
+        spawn.mapRect(15550, -950, 50, 225);
+        spawn.mapRect(15575, -750, 75, 25);
+        spawn.mapRect(15550, -950, 375, 50);
+        spawn.mapRect(15925, -950, 50, 225);
+        spawn.mapRect(15875, -750, 100, 25);
+        spawn.mapRect(15575, -1000, 375, 75);
+        spawn.mapRect(15625, -1050, 250, 100);
+        spawn.mapRect(15600, -1025, 75, 50);
+        spawn.mapRect(15875, -1000, 25, 25);
+        spawn.mapRect(15825, -1025, 75, 75);
+        spawn.mapRect(15700, -1100, 125, 50);
+        spawn.mapRect(15650, -1075, 75, 50);
+        spawn.mapRect(15800, -1075, 50, 75);
+        spawn.mapRect(15575, -725, 50, 25);
+        spawn.mapRect(15900, -725, 50, 25);
+        spawn.mapRect(15525, -925, 25, 175);
+        spawn.mapRect(15950, -925, 50, 200);
+        spawn.mapRect(15500, -875, 25, 75);
+        spawn.mapRect(16000, -875, 25, 75);
+        spawn.mapRect(15600, -900, 50, 75);
+        spawn.mapRect(15650, -900, 25, 25);
+        spawn.mapRect(15600, -825, 25, 25);
+        spawn.mapRect(15875, -900, 50, 50);
+        spawn.mapRect(15850, -925, 75, 50);
+        spawn.mapRect(15925, -875, 25, 25);
+        spawn.mapRect(15925, -850, 25, 25);
+        spawn.mapRect(15900, -875, 50, 50);
+        bigpool = level.hazard(9075, 575, 1950, 250);
+        spawn.mapRect(16000, -775, 25, 50);
+        spawn.mapRect(16000, -800, 25, 25);
+        spawn.mapRect(15500, -825, 25, 75);
+        spawn.mapRect(15475, -850, 75, 75);
+        spawn.mapRect(16000, -850, 50, 100);
+        spawn.mapRect(10775, -450, 50, 200);
+        spawn.mapRect(10775, -275, 100, 25);
+        spawn.mapRect(11100, -450, 50, 200);
+        spawn.mapRect(11050, -275, 75, 25);
+        spawn.mapRect(10775, -450, 375, 25);
+        spawn.mapRect(10825, -475, 275, 25);
+        spawn.mapRect(10875, -500, 150, 25);
+        spawn.mapRect(10900, -525, 100, 25);
+        spawn.mapRect(10750, -425, 25, 150);
+        spawn.mapRect(11150, -400, 25, 125);
+        spawn.mapRect(10725, -400, 50, 100);
+        spawn.mapRect(11150, -375, 50, 75);
+        spawn.mapRect(10800, -250, 50, 25);
+        spawn.mapRect(10825, -425, 50, 50);
+        spawn.mapRect(10875, -425, 25, 25);
+        spawn.mapRect(10825, -375, 25, 25);
+        spawn.mapRect(11050, -425, 50, 50);
+        spawn.mapRect(11025, -425, 25, 25);
+        spawn.mapRect(11075, -375, 25, 25);
+        spawn.mapRect(950, -1075, 50, 200);
+        spawn.mapRect(950, -1125, 300, 50);
+        spawn.mapRect(1000, -1075, 50, 50);
+        spawn.mapRect(1050, -1075, 25, 25);
+        spawn.mapRect(975, -1025, 50, 25);
+        spawn.mapRect(975, -1150, 250, 25);
+        spawn.mapRect(1000, -1175, 200, 25);
+        spawn.mapRect(900, -1075, 50, 175);
+        spawn.mapRect(875, -1050, 25, 125);
+        spawn.mapRect(950, -875, 125, 25);
+        spawn.mapRect(1250, -1125, 25, 125);
+        spawn.mapRect(975, -850, 75, 25);
+        spawn.mapRect(1250, -1100, 50, 75);
+        spawn.mapRect(925, -900, 50, 25);
+        spawn.mapRect(1050, -1200, 100, 25);
+        spawn.mapRect(1225, -1000, 50, 25);
+        spawn.mapRect(16375, 350, 900, 50);
+        spawn.mapRect(16400, 375, 850, 50);
+        spawn.mapRect(16425, 400, 800, 50);
+        spawn.mapRect(16475, 425, 675, 50);
+        spawn.mapRect(16625, 475, 375, 25);
+        spawn.mapRect(16650, 500, 325, 25);
+        spawn.mapRect(16675, 500, 275, 50);
+        spawn.mapRect(17400, 775, 25, 325);
+        spawn.mapRect(17425, 825, 25, 225);
+        spawn.mapRect(16200, 900, 25, 225);
+        spawn.mapRect(16175, 925, 25, 125);
+        spawn.mapRect(16150, 975, 25, 25);
+        spawn.mapRect(16400, 1150, 850, 50);
+        spawn.mapRect(16475, 1175, 650, 50);
+        spawn.mapRect(16575, 1225, 450, 25);
+        spawn.sneaker(7895.471733263175, 257.75477496554186)
+        spawn.sneaker(8109.4934675858085, 349.44686618726473)
+        spawn.sneaker(7525.886813944122, 391.9511482895349)
+        spawn.sneaker(8076.43795816953, 441.14947363958373)
+        spawn.pulsar(1064.583377612331, -976.2077284446908)
+        spawn.pulsar(1158.3436115513837, -1054.4975368803214)
+        spawn.pulsar(10966.055009228428, -373.8481911663377)
+        spawn.pulsar(10913.989668763379, -261.59108542627166)
+        spawn.pulsar(13454.158594286884, -402.8270664336466)
+        spawn.pulsar(13360.079608974078, -246.97797933698774)
+        spawn.pulsar(13497.913481830354, -251.68317759640576)
+        spawn.pulsar(15687.09056963911, -850.8426925141155)
+        spawn.pulsar(15829.058084589731, -785.4134546702737)
+        spawn.pulsar(15674.313958480483, -685.0594164868394)
+        spawn.pulsar(15819.881465281747, -686.4370174238113)
+        spawn.sneakBoss(18189.441342796745, 537.6633241821036)
+        thirdpool = level.hazard(16425, 925, 925, 200);
+        spawn.mapRect(17675, -525, 75, 725);
+        spawn.mapRect(17625, -475, 75, 650);
+        spawn.mapRect(17575, -425, 75, 575);
+        spawn.mapRect(17700, -525, 1125, 75);
+        spawn.mapRect(17675, 175, 1125, 75);
+        spawn.mapRect(18775, -525, 75, 775);
+        spawn.mapRect(18825, -475, 75, 675);
+        spawn.mapRect(18900, -450, 50, 625);
+        spawn.mapRect(18950, -400, 50, 500);
+        spawn.mapRect(17750, -575, 1000, 50);
+        spawn.mapRect(17775, -625, 950, 50);
+        spawn.mapRect(17800, -675, 900, 75);
+        spawn.mapRect(17825, -725, 850, 125);
+        spawn.mapRect(17850, -750, 800, 25);
+        spawn.mapRect(17750, 125, 50, 50);
+        spawn.mapRect(17750, 100, 25, 25);
+        spawn.mapRect(17800, 150, 25, 25);
+        spawn.mapRect(17750, -450, 75, 75);
+        spawn.mapRect(17750, -400, 25, 50);
+        spawn.mapRect(17800, -450, 50, 25);
+        spawn.mapRect(18750, -450, 25, 25);
+        spawn.mapRect(18725, -450, 50, 50);
+        spawn.mapRect(18700, -475, 25, 25);
+        spawn.mapRect(18725, -450, 25, 25);
+        spawn.mapRect(18700, -450, 75, 25);
+        spawn.mapRect(18750, -425, 25, 50);
+        spawn.mapRect(18725, 125, 75, 75);
+        spawn.mapRect(18700, 150, 50, 50);
+        spawn.mapRect(18750, 100, 75, 50);
+        spawn.mapRect(17850, 150, 850, 50);
+        spawn.mapRect(17825, 150, 25, 50);
+        spawn.mapRect(17550, -350, 25, 450);
+        spawn.mapRect(19000, -325, 25, 400);
+        spawn.mapRect(18000, -775, 475, 25);
+        spawn.mapRect(18025, -800, 425, 75);
+        spawn.mapRect(18050, -825, 375, 75);
+        spawn.mapRect(18075, -850, 325, 50);
+        spawn.mapRect(18100, -875, 275, 100);
+        spawn.mapRect(18125, -900, 225, 75);
+        spawn.mapRect(18150, -925, 175, 75);
+        spawn.mapRect(17275, 750, 1775, 125);
+        spawn.mapRect(17475, 725, 450, 50);
+        spawn.mapRect(18200, 725, 200, 50);
+        spawn.mapRect(18650, 725, 225, 75);
+        spawn.shieldingBoss(18253.51035871325, -131.1707821125636)
+        // spawn.blockBoss(12604.846253470663, 607.6074958800299)
+        spawn.mapRect(17725, 250, 1025, 25);
+        spawn.mapRect(17775, 275, 925, 25);
+        spawn.mapRect(17800, 300, 875, 25);
+        spawn.mapRect(17850, 325, 775, 25);
+        spawn.mapRect(17375, 275, 25, 75);
+        spawn.mapRect(19050, 750, 25, 275);
+        spawn.mapRect(19075, 775, 25, 250);
+        spawn.mapRect(19100, 800, 25, 225);
+        spawn.mapRect(19125, 850, 25, 175);
+        spawn.mapRect(19150, 875, 25, 150);
+        spawn.mapRect(19175, 925, 25, 100);
+        spawn.mapRect(19200, 950, 25, 75);
+        spawn.mapRect(19000, 850, 100, 175);
+        spawn.mapRect(19050, 975, 650, 50);
+        spawn.mapRect(19425, 650, 275, 50);
+        spawn.mapRect(19675, 650, 50, 375);
+        spawn.mapRect(19050, 1025, 625, 25);
+        spawn.mapRect(19075, 1050, 575, 25);
+        spawn.mapRect(19250, 1100, 200, 25);
+        spawn.mapRect(19175, 1075, 375, 25);
+        spawn.mapRect(19450, 625, 225, 25);
+        spawn.mapRect(19500, 600, 150, 50);
+        spawn.mapRect(19625, 700, 50, 50);
+        spawn.mapRect(19600, 700, 25, 25);
+        spawn.mapRect(19650, 750, 25, 25);
+        spawn.mapRect(19400, 650, 25, 100);
+        spawn.mapRect(19375, 675, 25, 50);
+        spawn.mapRect(17600, 875, 250, 25);
+        spawn.mapRect(18100, 850, 375, 50);
+        spawn.mapRect(18650, 875, 325, 25);
+
+        pooldunker = level.mover(7175, 425, 50, 25);
+        level.custom = () => {
+            level.exit.drawAndCheck();
+            pooldunker.VxGoal = 90;
+            pooldunker.push();
+            mover.VxGoal = 45;
+            mover.push();
+            level.enter.draw();
+            pool.query();
+            wastepool.query();
+            thirdpool.query();
+            mover1.VxGoal = 12;
+            mover1.push();
+            mover2.VxGoal = 24;
+            mover2.push();
+            bigpool.query();
+
+            for (i = 0; i < mob.length; i++) { if (mob[i].isBoss == false) { mob[i].damageReduction = 0.13 } }
+        };
+
+        spawn.mapRect(-100, 0, 1000, 100);
+        powerUps.addResearchToLevel() //needs to run after mobs are spawned
     },
     
     // ********************************************************************************************************
