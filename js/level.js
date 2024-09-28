@@ -12,8 +12,8 @@ const level = {
     modernPlayableLevels: ["lock", "towers", "flocculation"],
     cgonLevels: ["descent", "split"],
     communityLevels: ["stronghold", "basement", "crossfire", "vats", "n-gon", "house", "perplex", "coliseum", "tunnel", "islands"],
-    modernCommunityLevels: ["dripp", "fortress", "commandeer", "clock"], // todo: backport
-    gimmickLevels: ["run", "testChamber2", "temple", "biohazard", "stereoMadness", "yingYang", "staircase"],
+    modernCommunityLevels: ["dripp", "fortress", "commandeer", "clock", "buttonbutton", "downpour"], // todo: backport
+    gimmickLevels: ["run", "testChamber2", "temple", "biohazard", "stereoMadness", "yingYang", "staircase", "superNgonBros"],
     trainingLevels: ["walk", "crouch", "jump", "hold", "throw", "throwAt", "deflect", "heal", "fire", "nailGun", "shotGun", "superBall", "matterWave", "missile", "stack", "mine", "grenades", "harpoon"],
     levels: [],
     announceMobTypes() {
@@ -20178,6 +20178,1219 @@ const level = {
             simulation.draw.setPaths();
             lastBlock = Math.sin(simulation.cycle / 50) * 0.3 < 0;
         }
+    },
+    buttonbutton() {
+        simulation.makeTextLog(`<strong>buttonbutton</strong> by <span class='color-var'>||Destabilized E||</span>`);
+        const mover = level.mover(1425, -1949, 600, 25); //x,y,width.height,VxGoal,force
+
+        let portal
+        portal = level.portal({
+            x: -146,
+            y: 131
+        }, 2 * Math.PI, {
+            x: 1805,
+            y: -2295
+        }, 90)
+
+        const button = level.button(-456, -1320)
+        spawn.bodyRect(-400, -1475, 75, 75);
+        const button2 = level.button(1781, -61)
+        spawn.bodyRect(1781, (-61) - 100, 75, 75);
+        const boost1 = level.boost(1366, -1942, 1300)
+
+        button.isUp = true
+        button2.isUp = true
+
+        const train = level.transport(-250, 1151, 400, 50, 8 + simulation.difficultyMode)
+        level.custom = () => {
+            if (train.position.x < -244) {
+                train.changeDirection(true) //go right
+            } else if (train.position.x > 1700) {
+                train.changeDirection(false) //go left
+            }
+            if (button.isUp && button2.isUp) train.move();
+            mover.push();
+            ctx.fillStyle = "rgba(0,255,255,0.1)";
+            ctx.fillRect(6400, -550, 300, 350);
+            level.exit.drawAndCheck();
+            level.enter.draw();
+        };
+        level.customTopLayer = () => {
+            button.query();
+            button.draw();
+            button2.query();
+            button2.draw();
+            boost1.query();
+            train.draw()
+            portal[2].query()
+            portal[3].query()
+            portal[0].draw();
+            portal[1].draw();
+            mover.draw();
+            ctx.fillStyle = "rgba(0,0,0,0.1)"
+            ctx.fillRect(-150, -650, 900, 250)
+        };
+        level.setPosToSpawn(0, -450); //normal spawn
+        spawn.mapRect(level.enter.x, level.enter.y + 20, 100, 20);
+        level.exit.x = -525;
+        level.exit.y = 1128;
+        level.defaultZoom = 1500
+        simulation.zoomTransition(level.defaultZoom)
+        document.body.style.backgroundColor = "#ddd";
+        spawn.mapRect(-725, -1325, 575, 1900);
+        spawn.mapRect(1425, -1925, 600, 1550);
+        spawn.mapRect(1450, -50, 500, 425);
+        spawn.mapRect(1950, 75, 325, 300);
+        spawn.mapRect(2275, 200, 200, 175);
+        spawn.mapRect(-150, -400, 900, 250);
+        spawn.mapRect(-150, 300, 900, 275);
+        spawn.mapRect(1700, 900, 450, 275);
+        spawn.mapRect(1800, 1600, 450, 250);
+        spawn.mapRect(1675, 1675, 275, 175);
+        spawn.mapRect(1575, 1675, 275, 175);
+        spawn.mapRect(-550, 1150, 150, 100);
+        spawn.bodyRect(-1475, -225, 50, 50);
+        spawn.bodyRect(2450, 1525, 925, 850);
+        spawn.mapRect(2275, 1400, 300, 150);
+        spawn.mapRect(2125, 1025, 125, 150);
+        spawn.mapRect(2250, 1175, 175, 75);
+        spawn.mapRect(2150, 1175, 175, 75);
+        spawn.mapRect(1725, 1150, 475, 100);
+        spawn.mapRect(2225, 675, 650, 50);
+        spawn.bodyRect(2400, 500, 150, 175);
+        spawn.nodeGroup(326, 85, "grenadier", 6)
+        spawn.mapRect(-225, -1325, 625, 225);
+
+        spawn.randomMob(151, -1500)
+        spawn.randomMob(-88, -1829)
+        spawn.randomMob(2339, 896)
+
+
+        spawn.randomMob(1907, 1381)
+        spawn.randomMob(2398, 1301)
+        spawn.randomMob(1839, 811)
+
+
+        spawn.randomMob(2282, 1103)
+        spawn.randomMob(8, 124)
+        spawn.randomMob(629, 111)
+
+        spawn.randomMob(43, 831)
+        spawn.randomMob(168, 1002)
+        spawn.randomMob(2956, 1006)
+
+        spawn.randomMob(2713, 535)
+        spawn.randomMob(2396, 117)
+        spawn.randomMob(1498, -121)
+
+        spawn.nodeGroup(2030, -16, "grower", 6)
+        spawn.randomLevelBoss(1840, 675)
+    },
+    downpour() {
+        simulation.makeTextLog(`<strong>Downpour</strong> by <span class='color-var'>DesBoot</span>`);
+        let mobsspawned = 0
+        const laser = level.hazard(7492, -2612, 10, 500, 0.3) //laserintro
+
+        //5381, -3268, 10, 0.4
+        spawn.mapRect(340, -2032.5, 20, 25); //laser nose //laserintro
+        const laserbutton = level.button(5485, -2510)
+        const doorbutton = level.button(7618, -3204)
+        const doortoggle = level.toggle(5088.4, 1226.7)
+        const door = level.door(6500, -1200, 100, 350, 100)
+        const bunkerdoor = level.door(10700, -2500, 100, 500, 200)
+
+        const boost1 = level.boost(7300, 1209, 2200)
+        const boost2 = level.boost(6232.6, -832.8, 1400)
+        const portal = level.portal({ x: 4886.4, y: 1050.7 }, 2 * Math.PI, { x: 7686, y: -2121 }, 2 * Math.PI)
+        //let portal
+        const slime = level.hazard(-1800, 10, 4200, 400);
+        const slime2 = level.hazard(2400, -2100, 200, 2100);
+        const slime3 = level.hazard(2600, -2100, 3600, 200);
+        const slime4 = level.hazard(6400, -2100, 3600, 200);
+        level.setPosToSpawn(0, -50); //normal spawn
+        level.exit.x = 13130.3;
+        let rainCount = 1
+        level.exit.y = -370;
+        spawn.mapRect(level.enter.x, level.enter.y + 20, 100, 20); //bump for level entrance
+        spawn.mapRect(level.exit.x, level.exit.y + 20, 100, 20); //bump for level exit
+        level.defaultZoom = 1800
+        let stopcycle = 0
+        let flashcycle = Math.round(Math.random() * 25 + 260)
+        simulation.zoomTransition(level.defaultZoom)
+        document.body.style.backgroundColor = "#2e416e";//d8dadf
+        // color.map = "#444" //custom map color
+
+
+        //simulation.makeTextLog(stopcycle)
+        level.custom = () => {
+            do {
+
+                ctx.beginPath()
+                ctx.fillStyle = "rgba(30,150,117,255)"
+                ctx.rect(Math.random() * 4500 - 2000, -5000, Math.random() * 3 + 2.5, 5000)
+                ctx.rect(Math.random() * 4500 - 2000, -5000, Math.random() * 3 + 2.5, 5000)
+                ctx.rect(Math.random() * 4500 - 2000, -5000, Math.random() * 3 + 2.5, 5000)
+                ctx.rect(Math.random() * 2000 + 2500, -5000, Math.random() * 3 + 2.5, 3000)
+                ctx.rect(Math.random() * 2000 + 2500, -5000, Math.random() * 3 + 2.5, 3000)
+                ctx.rect(Math.random() * 1300 + 4500, -5000, Math.random() * 3 + 2.5, 2500)
+                ctx.rect(Math.random() * 1300 + 7500, -5000, Math.random() * 3 + 2.5, 1800)
+                ctx.rect(Math.random() * 1800 + 5700, -5000, Math.random() * 3 + 2.5, 3000)
+                ctx.rect(Math.random() * 1800 + 5700, -5000, Math.random() * 3 + 2.5, 3000)
+                ctx.rect(Math.random() * 1800 + 8400, -5000, Math.random() * 3 + 2.5, 3000)
+                ctx.rect(Math.random() * 1800 + 8400, -5000, Math.random() * 3 + 2.5, 3000)
+                ctx.rect(Math.random() * 4500 - 2000, -5000, Math.random() * 3 + 2.5, 5000)
+                ctx.rect(Math.random() * 1800 + 10200, -5000, Math.random() * 3 + 2.5, 3000)
+                ctx.rect(Math.random() * 1800 + 10200, -5000, Math.random() * 3 + 2.5, 3000)
+                ctx.rect(Math.random() * 1800 + 12000, -5000, Math.random() * 3 + 2.5, 3000)
+                ctx.rect(Math.random() * 1800 + 12000, -5000, Math.random() * 3 + 2.5, 3000)
+                ctx.fillStyle = "rgba(30,150,117,255)"
+                ctx.fill()
+                // }
+                // if (rainCount > 12) {  
+                //     rainCount = 1
+                //     simulation.makeTextLog(rainCount)
+
+                // } else {
+                //     rainCount = rainCount + 1
+                //     simulation.makeTextLog(rainCount)
+                // }
+            } while (Math.random() < 0.8);
+            //simulation.makeTextLog(stopcycle)
+            //simulation.makeTextLog(m.cycle)
+            // ctx.fillStyle = "rgba(228,255,0,0.8)"
+            // //simulation.makeTextLog(stopcycle)
+            // ctx.fillRect(50.4, -1210.0, 100, 100)
+            // stopcycle = m.cycle + Math.random * 600;
+            //stopcycle = m.cycles + Math.random * 600
+
+            if (stopcycle > 300) {
+                stopcycle = 0
+                flashcycle = Math.round(Math.random() * 25 + 260)
+                document.body.style.backgroundColor = "#2e416e";
+            } else {
+                if (stopcycle > flashcycle) {
+                    document.body.style.backgroundColor = "#7391ff";
+                    for (let i = 0; i < mob.length; i++) mobs.statusStun(mob[i], Math.random() * 20 + 30)
+                }
+                stopcycle = stopcycle + 1
+            }
+
+            ctx.fillStyle = "#d4f4f4"
+            ctx.fillRect(12984, -704, 420, 450)
+            ctx.fillStyle = "rgba(0,0,0,0.5)"
+            ctx.fillRect(4703, -2362, 100, 100)
+            ctx.fillRect(5053, -2362, 100, 100)
+            ctx.fillRect(5403, -2362, 100, 100)
+            ctx.fillRect(4703, -2062, 100, 100)
+            ctx.fillRect(5053, -2062, 100, 100)
+            ctx.fillRect(5403, -2062, 100, 100)
+            ctx.fillRect(4523, -2512, 1150, 800)
+            ctx.fillRect(4735, -1233, 100, 500)//tree
+            ctx.beginPath()
+            ctx.moveTo(4487, -1195)//slope of -1/3
+            ctx.lineTo(4736, -792)
+            ctx.lineTo(4736, -852)
+            ctx.lineTo(4527, -1195)
+
+
+            ctx.moveTo(5087, -1195)//slope of -1/3
+            ctx.lineTo(4836, -792)
+            ctx.lineTo(4836, -852)
+            ctx.lineTo(5047, -1195)
+            ctx.fill()
+            ctx.moveTo(5252.4, -2483.5)
+            ctx.lineTo(5141.2, -2507.8)
+            ctx.lineTo(5209.2, -2625.2)
+            ctx.lineTo(5290.2, -2626.6)
+
+            ctx.lineTo(5361.2, -2697.9)
+            ctx.lineTo(5410.6, -2717.0)
+
+            ctx.lineTo(5680.2, -2648.7)
+            ctx.lineTo(5687.7, -2471.5)
+
+            ctx.fill()
+
+
+
+            //building 2        spawn.mapRect(8473, -2513, 50, 50);
+            ctx.fillRect(8673, -2137, 50, 175)
+
+            ctx.fillRect(7630, -2540, 100, 100)
+            ctx.fillRect(7930, -2540, 100, 100)
+            ctx.fillRect(8230, -2540, 100, 100)
+
+            ctx.fillRect(8530, -2765, 100, 100)
+
+            ctx.fillRect(7630, -2990, 100, 100)
+            ctx.fillRect(7930, -2990, 100, 100)
+
+            ctx.fillRect(8230, -2990, 100, 100)
+
+
+            ctx.beginPath()
+            ctx.moveTo(7475, -3213)
+            ctx.lineTo(8100, -3213)
+            ctx.lineTo(8191.2, -3334.7)
+            ctx.lineTo(8318.0, -3388.3)
+            ctx.lineTo(8348.5, -3496.9)
+            ctx.lineTo(8480.0, -3512.6)
+            ctx.lineTo(8670, -3482)
+            ctx.lineTo(8725, -3213)
+            ctx.lineTo(8725, -1463)
+            ctx.lineTo(7475, -1463)
+            ctx.fill()
+
+
+
+            //stairs        spawn.mapRect(7523, -2313, 800, 75);
+            ctx.fillRect(8523, -2563, 50, 50)
+            ctx.fillRect(8473, -2613, 50, 50)
+            ctx.fillRect(8423, -2663, 50, 50)
+            ctx.fillRect(8373, -2713, 50, 50)
+            ctx.fillRect(8323, -2763, 50, 50)
+
+            ctx.fillRect(8323, -2813, 50, 50)
+            ctx.fillRect(8373, -2863, 50, 50)
+            ctx.fillRect(8423, -2913, 50, 50)
+            ctx.fillRect(8473, -2963, 50, 50)
+
+            ctx.fillRect(8523, -3013, 50, 50)//make block
+            ctx.fillRect(8473, -3063, 50, 50)//make block
+            ctx.fillRect(8423, -3113, 50, 50)//make block
+            ctx.fillRect(8373, -3163, 50, 50)
+            ctx.fillRect(8323, -3213, 50, 50)
+
+            //caves
+
+            ctx.fillStyle = "rgba(30,150,117,255)"//fake slime
+            //87,189,146,255
+            ctx.fillRect(6100, -1900, 100, 1050)
+            ctx.fillRect(6400, -1900, 100, 1050)
+            ctx.fillRect(2600, -850, 4700, 200)
+            ctx.fillRect(7200, -650, 100, 1900)
+            ctx.fillRect(2399, -1, 200, 400)
+
+            //bunker
+            ctx.fillStyle = "rgba(0,0,0,0.5)"
+
+            ctx.beginPath()
+            ctx.moveTo(10800, -2400)//slope of -1/3
+            ctx.lineTo(10800, -340)
+            ctx.lineTo(12980, -340)
+            ctx.lineTo(12980, -700)
+            ctx.lineTo(13465, -700)
+            ctx.lineTo(13541, -1737)
+            ctx.lineTo(11864.6, -1967.0)
+            ctx.lineTo(11003, -2400)
+            ctx.fill()
+            ctx.fillRect(6100, -2000, 400, 50)
+
+            // -2000 -> 2500
+            // Math.random() * 5000 -2500
+            ctx.fillStyle = "rgba(0,0,0,0.6)"
+            ctx.beginPath()
+            ctx.moveTo(6100, -1700)
+            ctx.lineTo(5799.5, -800)
+            ctx.lineTo(2600, -800)
+            ctx.lineTo(2600, -1700)
+            ctx.lineTo(5799.5, -1700)
+
+            ctx.moveTo(6500, -1200)
+            ctx.lineTo(7600, -1200)
+            ctx.lineTo(8000, 1400)
+            ctx.lineTo(4600, 1500)
+            ctx.lineTo(4500.5, 0)
+            ctx.lineTo(6500, -200)
+            ctx.lineTo(6500, -1200)
+            ctx.fill()
+
+
+
+
+            portal[2].query()
+            portal[3].query()
+            if (laserbutton.isUp) {
+                laser.isOn = true;
+            } else {
+                laser.isOn = false;
+            }
+
+
+            ctx.fillStyle = "rgba(0,0,0,0.6)"
+            ctx.fillRect(2113, -791, 500, 75)
+            ctx.fillRect(1766, -1091, 250, 310)
+            ctx.fillRect(4473, -2912, 50, 1000)
+            ctx.fillRect(5673, -2712, 50, 800)
+            ctx.fillStyle = "rgba(0,0,0,0.2)"
+
+            ctx.fillRect(4523, -2512, 350, 75)
+            ctx.fillRect(5273, -2212, 400, 75)
+
+
+            level.exit.drawAndCheck();
+            slime.query();
+            slime2.query();
+            slime3.query();
+            slime4.query();
+
+            // spawn.mapRect(4873, -2512, 800, 75);
+            // spawn.mapRect(4473, -2212, 800, 75);
+            //setTimeout(function(){/*YourCode*/},1000);
+
+            //water falling/flowing effect
+            ctx.fillStyle = `hsla(160, 100%, 26%,${0.5 + 0.07 * Math.random()})`//lower river
+            ctx.fillRect(-1800 + Math.random() * 100, 10 + 400 * Math.random(), 3900, 5)
+            ctx.fillRect(-1800, 10 + 400 * Math.random(), 4400, 5)
+
+            ctx.fillRect(2400 + 200 * Math.random(), Math.random() * - 100 - 2000, 5, 2000)//first waterfall
+            ctx.fillRect(6100 + 100 * Math.random(), Math.random() * - 100 - 1900, 5, 1050)//twin waterfalls
+            ctx.fillRect(6400 + 100 * Math.random(), Math.random() * - 100 - 1900, 5, 1050)
+
+            ctx.fillRect(7200 + 100 * Math.random(), -800 - 50 * Math.random(), 5, 2032)
+            level.enter.draw();
+            laserbutton.query();
+            laserbutton.draw();
+            doortoggle.query();
+            if (!doortoggle.isOn) {
+                door.isClosing = true
+                bunkerdoor.isClosing = true
+
+            } else {
+                door.isClosing = false
+                bunkerdoor.isClosing = false
+                if (mobsspawned == 0) {
+                    spawn.randomSmallMob(6128.0, 822.6);
+                    spawn.randomSmallMob(6854.8, 560.2);
+                    spawn.randomSmallMob(8320.7, -3402.4);
+                    spawn.randomMob(6629.0, 711.3, 0.8);
+                    spawn.randomMob(8199.2, -2545.5, 0.8);
+                    spawn.randomMob(8067.7, -2957.2, 0.8);
+                    spawn.randomMob(5149.6, -1444.1, 0.8);
+
+                    mobsspawned = 1
+
+                }
+
+            }
+            door.openClose();
+            bunkerdoor.openClose();
+
+        };
+        level.customTopLayer = () => {
+            door.draw();
+            bunkerdoor.draw();
+
+            laser.opticalQuery();
+            if (player.position.y > -70 && player.position.x < 2785) {
+                if (m.onGround) {
+                    Matter.Body.setVelocity(player, {
+                        x: player.velocity.x - (2 + m.pos.y / 150),
+                        y: player.velocity.y
+                    });
+                } else {
+                    Matter.Body.setVelocity(player, {
+                        x: player.velocity.x - (1 + m.pos.y / 150),
+                        y: player.velocity.y
+                    });
+                }
+
+            }
+            if (player.position.x > 2400 && player.position.x < 2600) {
+                Matter.Body.setVelocity(player, {
+                    x: player.velocity.x,
+                    y: player.velocity.y + 4
+                });
+
+
+            }
+            boost1.query();
+            boost2.query();
+            if (player.position.x > 2600 && player.position.x < 4500 && player.position.y < -1900 && player.position.y > -2121.3) {
+                Matter.Body.setVelocity(player, {
+                    x: player.velocity.x - 2,
+                    y: player.velocity.y
+                });
+            }
+            if (player.position.x > 4500 && player.position.x < 6000 && player.position.y < -1900 && player.position.y > -2121.3) {
+
+                if (input.left) {
+                    Matter.Body.setVelocity(player, {
+                        x: player.velocity.x + 0.1,
+                        y: player.velocity.y
+                    });
+                } else {
+                    Matter.Body.setVelocity(player, {
+                        x: player.velocity.x + 0.5,
+                        y: player.velocity.y
+                    });
+                }
+            }
+            if (player.position.x > 6500 && player.position.x < 7500 && player.position.y < -1900 && player.position.y > -2121.3) {
+                Matter.Body.setVelocity(player, {
+                    x: player.velocity.x - 1,
+                    y: player.velocity.y
+                });
+            }
+            if (player.position.x > 7500 && player.position.x < 10000 && player.position.y < -1900 && player.position.y > -2121.3) {
+                Matter.Body.setVelocity(player, {
+                    x: player.velocity.x - 1,
+                    y: player.velocity.y
+                });
+            }
+            if (player.position.x > 2600 && player.position.x < 6100 && player.position.y < -650 && player.position.y > -920) {
+                if (input.right) {
+                    Matter.Body.setVelocity(player, {
+                        x: player.velocity.x - 0.2,
+                        y: player.velocity.y
+                    });
+                } else {
+                    Matter.Body.setVelocity(player, {
+                        x: player.velocity.x - 0.4,
+                        y: player.velocity.y
+                    });
+                }
+            }
+            if (player.position.x > 6500 && player.position.x < 7300 && player.position.y < -650 && player.position.y > -920 && m.onGround) {
+                if (input.left) {
+                    Matter.Body.setVelocity(player, {
+                        x: player.velocity.x + 0.2,
+                        y: player.velocity.y
+                    });
+                } else {
+                    Matter.Body.setVelocity(player, {
+                        x: player.velocity.x + 0.4,
+                        y: player.velocity.y
+                    });
+                }
+            }
+            if (player.position.x > 7200 && player.position.x < 7350 && player.position.y > -950 && player.position.y < 1250) {
+                Matter.Body.setVelocity(player, {
+                    x: player.velocity.x,
+                    y: player.velocity.y + 0.8
+                });
+            }
+            if (player.position.x > 6100 && player.position.x < 6200 && player.position.y < -800 && player.position.y > -2000) {
+                Matter.Body.setVelocity(player, {
+                    x: player.velocity.x,
+                    y: player.velocity.y + 0.3
+                });
+            }
+            if (player.position.x > 6400 && player.position.x < 6500 && player.position.y < -800 && player.position.y > -2000) {
+                Matter.Body.setVelocity(player, {
+                    x: player.velocity.x,
+                    y: player.velocity.y + 0.3
+                });
+            }
+            //            ctx.fillRect(7200, -650, 100, 1900)
+
+            portal[0].draw();
+            portal[1].draw();
+            portal[2].draw();
+            portal[3].draw();
+
+
+        };
+
+        spawn.mapRect(-100, 0, 1000, 100);
+        spawn.mapRect(-1800, 400, 4400, 1300);
+        spawn.mapRect(-1800, 0, 100, 400);
+        spawn.mapRect(2600, -2000, 3500, 300);
+        spawn.mapRect(2600, -2000, 500, 800);
+        spawn.mapRect(2955, -1779, 800, 300);
+        spawn.mapRect(2600, -800, 2300, 2500);
+        spawn.mapRect(-460, 100, 1570, 400);
+        spawn.mapVertex(965, 67, "0 -100   220 0   0 0");
+        spawn.mapVertex(-185, 67, "0 -100   -420 0   0 0");
+        spawn.mapVertex(1210, 365, "0 -400   300 0   0 0");
+        spawn.mapRect(217.5, -358.5, 50, 360);
+        spawn.mapRect(-83, -358.5, 300, 50);
+
+        //blocks in river/waterfall
+
+        spawn.mapRect(1275, 0, 450, 75);
+        spawn.mapRect(2027, -388, 600, 75);
+        spawn.mapRect(1666, -791, 450, 75);
+        spawn.mapRect(1666, -1091, 450, 75);
+        //buildings
+
+        spawn.mapRect(4873, -2512, 800, 75);
+        spawn.mapRect(4473, -2212, 800, 75);
+        spawn.mapRect(4473, -2912, 50, 800);
+        spawn.mapRect(5673, -2712, 50, 575);
+
+        spawn.mapRect(6671.5, -2401.4, 500, 50);
+        spawn.mapRect(6105.1, -2354.1, 400, 50);
+
+        spawn.mapRect(4473, -2952, 8, 75);//1,3,2
+        spawn.mapRect(4493, -3032, 15, 150);
+        spawn.mapRect(4513, -2982, 7, 75);
+
+        spawn.mapRect(5673, -2742, 12, 50);
+        spawn.mapRect(5703, -2772, 8, 100);
+
+
+        //building 2
+        //            ctx.fillRect(8323, -2363, 50, 50)
+
+        spawn.mapRect(7473, -3412, 50, 800);
+        spawn.mapRect(7473, -2312, 50, 500);
+        spawn.mapRect(8673, -3212, 50, 1075);
+        spawn.mapRect(7523, -2313, 800, 75);
+        spawn.mapRect(7523, -2763, 800, 75);
+        spawn.mapRect(7523, -3213, 800, 75);
+        spawn.mapRect(8725, -2340, 400, 50);
+        spawn.mapRect(8925, -2640, 200, 50);
+        spawn.mapRect(8725, -2940, 200, 50);
+
+        //stairs
+        spawn.mapRect(8323, -2363, 50, 50);
+        spawn.mapRect(8373, -2413, 50, 50);
+        spawn.mapRect(8423, -2463, 50, 50);
+        spawn.mapRect(8473, -2513, 250, 50);
+        //stairs 2
+        spawn.mapRect(8523, -3013, 50, 50)//make block
+        spawn.mapRect(8473, -3063, 50, 50)//make block
+        spawn.mapRect(8423, -3113, 50, 50)//make block
+        //trees in tunnel
+        spawn.mapRect(4485, -1243, 600, 50)
+        spawn.mapRect(3967, -1056, 400, 50)
+        spawn.mapRect(5453, -1150, 50, 300)
+        spawn.mapRect(5453, -1700, 50, 300)
+
+
+        //tunnels and boss
+        spawn.mapRect(6500, -2000, 3100, 800);
+        spawn.mapRect(7500, -2000, 3300, 3700);
+        spawn.mapRect(4900, -800, 2300, 1000);
+        spawn.mapRect(4354, 1230, 4000, 470);
+        spawn.mapRect(5388, 863, 100, 500);
+        spawn.mapRect(5388, 63, 100, 500);
+        spawn.mapRect(5834, 549, 500, 80);
+        spawn.mapRect(6756, 897, 400, 80);
+
+
+        //extra boss
+        spawn.mapRect(9196, -11492, 500, 100);
+        spawn.mapRect(9196, -11492, 500, 100);
+
+        //bunker
+        spawn.mapRect(11500, -2000, 1900, 500);
+        spawn.mapRect(10800, -900, 800, 2600);
+        spawn.mapRect(11600, -340, 1800, 2600);
+        spawn.mapRect(13400, -2000, 1800, 3600);
+        spawn.mapRect(10800, -2500, 200, 100);
+        spawn.mapVertex(11400, -2235, "0 10  900 510  800 510  750 510  0 110");
+
+        spawn.mapVertex(10100, -2000, "0 0  0 -250  400 0");
+        spawn.mapRect(12945.0, -741.9, 600, 50);
+        spawn.mapRect(12945.0, -741.9, 50, 250);
+        //stairs
+        spawn.mapRect(11600, -850, 50, 550);
+        spawn.mapRect(11650, -800, 50, 500);
+        spawn.mapRect(11700, -750, 50, 450);
+        spawn.mapRect(11750, -700, 50, 400);
+        spawn.mapRect(11800, -650, 50, 350);
+        spawn.mapRect(11850, -600, 50, 300);
+        spawn.mapRect(11900, -550, 50, 250);
+        spawn.mapRect(11950, -500, 50, 200);
+        spawn.mapRect(12000, -450, 50, 150);
+        spawn.mapRect(12050, -400, 50, 100);
+        spawn.mapRect(12100, -350, 50, 50);
+
+
+        //mobs
+        //spawn.tetherBoss(6480, 992, { x: 6480, y: 210 })
+
+        if (Math.random() < 0.5) {
+            spawn.tetherBoss(6480, 992, { x: 6480, y: 210 })
+        } else {
+            spawn.randomLevelBoss(5977, 992)
+        }
+
+
+        //mobs for waterfall and first cavern
+        //spawn.randomSmallMob(1999.2, -487.4);
+        spawn.randomMob(1999.2, -487.4, 0.8);
+        //spawn.randomSmallMob(2080.0, -1206.4);
+        spawn.randomMob(2080.0, -1206.4, 0.8);
+        spawn.randomSmallMob(3287.5, -1021.1);
+        //spawn.randomSmallMob(3992.2, -1223.9);
+        spawn.randomSmallMob(5018.1, -1483.5);
+        spawn.randomGroup(6776.2, -3054.5, 0.4);
+        spawn.randomGroup(4217.4, -1403.6, 0.4);
+
+
+        //surface area mobs
+        spawn.randomSmallMob(5089.0, -2284.1);
+        spawn.randomSmallMob(6988.3, -2580.2);
+        spawn.randomSmallMob(7975.0, -2920.3);
+        spawn.randomMob(5132.0, -2646.2, 0.8);
+        spawn.randomMob(6365.2, -2459.2, 0.8);
+        spawn.randomMob(8129.0, -2406.7, 0.8);
+        spawn.randomMob(8129.0, -2406.7, 0.8);
+        spawn.randomGroup(2225.3, -1543.2, 0.4);
+
+
+        spawn.debris(4426.9, -1433.8, 700, 1); //16 debris per level
+        spawn.debris(4651.2, -2597.3, 700, 1); //16 debris per level
+        spawn.debris(9920.9, -2378.3, 700, 2); //16 debris per level
+        spawn.debris(8298.5, -2883.8, 700, 1); //16 debris per level
+        spawn.debris(6779.2, -2662.9, 700, 1); //16 debris per level
+        spawn.debris(6371.5, 442.3, 700, 2); //16 debris per level
+        spawn.debris(1873.5, -1297.5, 700, 1); //16 debris per level
+
+        spawn.bodyRect(6457.9, -2541.5, 300, 25, 0.9);
+        //spawn.bodyRect(5685, -2140, 25, 140, 0.9); 
+        spawn.bodyRect(4473, -2110, 50, 110, 0.9);
+        //spawn.bodyRect(5292.1, -2617.2, 50, 50, 0.9); 
+        spawn.bodyRect(6370.1, -2408.4, 50, 50, 0.9);
+        //spawn.bodyRect(5467, -1400, 25, 250, 0.9); 
+
+        spawn.bodyRect(4509.0, -1425.7, 30 + 45 * Math.random(), 30 + 45 * Math.random(), 0.9);
+        //spawn.bodyRect(8082.9, -2488.1, 30 + 45 * Math.random(), 30 + 45 * Math.random(), 0.9); 
+        spawn.bodyRect(7859.6, -2883.6, 30 + 45 * Math.random(), 30 + 45 * Math.random(), 0.9);
+        //spawn.bodyRect(5609.5, 948.5, 30 + 45 * Math.random(), 30 + 45 * Math.random(), 0.9); 
+        spawn.bodyRect(5803.7, 1125.5, 30 + 45 * Math.random(), 30 + 45 * Math.random(), 0.9);
+        //spawn.bodyRect(5492.1, 1061.7, 90, 169, 0.9); 
+        spawn.bodyRect(5582.1, 1061.7, 110, 70, 0.9);
+        //spawn.bodyRect(5582.1, 961.7, 50, 30, 0.9); 
+
+
+
+
+        // spawn.randomSmallMob(1300, -70);
+        // spawn.randomSmallMob(1300, -70);
+        // spawn.randomSmallMob(1300, -70);
+        // spawn.randomSmallMob(1300, -70);
+
+        // powerUps.spawnStartingPowerUps(1475, -1175);
+        // spawn.debris(750, -2200, 3700, 16); //16 debris per level
+        // spawn.bodyRect(1540, -1110, 300, 25, 0.9); 
+        // spawn.randomSmallMob(1300, -70);
+        // spawn.randomMob(2650, -975, 0.8);
+        // spawn.randomGroup(1700, -900, 0.4);
+        // if (simulation.difficulty > 1) spawn.randomLevelBoss(2200, -1300);
+        // spawn.secondaryBossChance(100, -1500)
+        powerUps.addResearchToLevel() //needs to run after mobs are spawned
+    },
+    superNgonBros() {
+        simulation.makeTextLog(`<strong>Super N-gon Bros</strong> by <span class='color-var'>DesBoot</span>`);
+
+        let bowserKilled = 0
+        let flagY = -750
+        let flagReached = 0
+        const elevator1 = level.elevator(3975, -11650, 450, 50, -13100, 0.003)
+        const elevator2 = level.elevator(5575, -11650, 450, 50, -13100, 0.003)
+        let firstElevatorY = -11650
+
+        const portal = level.portal({ x: 3990, y: 100 }, 1.5 * Math.PI, { x: 100, y: -13500 }, -1.5 * Math.PI)
+        const portal2 = level.portal({ x: 7135, y: -12270 }, -1 * Math.PI, { x: 12325, y: -2000 }, -1.5 * Math.PI)
+
+        const bowser = function (x, y, radius = 150) { //define the mob the same as spawn mob code
+            mobs.spawn(x, y, 5, radius, "rgb(0,200,180)");
+            let me = mob[mob.length - 1];
+            me.accelMag = 0.05;
+            me.g = 0.002; //required if using this.gravity
+            me.frictionAir = 0.01;
+            me.friction = 1
+            me.frictionStatic = 1
+            me.restitution = 0;
+            me.delay = 80 * simulation.CDScale;
+            me.randomHopFrequency = 200 + Math.floor(Math.random() * 150);
+            me.randomHopCD = simulation.cycle + me.randomHopFrequency;
+            Matter.Body.rotate(me, Math.random() * Math.PI);
+            spawn.shield(me, x, y);
+            me.do = function () {
+                //spawn.grenade(me.position.x, me.position.y);
+                // //const v = 5 * simulation.accelScale;
+                // Matter.Body.setVelocity(mob[mob.length - 1], {
+                //     x: this.velocity.x + this.fireDir.x * v + Math.random(),
+                //     y: this.velocity.y + this.fireDir.y * v + Math.random()
+                // });
+                this.gravity();
+                this.seePlayerCheck();
+                this.checkStatus();
+                if (this.seePlayer.recall) {
+                    if (this.cd < simulation.cycle && (Matter.Query.collides(this, map).length || Matter.Query.collides(this, body).length)) {
+                        this.cd = simulation.cycle + this.delay;
+                        const forceMag = (this.accelMag + this.accelMag * Math.random()) * this.mass;
+                        const angle = Math.atan2(this.seePlayer.position.y - this.position.y, this.seePlayer.position.x - this.position.x);
+                        this.force.x += forceMag * Math.cos(angle) * 0.5;
+                        this.force.y += (forceMag * Math.sin(angle) - (Math.random() * 0.07 + 0.1) * this.mass) * 0.7; //antigravity
+                        if (Math.random() < 0.5) {
+                            spawn.grenade(me.position.x, me.position.y - 250 * Math.random(), 500);
+                            Matter.Body.setVelocity(mob[mob.length - 1], {
+                                x: -5,
+                                y: 0
+                            });
+                        } else {
+                            spawn.bullet(this.position.x, this.position.y, 25);
+                            Matter.Body.setVelocity(mob[mob.length - 1], {
+                                x: -25,
+                                y: -25
+                            });
+                        }
+                    }
+                } else {
+                    //randomly hob if not aware of player
+                    if (this.randomHopCD < simulation.cycle && (Matter.Query.collides(this, map).length || Matter.Query.collides(this, body).length)) {
+                        this.randomHopCD = simulation.cycle + this.randomHopFrequency;
+                        //slowly change randomHopFrequency after each hop
+                        this.randomHopFrequency = Math.max(100, this.randomHopFrequency + (0.5 - Math.random()) * 200);
+                        const forceMag = (this.accelMag + this.accelMag * Math.random()) * this.mass * (0.1 + Math.random() * 0.3);
+                        const angle = -Math.PI / 2 + (Math.random() - 0.5) * Math.PI;
+                        this.force.x += forceMag * Math.cos(angle);
+                        this.force.y += forceMag * Math.sin(angle) - 0.07 * this.mass; //antigravity
+                        spawn.grenade(me.position.x, me.position.y - 250 * Math.random(), 500);
+                        Matter.Body.setVelocity(mob[mob.length - 1], {
+                            x: -5,
+                            y: 0
+                        });
+                    }
+                }
+            };
+            me.onDeath = function () {
+                powerUps.spawnBossPowerUp(this.position.x, this.position.y)
+                bowserKilled = 1
+            }
+
+        }
+
+        bowser(20500, -400) //call the mob
+        powerUps.addResearchToLevel() //needs to run after mobs are spawned
+        //fire(15300, -200)
+        const brick = function (x, y, angle = Math.PI * 0.5, radius = 53) {//credit to Richard0820 for the code
+            mobs.spawn(x, y, 4, radius, "#ab6101");
+            let me = mob[mob.length - 1];
+            me.stroke = "transparent";
+            me.isDropPowerUp = false;
+            me.showHealthBar = false;
+            Matter.Body.setDensity(me, 999999)
+            me.collisionFilter.mask = cat.player | cat.mob | cat.bullet;
+            me.constraint = Constraint.create({
+                pointA: {
+                    x: me.position.x,
+                    y: me.position.y
+                },
+                bodyB: me,
+                stiffness: 0,
+                damping: 0
+            });
+            me.do = function () {
+                this.isStunned = true;
+                if (this.health < 1) {
+                    this.health += 0.001; //regen
+                }
+                this.checkStatus();
+                Matter.Body.setAngle(me, angle);
+                if ((player.velocity.y < 0 && player.position.y > me.position.y || player.velocity.y > 30 && player.position.y < me.position.y) && Math.abs(player.position.x - me.position.x) < 50 && Math.abs(player.position.y - me.position.y) < 150) {
+                    me.death()
+                }
+            };
+
+            me.onHit = function () {
+
+                if (player.velocity.y < 0 && player.position.y > me.position.y || player.velocity.y > 30 && player.position.y < me.position.y) {
+
+                    me.death()
+
+                }
+            }
+            me.onDeath = function () {
+                if (Math.random() < 0.1) {
+                    spawn.randomSmallMob(me.position.x, me.position.y - 75, 1, 16 + Math.ceil(Math.random() * 15), Infinity);
+                    simulation.makeTextLog('mob')
+                } else {
+                    if (Math.random() < 0.07) {
+                        powerUps.spawn(me.position.x, me.position.y + (75 * (player.velocity.y / Math.abs(player.velocity.y))), "tech", true);
+                        simulation.makeTextLog('tech')
+                    } else {
+                        if (Math.random() < 0.4) {
+                            powerUps.spawn(me.position.x, me.position.y + (75 * (player.velocity.y / Math.abs(player.velocity.y))), "heal", true);
+                            simulation.makeTextLog('heal')
+                        } else {
+                            //if (Math.random() < 0.8){
+                            powerUps.spawn(me.position.x, me.position.y + (75 * (player.velocity.y / Math.abs(player.velocity.y))), "ammo", true);
+                            simulation.makeTextLog('ammo')
+                            //}
+                        }
+                    }
+                }
+            }
+            Composite.add(engine.world, me.constraint);
+        }
+        let firstMobsSpawned = 1
+        let secondMobsSpawned = 0
+        let thirdMobsSpawned = 0
+        let fourthMobsSpawned = 0
+        let firstMobsReached = 0
+        let secondMobsReached = 0
+        let thirdMobsReached = 0
+        let fourthMobsReached = 0
+        let finalRoomReached = 0
+        let undergroundMobsSpawned = 0
+        let undergroundMobsReached = 0
+
+
+        level.setPosToSpawn(0, -50); //normal spawn
+        level.exit.x = 22100;
+        level.exit.y = -40;
+        spawn.mapRect(level.enter.x, level.enter.y + 20, 100, 20); //bump for level entrance
+        spawn.mapRect(level.exit.x, level.exit.y + 20, 100, 20); //bump for level exit
+        level.defaultZoom = 1800
+        simulation.zoomTransition(level.defaultZoom)
+        document.body.style.backgroundColor = "#a2a5ff";
+        // color.map = "#444" //custom map color
+
+        level.custom = () => {
+            if (player.position.x > 14950 && flagReached == 0) {
+                flagReached = 1
+            }
+            if (flagReached == 1 && flagY < -150) {
+                flagY += 5
+            }
+            ctx.fillStyle = "rgba(64,64,64,0.97)"
+            ctx.fillRect(4200, -13100, 2, 1450)
+            ctx.fillRect(5800, -13100, 2, 1450)
+            if (firstElevatorY < -12099) {
+                firstElevatorY = -11650
+            } else {
+                firstElevatorY -= 5
+            }
+
+            //simulation.makeTextLog(firstElevatorY)
+            elevator1.move();
+            elevator2.move();
+            if (player.position.x > 0 && player.position.y < -9000 && player.position.y > -10000) {
+                //m.death()
+                m.damage(0.05 * simulation.difficultyMode)
+                Matter.Body.setPosition(player, {
+                    x: 275,
+                    y: -12175
+                });
+            }
+
+            portal[2].query()
+            portal[3].query()
+            portal2[2].query()
+            portal2[3].query()
+            //simulation.makeTextLog(firstBlockBroken)
+            level.exit.drawAndCheck();
+            if (player.position.x > 4100 && secondMobsReached == 0) {
+                secondMobsSpawned = 1
+            }
+            if (player.position.x > 7000 && thirdMobsReached == 0) {
+                thirdMobsSpawned = 1
+            }
+            if (player.position.x > 14300 && fourthMobsReached == 0) {
+                fourthMobsSpawned = 1
+            }
+            if (player.position.y < -11000 && undergroundMobsReached == 0) {
+                undergroundMobsSpawned = 1
+            }//player.position.x > 14300 && 
+            if (m.onGround) {
+                if (Math.abs(player.velocity.x) > 0.3) {
+                    Matter.Body.setVelocity(player, {
+                        x: player.velocity.x + (0.1 * (Math.abs(player.velocity.x) / player.velocity.x)),
+                        y: player.velocity.y + 0.2
+                    });
+                } else {
+                    Matter.Body.setVelocity(player, {
+                        x: player.velocity.x,
+                        y: player.velocity.y + 0.2
+                    });
+                }
+            } else {
+                if (input.down) {
+                    Matter.Body.setVelocity(player, {
+                        x: player.velocity.x,
+                        y: player.velocity.y + 2
+                    });
+                } else {
+                    Matter.Body.setVelocity(player, {
+                        x: player.velocity.x,
+                        y: player.velocity.y + 0.2
+                    });
+                }
+            }
+
+            level.enter.draw();
+            if (finalRoomReached == 0 && player.position.x > 21150) {
+                finalRoomReached = 1
+                simulation.makeTextLog('Thank you M, but our techs are in another castle!')
+            }
+            //mobs
+            if (firstMobsSpawned == 1 && firstMobsReached == 0) {
+                spawn.randomSmallMob(1260, -75);
+                spawn.randomMob(2100, -75, 0.4);
+                spawn.randomSmallMob(2400, -75);
+                spawn.randomSmallMob(2500, -75);
+                spawn.randomMob(2900, -75, 0.2);
+                spawn.randomMob(3400, -75, 0.4);
+                spawn.randomMob(3400, -75, 0.4);
+                firstMobsReached = 1
+            }
+            if (secondMobsSpawned == 1 && secondMobsReached == 0) {
+                spawn.randomSmallMob(4400, -75);
+                spawn.randomSmallMob(5500, -75);
+                spawn.randomSmallMob(5835.6, -402.4);
+                spawn.randomSmallMob(5835.6, -402.4);
+                spawn.randomSmallMob(6543.2, -730.0);
+                spawn.randomMob(6795.4, -162.4, 0.1);
+                spawn.randomMob(6795.4, -162.4, 0.1);
+                secondMobsReached = 1
+            }
+            if (thirdMobsSpawned == 1 && thirdMobsReached == 0) {
+                spawn.randomMob(8465.6, -469.9, 0.1);
+                spawn.randomMob(9839.6, -444.5, 0.4);
+                spawn.randomSmallMob(11033.2, -155.3);
+                spawn.randomMob(12161.3, -85.1, 0.3);
+                spawn.randomMob(12161.3, -85.1, 0.3);
+                spawn.randomMob(13399.8, -93.4, 0.4);
+                thirdMobsReached = 1
+
+            }
+            if (fourthMobsSpawned == 1 && fourthMobsReached == 0) {
+                spawn.randomSmallMob(16500, -400);
+                spawn.randomSmallMob(19278.9, -211.1);
+                spawn.randomMob(18839.0, -463.2, 0.3);
+                spawn.randomMob(18036.9, -205.9, 0.3);
+                spawn.randomMob(16950.4, -365.2, 0.4);
+                spawn.randomMob(16355.6, -390.8, 0.1);
+
+                fourthMobsReached = 1
+
+            }
+            if (undergroundMobsSpawned == 1 && undergroundMobsReached == 0) {
+                spawn.randomSmallMob(1140.0, -12228.0);
+                spawn.randomSmallMob(2429.9, -12371.2);
+                spawn.randomSmallMob(4899.4, -12139.6);
+                spawn.randomMob(18839.0, -463.2, 0.3);
+                spawn.randomMob(2844.5, -12281.0, 0.2);
+                spawn.randomMob(4967.5, -12550.8, 0.4);
+                spawn.randomMob(6696.9, -12437.9, 0.1);
+
+                undergroundMobsReached = 1
+
+            }
+            portal[0].draw();
+            portal[1].draw();
+            portal[2].draw();
+            portal[3].draw();
+            portal2[0].draw();
+            portal2[1].draw();
+            portal2[2].draw();
+            portal2[3].draw();
+        };
+        level.customTopLayer = () => {
+            //spawn.mapRect(886, firstElevatorY + 10000, 75, 5);
+
+            ctx.fillStyle = "rgba(64,64,64,0.97)"
+            ctx.fillRect(3928, -300, 120, 500)
+            //6940, -12360, 200, 5
+            ctx.fillRect(6940, -12350, 170, 120)
+            ctx.fillRect(7090, -12380, 120, 200)
+            ctx.fillRect(14980, -750, 10, 750)//flagpole
+            ctx.beginPath()
+            ctx.moveTo(14980, flagY)
+            ctx.lineTo(14905, flagY)
+            ctx.lineTo(14980, flagY + 75)
+            ctx.fill()
+
+        };
+
+
+
+        brick(923.5, -262);
+        spawn.mapRect(886, -304, 75, 5);
+        spawn.mapRect(886, -229, 75, 5);
+        spawn.mapRect(883, -304, 5, 80);
+        spawn.mapRect(958, -304, 5, 80);
+        brick(1250.5, -262);
+        spawn.mapRect(1138, -304, 375, 5);
+        spawn.mapRect(1138, -229, 375, 5);
+        brick(1400.5, -262);
+        brick(1325.5, -562);
+        spawn.mapRect(1288, -604, 75, 5);
+        spawn.mapRect(1288, -529, 75, 5);
+        spawn.mapRect(1285, -604, 5, 80);
+        spawn.mapRect(1360, -604, 5, 80);
+        brick(5787.5, -262);
+        spawn.mapRect(5675, -304, 225, 5);
+        spawn.mapRect(5675, -229, 225, 5);
+        brick(6987.5, -562);
+        spawn.mapRect(6725, -604, 300, 5);
+        spawn.mapRect(6725, -529, 300, 5);
+        spawn.mapRect(7025, -604, 5, 80);
+        brick(7887.5, -262);//4 separated blocks in the middle
+        spawn.mapRect(7850, -304, 75, 5);
+        spawn.mapRect(7850, -225, 75, 5);
+        spawn.mapRect(7850, -304, 5, 80);
+        spawn.mapRect(7925, -304, 5, 84);
+        brick(8112.5, -262);
+        spawn.mapRect(8075, -304, 75, 5);
+        spawn.mapRect(8075, -225, 75, 5);
+        spawn.mapRect(8075, -304, 5, 80);
+        spawn.mapRect(8150, -304, 5, 84);
+        brick(8337.5, -262);
+        spawn.mapRect(8300, -304, 75, 5);
+        spawn.mapRect(8300, -225, 75, 5);
+        spawn.mapRect(8300, -304, 5, 80);
+        spawn.mapRect(8375, -304, 5, 84);
+        brick(8112.5, -562);
+        spawn.mapRect(8075, -604, 75, 5);
+        spawn.mapRect(8075, -525, 75, 5);
+        spawn.mapRect(8075, -604, 5, 80);
+        spawn.mapRect(8150, -604, 5, 84);
+        brick(9612.5, -562);
+        spawn.mapRect(9500, -604, 300, 5);
+        spawn.mapRect(9500, -525, 300, 5);
+        spawn.mapRect(9647.5, -600, 5, 75);
+        brick(9687.5, -562);
+        brick(12887.5, -262);
+        spawn.mapRect(12700, -304, 300, 5);
+        spawn.mapRect(12700, -225, 300, 5);
+        brick(5212.5, -12337.5);
+        spawn.mapRect(4725, -12377, 525, 5);
+        spawn.mapRect(4725, -12303, 525, 5);
+        spawn.mapRect(5250, -12377, 5, 79);
+
+
+
+
+
+        spawn.mapRect(-100, 0, 4033, 2000);
+        spawn.mapRect(4043, 0, 882, 2000);
+        spawn.mapRect(3909.5, 203.6, 150, 2000);
+        spawn.mapRect(1138, -300, 75, 75);
+        spawn.mapRect(1288, -300, 75, 75);
+        spawn.mapRect(1438, -300, 75, 75);
+        spawn.mapRect(1738, -150, 150, 75);//pipe 1
+        spawn.mapRect(1753, -150, 120, 150);
+        spawn.mapRect(2488, -225, 150, 75);//pipe 2
+        spawn.mapRect(2503, -225, 120, 225);
+        spawn.mapRect(3088, -300, 150, 75);//pipe 3
+        spawn.mapRect(3103, -300, 120, 300);
+        spawn.mapRect(3913, -300, 20, 75);//pipe 4
+        spawn.mapRect(3928, -300, 5, 300);
+        spawn.mapRect(4043, -300, 20, 75);
+        spawn.mapRect(4043, -300, 5, 300);
+
+        spawn.mapRect(5225, 0, 1125, 2000);
+        spawn.mapRect(6575, 0, 4900, 2000);
+        spawn.mapRect(5675, -300, 75, 75);
+        spawn.mapRect(5825, -300, 75, 75);
+        spawn.mapRect(5900, -600, 600, 75);
+        spawn.mapRect(6725, -600, 225, 75);
+        spawn.mapRect(6950, -300, 75, 75);
+        spawn.mapRect(7400, -300, 150, 75);
+
+        spawn.mapRect(8750, -300, 75, 75);
+        spawn.mapRect(8975, -600, 225, 75);//raised platform
+        spawn.mapRect(9575, -300, 150, 75);
+        spawn.mapRect(9500, -600, 75, 75);//upper block with double bricks
+        spawn.mapRect(9725, -600, 75, 75);
+        spawn.mapRect(9950, -75, 300, 75);//staircase
+        spawn.mapRect(10025, -150, 225, 75);
+        spawn.mapRect(10100, -225, 150, 75);
+        spawn.mapRect(10175, -300, 75, 75);
+
+        spawn.mapRect(10475, -75, 300, 75);
+        spawn.mapRect(10475, -150, 225, 75);
+        spawn.mapRect(10475, -225, 150, 75);
+        spawn.mapRect(10475, -300, 75, 75);
+
+        spawn.mapRect(11100, -75, 375, 75);//staircase 2
+        spawn.mapRect(11175, -150, 300, 75);
+        spawn.mapRect(11250, -225, 225, 75);
+        spawn.mapRect(11325, -300, 150, 75);
+
+        spawn.mapRect(11725, -75, 300, 75);
+        spawn.mapRect(11725, -150, 225, 75);
+        spawn.mapRect(11725, -225, 150, 75);
+        spawn.mapRect(11725, -300, 75, 75);
+
+        spawn.mapRect(11725, 0, 5975, 2000);//platform after the staircase
+        spawn.mapRect(12325, -150, 150, 75);//exit pipe
+        spawn.mapRect(12340, -150, 120, 300);
+        spawn.mapRect(12700, -300, 150, 75);
+        spawn.mapRect(12925, -300, 75, 75);
+        spawn.mapRect(13525, -150, 150, 72);//final pipe
+        spawn.mapRect(13540, -150, 120, 150);
+        spawn.mapRect(13675, -75, 675, 75);//final staircase
+        spawn.mapRect(13750, -150, 600, 75);
+        spawn.mapRect(13825, -225, 525, 75);
+        spawn.mapRect(13900, -300, 450, 75);
+        spawn.mapRect(13975, -375, 375, 75);
+        spawn.mapRect(14050, -450, 300, 75);
+        spawn.mapRect(14125, -525, 225, 75);
+        spawn.mapRect(14200, -600, 150, 75);
+
+        //flag
+        spawn.mapRect(14950, -75, 75, 75);
+
+
+
+        spawn.mapRect(1750, -4600, 500, 25);//loss
+        spawn.mapRect(2000, -4850, 25, 500);
+        spawn.mapRect(1800, -4800, 25, 150);
+        spawn.mapRect(2075, -4800, 25, 150);
+        spawn.mapRect(2150, -4775, 25, 125);
+        spawn.mapRect(1875, -4550, 25, 150);
+        spawn.mapRect(1800, -4550, 25, 150);
+        spawn.mapRect(2075, -4550, 25, 150);
+        spawn.mapRect(2123, -4430, 100, 25);
+        // spawn.mapRect(-250, -600, 500, 25);
+        // spawn.mapRect(-250, -600, 500, 25);
+
+        //underground area
+        spawn.mapRect(0, -12000, 2025, 2000);
+        spawn.mapRect(2325, -12225, 150, 2000);
+        spawn.mapRect(2775, -12000, 900, 2000);
+        spawn.mapRect(3525, -12300, 150, 300);
+        spawn.mapRect(3450, -12225, 75, 300);
+        spawn.mapRect(3375, -12150, 75, 300);
+        spawn.mapRect(3300, -12075, 75, 300);
+        spawn.mapRect(4725, -12375, 450, 75);
+        spawn.mapRect(4725, -12000, 600, 2000);
+        spawn.mapRect(-100, -13500, 100, 3500);
+        spawn.mapRect(-100, -13500, 100, 3500);
+        spawn.mapRect(6375, -12225, 1650, 2000);
+        spawn.mapRect(7225, -13225, 2850, 3000);
+        spawn.mapRect(-100, -13700, 100, 200);//roof
+        spawn.mapRect(-100, -13700, 3775, 100);
+        spawn.mapRect(6450, -13225, 1000, 100);
+        spawn.mapRect(7090, -13225, 120, 885);//pipe
+        //spawn.mapRect(6940, -12360, 200, 120);
+        spawn.mapRect(6940, -12350, 200, 5);
+        spawn.mapRect(6950, -12240, 140, 5);
+        spawn.mapRect(6940, -12365, 75, 15);
+        spawn.mapRect(6940, -12235, 75, 15);
+
+        //castle
+        spawn.mapRect(17700, 0, 4975, 2000);
+        spawn.mapRect(18600, -225, 375, 2225);
+        spawn.mapRect(19500, -225, 450, 2225);
+        spawn.mapRect(19500, -825, 450, 225);
+        spawn.mapRect(15924, -1575, 6751, 750);
+        spawn.mapRect(19950, -225, 975, 75);
+        spawn.mapRect(20925, -300, 225, 300);
+        spawn.mapRect(21000, -825, 150, 300);
+        spawn.mapRect(15924, -225, 1776, 2225);
+        spawn.mapRect(17175, -825, 525, 225);
+        spawn.mapRect(22600, -825, 75, 825);
+
+
+
+        // powerUps.spawnStartingPowerUps(1475, -1175);
+        // spawn.debris(750, -2200, 3700, 16); //16 debris per level
+        // spawn.bodyRect(1540, -1110, 300, 25, 0.9); 
+        // spawn.randomSmallMob(1300, -70);
+        // spawn.randomMob(2650, -975, 0.8);
+        // spawn.randomGroup(1700, -900, 0.4);
+        // if (simulation.difficulty > 1) spawn.randomLevelBoss(2200, -1300);
+        // spawn.secondaryBossChance(100, -1500)
     },
     
     // ********************************************************************************************************
