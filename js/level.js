@@ -14,6 +14,7 @@ const level = {
     communityLevels: ["stronghold", "basement", "crossfire", "vats", "n-gon", "house", "perplex", "coliseum", "tunnel", "islands"],
     modernCommunityLevels: ["dripp", "fortress", "commandeer", "clock", "buttonbutton", "downpour"], // todo: backport
     gimmickLevels: ["run", "testChamber2", "temple", "biohazard", "stereoMadness", "yingYang", "staircase", "superNgonBros", "underpass", "cantilever", "tlinat", "ruins"],
+    // ace is not being ported because its bugged, crimsonTowers is not being ported because of performance and copyright issues
     trainingLevels: ["walk", "crouch", "jump", "hold", "throw", "throwAt", "deflect", "heal", "fire", "nailGun", "shotGun", "superBall", "matterWave", "missile", "stack", "mine", "grenades", "harpoon"],
     levels: [],
     announceMobTypes() {
