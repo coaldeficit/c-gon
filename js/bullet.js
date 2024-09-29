@@ -23,7 +23,7 @@ const b = {
     },
     fire() {},
     fireNormal() {
-        if (b.inventory.length) {
+        if (b.inventory.length && !simulation.isChoosing) {
             if (input.fire && m.fireCDcycle < m.cycle && (!input.field || m.fieldFire)) {
                 if (b.guns[b.activeGun].ammo > 0) {
                     b.fireWithAmmo()
@@ -36,7 +36,7 @@ const b = {
         }
     },
     fireNotMove() { //added  && player.speed < 0.5 && m.onGround  
-        if (b.inventory.length) {
+        if (b.inventory.length && !simulation.isChoosing) {
             if (input.fire && m.fireCDcycle < m.cycle && (!input.field || m.fieldFire) && player.speed < 2.5 && m.onGround && Math.abs(m.yOff - m.yOffGoal) < 1) {
                 if (b.guns[b.activeGun].ammo > 0) {
                     b.fireWithAmmo()
@@ -49,7 +49,7 @@ const b = {
         }
     },
     fireAlwaysFire() { //added  && player.speed < 0.5 && m.onGround  //removed input.fire && (!input.field || m.fieldFire)
-        if (b.inventory.length) {
+        if (b.inventory.length && !simulation.isChoosing) {
             if (m.fireCDcycle < m.cycle && player.speed < 0.5 && m.onGround && Math.abs(m.yOff - m.yOffGoal) < 1) {
                 if (b.guns[b.activeGun].ammo > 0) {
                     b.fireWithAmmo()
@@ -60,7 +60,7 @@ const b = {
         }
     },
     fireFloat() { //added  && player.speed < 0.5 && m.onGround  
-        if (b.inventory.length) {
+        if (b.inventory.length && !simulation.isChoosing) {
             if (input.fire && (!input.field || m.fieldFire)) {
                 if (m.fireCDcycle < m.cycle) {
                     if (b.guns[b.activeGun].ammo > 0) {
