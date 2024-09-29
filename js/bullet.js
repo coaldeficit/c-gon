@@ -6030,7 +6030,7 @@ const b = {
             name: "foam",
             description: "spray bubbly foam that <strong>sticks</strong> to mobs<br><strong class='color-s'>slows</strong> mobs and does <strong class='color-d'>damage</strong> over time",
             ammo: 0,
-            ammoPack: 24,
+            ammoPack: 36,
             have: false,
             charge: 0,
             isDischarge: false,

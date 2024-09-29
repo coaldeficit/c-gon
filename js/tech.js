@@ -247,11 +247,14 @@ const tech = {
         if (tech.isSpeedDamage) dmg *= 1 + Math.min(0.66, player.speed * 0.0165)
         if (tech.isBotDamage) dmg *= 1 + 0.06 * b.totalBots()
         if (tech.isDamageAfterKillNoRegen && m.lastKillCycle + 300 > m.cycle) dmg *= 1.5
-        //if (tech.isArmoredConfig) dmg /= m.harmReduction(true)
+        if (powerUps.boost.endCycle > simulation.cycle) dmg *= 1 + powerUps.boost.damage
+        if (tech.isVerlet) dmg *= 2.5
+        if (tech.isAperture) dmg *= (1.4 + (0.8 * Math.sin(m.cycle * 0.01)))
+        if (tech.isDepolarization && m.lastKillCycle + (240-tech.isRepolarization) < m.cycle) dmg *= 2.25
         return dmg * tech.slowFire * tech.aimDamage
     },
     duplicationChance() {
-        return Math.max(0, (tech.isTreasure ? 0.35 : 0) + (tech.isPowerUpsVanish ? 0.12 : 0) + (tech.isStimulatedEmission ? 0.15 : 0) + tech.cancelCount * 0.045 + tech.duplicateChance + m.duplicateChance + tech.fieldDuplicate + tech.cloakDuplication + (tech.isAnthropicTech && tech.isDeathAvoidedThisLevel ? 0.5 : 0))
+        return Math.max(0 + (tech.isPowerUpsVanish ? 0.12 : 0) + (tech.isStimulatedEmission ? 0.15 : 0) + tech.cancelCount * 0.045 + tech.duplicateChance + m.duplicateChance + tech.fieldDuplicate + tech.cloakDuplication + (tech.isAnthropicTech && tech.isDeathAvoidedThisLevel ? 0.5 : 0))
     },
     isScaleMobsWithDuplication: false,
     maxDuplicationEvent() {
@@ -300,7 +303,51 @@ const tech = {
             }
         }
     },
-    tech: [{
+    tech: [
+      {
+          name: "aperture",
+          description: "every <strong>10.47</strong> seconds your <strong class='color-d'>damage</strong> cycles between<br>being <strong>40%</strong> lower and <strong>120%</strong> higher",
+          maxCount: 1,
+          count: 0,
+          frequency: 1,
+          frequencyDefault: 1,
+          isSkin: true,
+          allowed() {
+              return true
+          },
+          requires: "",
+          effect() {
+			  tech.isAperture = true
+			  if (!m.isShipMode) m.skin.dilate()
+          },
+          remove() {
+			  tech.isAperture = false
+			  if (!m.isShipMode) m.resetSkin()
+          }
+      },
+      {
+          name: "diaphragm",
+          description: "every <strong>13.96</strong> seconds your <strong class='color-harm'>harm</strong> reduction cycles<br>between being <strong>35%</strong> lower and <strong>60%</strong> higher",
+          maxCount: 1,
+          count: 0,
+          frequency: 1,
+          frequencyDefault: 1,
+          isSkin: true,
+          allowed() {
+              return tech.isAperture
+          },
+          requires: "aperture",
+          effect() {
+			  tech.isDiaphragm = true
+			  if (!m.isShipMode) m.resetSkin()
+			  if (!m.isShipMode) m.skin.dilate2()
+          },
+          remove() {
+			  tech.isDiaphragm = false
+			  if (!m.isShipMode) m.resetSkin()
+          }
+      },
+	  {
             name: "gun sciences",
             description: "</strong>triple</strong> the <strong class='flicker'>frequency</strong> of finding <strong class='color-g'>gun</strong><strong class='color-m'>tech</strong><br>spawn a <strong class='color-g'>gun</strong>",
             maxCount: 1,
@@ -697,12 +744,14 @@ const tech = {
                 tech.isFireMoveLock = true;
                 b.setFireCD();
                 b.setFireMethod();
+				if (!m.isShipMode) m.skin.strokeGap()
             },
             remove() {
                 if (tech.isFireMoveLock) {
                     tech.isFireMoveLock = false
                     b.setFireCD();
                     b.setFireMethod();
+			        if (!m.isShipMode) m.resetSkin()
                 }
             }
         },
@@ -713,8 +762,8 @@ const tech = {
             count: 0,
             frequency: 1,
             frequencyDefault: 1,
-            allowed() { return true },
-            requires: "",
+            allowed() { return !tech.isNitinol },
+            requires: "not nitinol",
             effect() { // good with melee builds, content skipping builds
                 tech.squirrelFx += 0.25;
                 tech.squirrelJump += 0.1;
@@ -724,6 +773,32 @@ const tech = {
                 tech.squirrelFx = 1;
                 tech.squirrelJump = 1;
                 m.setMovement()
+            }
+        },
+        {
+            name: "nitinol",
+            description: "<strong>70%</strong> faster <strong>movement</strong> and <strong>jump speed</strong><br><strong>55%</strong> increased <strong><em>delay</em></strong> after firing",
+            maxCount: 1,
+            count: 0,
+            frequency: 1,
+            frequencyDefault: 1,
+            allowed() {
+                return tech.squirrelFx == 1
+            },
+            requires: "not squirrel-cage rotor",
+            effect() {
+		  	    tech.isNitinol = true
+                tech.fireRate *= 1.55
+                b.setFireCD();
+                m.setMovement()
+			    if (!m.isShipMode) m.skin.mech()
+            },
+            remove() {
+			    tech.isNitinol = false
+                tech.fireRate /= 1.55
+                b.setFireCD();
+                m.setMovement()
+			    if (!m.isShipMode) m.resetSkin()
             }
         },
         // {
@@ -1805,6 +1880,7 @@ const tech = {
                 tech.isFlipFlop = false
                 tech.isFlipFlopOn = false
                 m.eyeFillColor = 'transparent'
+				if (!m.isShipMode) m.resetSkin()
             }
         },
         {
@@ -1879,6 +1955,7 @@ const tech = {
                 tech.isRelay = false
                 tech.isFlipFlopOn = false
                 m.eyeFillColor = 'transparent'
+				if (!m.isShipMode) m.resetSkin()
             }
         },
         {
@@ -2156,9 +2233,11 @@ const tech = {
             requires: "not standing wave, mass-energy, max energy reduction, retrocausality",
             effect() {
                 tech.isRewindAvoidDeath = true;
+				if (!m.isShipMode) m.skin.CPT()
             },
             remove() {
                 tech.isRewindAvoidDeath = false;
+			    if (!m.isShipMode) m.resetSkin()
             }
         },
         {
@@ -2201,6 +2280,26 @@ const tech = {
             }
         },
         {
+            name: "Verlet integration",
+            description: "increase <strong class='color-d'>damage</strong> by <strong>150%</strong> extra <br>after mobs <strong>die</strong> advance time <strong>0.5</strong> seconds",
+            maxCount: 1,
+            count: 0,
+            frequency: 1,
+            frequencyDefault: 1,
+            allowed() {
+                return true
+            },
+            requires: "",
+            effect() {
+		  	    tech.isVerlet = true
+			    if (!m.isShipMode) m.skin.verlet()
+            },
+            remove() {
+			    tech.isVerlet = false
+		  	    if (!m.isShipMode) m.resetSkin()
+            }
+        },
+        {
             name: "piezoelectricity",
             description: "<strong>colliding</strong> with mobs gives you <strong>2048</strong> <strong class='color-f'>energy</strong>", //<br>reduce <strong class='color-harm'>harm</strong> by <strong>15%</strong>
             maxCount: 1,
@@ -2238,6 +2337,7 @@ const tech = {
                 tech.isEnergyHealth = true;
                 simulation.mobDmgColor = "rgba(14, 190, 235,0.7)" //"#0cf"
                 m.displayHealth();
+				if (!m.isShipMode) m.skin.energy()
             },
             remove() {
                 if (tech.isEnergyHealth) {
@@ -2248,6 +2348,7 @@ const tech = {
                     m.health = Math.max(Math.min(m.maxHealth, m.energy), 0.1);
                     simulation.mobDmgColor = "rgba(255,0,0,0.7)"
                     m.displayHealth();
+			        if (!m.isShipMode) m.resetSkin()
                 }
                 tech.isEnergyHealth = false;
             }
@@ -2604,7 +2705,7 @@ const tech = {
         },
         {
             name: "torpor",
-            description: "if a mob has <strong>not died</strong> in the last <strong>5 seconds</strong><br>reduce <strong class='color-harm'>harm</strong> by <strong>66%</strong>",
+            description: "if a mob has <strong>not died</strong> in the last <strong>5 seconds</strong><br>reduce <strong class='color-harm'>harm</strong> by <strong>67%</strong>",
             maxCount: 1,
             count: 0,
             frequency: 1,
@@ -2618,6 +2719,44 @@ const tech = {
             },
             remove() {
                 tech.isHarmReduceNoKill = false;
+            }
+        },
+        {
+            name: "depolarization",
+            description: "if a mob has <strong>not died</strong> in the last <strong>4 seconds</strong><br>increase <strong class='color-d'>damage</strong> by <strong>125%</strong>",
+            maxCount: 1,
+            count: 0,
+            frequency: 1,
+            frequencyDefault: 1,
+            allowed() {
+                return true
+            },
+            requires: "",
+            effect() {
+	    		tech.isDepolarization = true
+	    		if (!m.isShipMode) m.skin.polar()
+            },
+            remove() {
+			    tech.isDepolarization = false
+			    if (!m.isShipMode) m.resetSkin()
+            }
+        },
+        {
+            name: "repolarization",
+            description: "the effects of <strong>torpor</strong> and <strong>depolarization</strong><br>reset 1.25 seconds sooner after a mob <strong>dies</strong>",
+            maxCount: 3,
+            count: 0,
+            frequency: 2,
+            frequencyDefault: 2,
+            allowed() {
+                return tech.isHarmReduceNoKill || tech.isDepolarization
+            },
+            requires: "torpor, depolarization",
+            effect() {
+	    		tech.isRepolarization += 75
+            },
+            remove() {
+			    tech.isRepolarization = 0
             }
         },
         {
@@ -2725,10 +2864,12 @@ const tech = {
                 tech.isFallingDamage = true;
                 m.setMaxHealth();
                 m.addHealth(1 / simulation.healScale)
+				if (!m.isShipMode) m.skin.tungsten()
             },
             remove() {
                 tech.isFallingDamage = false;
                 m.setMaxHealth();
+			    if (!m.isShipMode) m.resetSkin()
             }
         },
         {
@@ -2904,7 +3045,7 @@ const tech = {
         {
             name: "non-unitary operator",
             link: `<a target="_blank" href='https://en.wikipedia.org/wiki/Unitary_operator' class="link">non-unitary operator</a>`,
-            description: "reduce combat <strong>difficulty</strong> by <strong>2 levels</strong>, but<br>after a <strong>collision</strong> enter an <strong class='alt'>alternate reality</strong>",
+            description: "reduce combat <strong>difficulty</strong> by <strong>3 levels</strong>, but<br>after a <strong>collision</strong> enter an <strong class='alt'>alternate reality</strong>",
             maxCount: 1,
             count: 0,
             frequency: 1,
@@ -2915,12 +3056,14 @@ const tech = {
             requires: "not Ψ(t) collapse, many-worlds",
             effect() {
                 tech.isCollisionRealitySwitch = true;
-                level.difficultyDecrease(simulation.difficultyMode * 2)
+                level.difficultyDecrease(simulation.difficultyMode * 3)
+				if (!m.isShipMode) m.skin.anodize()
             },
             remove() {
                 tech.isCollisionRealitySwitch = false;
                 if (this.count > 0) {
-                    level.difficultyIncrease(simulation.difficultyMode * 2)
+                    level.difficultyIncrease(simulation.difficultyMode * 3)
+			        if (!m.isShipMode) m.resetSkin()
                 }
             }
         },
@@ -3745,9 +3888,9 @@ const tech = {
                 tech.isLooting = 0
             }
         },
-        /*{ // TODO: rework
+        { // TODO: rework
             name: "treasure",
-            description: `mobs can drop <strong class='color-dup'>duplicate</strong> power ups based on your <strong class='color-dup'>duplication</strong> chance<br>mobs spawn with more <strong>health</strong> based on your <strong class='color-dup'>duplication</strong> chance<br>adds <strong>35%</strong> <strong class='color-dup'>duplication</strong> chance<br><strong>+35%</strong> <strong class='color-j'>JUNK</strong> to the potential <strong class='color-m'>tech</strong> pool`,
+            description: `mobs drop way more ${powerUps.orb.research(1)} and ${powerUps.orb.boost(1)}<br>mobs cant drop anything else`,
             maxCount: 1,
             count: 0,
             frequency: 1,
@@ -3757,19 +3900,15 @@ const tech = {
             },
             requires: "looting, not exotic particles",
             effect: () => {
-                tech.isTreasure = 1
-		powerUps.setDupChance();
-		tech.addJunkTechToPool(0.35)
+              tech.isTreasure = true
             },
             remove() {
-                tech.isTreasure = 0
-		powerUps.setDupChance();
-		tech.removeJunkTechFromPool(0.35)
+              tech.isTreasure = false
             }
-        },*/
+        },
         {
             name: "exotic particles",
-            description: `mobs drop <strong>30%</strong> less power ups on death<br>mobs can drop <strong class='color-h'>exotic</strong> <strong class='color-f'>power ups</strong>`,
+            description: `mobs drop <strong>40%</strong> less power ups on death<br>mobs can drop <strong class='color-h'>exotic</strong> <strong class='color-f'>power ups</strong>`,
             maxCount: 1,
             count: 0,
             frequency: 1,
@@ -9163,6 +9302,7 @@ const tech = {
                     // ctx.fill()
                     ctx.restore();
                     m.yOff = m.yOff * 0.85 + m.yOffGoal * 0.15; //smoothly move leg height towards height goal
+	               	powerUps.boost.draw()
                 }
             },
             remove() {}
@@ -9202,7 +9342,8 @@ const tech = {
                     ctx.lineWidth = 2;
                     ctx.stroke();
                     ctx.restore();
-                    m.yOff = m.yOff * 0.85 + m.yOffGoal * 0.15; //smoothly move leg height towards height goal
+                    m.yOff = m.yOff * 0.85 + m.yOffGoal * 0.15; //smoothly move leg height towards height goal		
+	            	powerUps.boost.draw()
                 }
             },
             remove() {}
@@ -9284,6 +9425,7 @@ const tech = {
 
                     ctx.restore();
                     m.yOff = m.yOff * 0.85 + m.yOffGoal * 0.15; //smoothly move leg height towards height goal
+		            powerUps.boost.draw()
                 }
             },
             remove() {}
@@ -9352,6 +9494,7 @@ const tech = {
                     ctx.stroke();
                     ctx.restore();
                     m.yOff = m.yOff * 0.85 + m.yOffGoal * 0.15;
+		            powerUps.boost.draw()
                 }
             },
             remove() {}
@@ -9738,6 +9881,12 @@ const tech = {
     bulletSize: null,
     energySiphon: null,
     healthDrain: null,
+	isRepolarization: 0,
+	isDepolarization: null,
+	isDiaphragm: null,
+	isAperture: null,
+	isVerlet: null,
+    isNitinol: null,
     isLooting: null,
     isEnemyStomp: null,
     crouchAmmoCount: null,
