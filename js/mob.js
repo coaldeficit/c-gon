@@ -1155,6 +1155,11 @@ const mobs = {
                             });
                         }
                     }
+                    if (tech.isVerlet && !m.isBodiesAsleep) {
+                        requestAnimationFrame(() => {
+                            simulation.timeSkip(30)
+                        }); //wrapping in animation frame prevents errors, probably
+                    }
                     if (tech.isEnergyLoss) m.energy *= 0.75;
                     powerUps.spawnRandomPowerUp(this.position.x, this.position.y);
                     m.lastKillCycle = m.cycle; //tracks the last time a kill was made, mostly used in simulation.checks()

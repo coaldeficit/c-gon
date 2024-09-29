@@ -949,6 +949,52 @@ const powerUps = {
             m.setMaxEnergy();
         },
     },
+    boost: {
+        name: "boost",
+        color: "#f55", //"#0cf",
+        size() {
+            return 11;
+        },
+        endCycle: 0,
+        duration: 600,
+        damage: 1.25,
+        isDefense: false,
+        effect() {
+            powerUps.boost.endCycle = simulation.cycle + Math.floor(Math.max(0, powerUps.boost.endCycle - simulation.cycle) * 0.6) + powerUps.boost.duration //duration+seconds plus 2/3 of current time left
+        },
+        draw() {
+            // console.log(this.endCycle)
+            // if (powerUps.boost.endCycle > m.cycle) {
+            //     ctx.strokeStyle = "rgba(255,0,0,0.8)" //m.fieldMeterColor; //"rgba(255,255,0,0.2)" //ctx.strokeStyle = `rgba(0,0,255,${0.5+0.5*Math.random()})`
+            //     ctx.beginPath();
+            //     const arc = (powerUps.boost.endCycle - m.cycle) / powerUps.boost.duration
+            //     ctx.arc(m.pos.x, m.pos.y, 28, m.angle - Math.PI * arc, m.angle + Math.PI * arc); //- Math.PI / 2
+            //     ctx.lineWidth = 4
+            //     ctx.stroke();
+            // }
+
+            if (powerUps.boost.endCycle > simulation.cycle) {
+                //gel that acts as if the wind is blowing it when player moves
+                ctx.save();
+                ctx.translate(m.pos.x, m.pos.y);
+                m.velocitySmooth = Vector.add(Vector.mult(m.velocitySmooth, 0.8), Vector.mult(player.velocity, 0.2))
+                ctx.rotate(Math.atan2(m.velocitySmooth.y, m.velocitySmooth.x))
+                ctx.beginPath();
+                const radius = 40
+                const mag = 8 * Vector.magnitude(m.velocitySmooth) + radius
+                ctx.arc(0, 0, radius, -Math.PI / 2, Math.PI / 2);
+                ctx.bezierCurveTo(-radius, radius, -radius, 0, -mag, 0); // bezierCurveTo(cp1x, cp1y, cp2x, cp2y, x, y)
+                ctx.bezierCurveTo(-radius, 0, -radius, -radius, 0, -radius);
+                const time = Math.min(0.5, (powerUps.boost.endCycle - simulation.cycle) / powerUps.boost.duration)
+                ctx.fillStyle = `rgba(255,0,200,${time})`
+                ctx.fill()
+                ctx.strokeStyle = "#f09"
+                ctx.lineWidth = 0.3 + 4 * time
+                ctx.stroke();
+                ctx.restore();
+            }
+        },
+    },
     onPickUp(who) {
         powerUps.research.currentRerollCount = 0
         if (tech.isTechDamage && who.name === "tech") m.damage(0.11)
@@ -984,40 +1030,48 @@ const powerUps = {
     // },
     spawnRandomPowerUp(x, y) { //mostly used after mob dies,  doesn't always return a power up
         if (!tech.isTreasure) {
-          if ((Math.random() * Math.random() - 0.3 > Math.sqrt(m.health) && !tech.isEnergyHealth) || Math.random() < (0.04+(0.01*tech.isLooting))*(tech.isExoticParts ? 0.7 : 1)) { //spawn heal chance is higher at low health
+          if ((Math.random() * Math.random() - 0.3 > Math.sqrt(m.health) && !tech.isEnergyHealth) || Math.random() < (0.04+(0.01*tech.isLooting))*(tech.isExoticParts ? 0.6 : 1)) { //spawn heal chance is higher at low health
             powerUps.spawn(x, y, "heal");
             return;
           }
-          if (Math.random() < 0.15+(0.05*tech.isLooting)*(tech.isExoticParts ? 0.7 : 1) && b.inventory.length > 0) {
+          if (Math.random() < 0.15+(0.05*tech.isLooting)*(tech.isExoticParts ? 0.6 : 1) && b.inventory.length > 0) {
             powerUps.spawn(x, y, "ammo");
             return;
           }
-          if (Math.random() < 0.0007*(tech.isExoticParts ? 0.7 : 1) * (3 - b.inventory.length)) { //a new gun has a low chance for each not acquired gun up to 3
+          if (Math.random() < 0.0007*(tech.isExoticParts ? 0.6 : 1) * (3 - b.inventory.length)) { //a new gun has a low chance for each not acquired gun up to 3
             powerUps.spawn(x, y, "gun");
             return;
           }
           // if (Math.random() < 0.0027 * (22 - tech.totalCount)) { //a new tech has a low chance for each not acquired tech up to 25
-          if (Math.random() < 0.005*(tech.isExoticParts ? 0.7 : 1) * 10-level.levelsCleared) { //a new tech has a low chance that decreases in later levels
+          if (Math.random() < 0.005*(tech.isExoticParts ? 0.6 : 1) * 10-level.levelsCleared) { //a new tech has a low chance that decreases in later levels
             powerUps.spawn(x, y, "tech");
             return;
           }
-          if (Math.random() < 0.0015*(tech.isExoticParts ? 0.7 : 1)) {
+          if (Math.random() < 0.0015*(tech.isExoticParts ? 0.6 : 1)) {
             powerUps.spawn(x, y, "field");
             return;
           }
-          if (Math.random() < 0.02*(tech.isExoticParts ? 0.7 : 1) && tech.isLooting) {
+          if (Math.random() < 0.02*(tech.isExoticParts ? 0.6 : 1) && tech.isLooting) {
             powerUps.spawn(x, y, "research");
             return;
           }
-          if (Math.random() < 0.07 && tech.isExoticParts) {
+          if (Math.random() < 0.06 && tech.isExoticParts) {
             powerUps.spawn(x, y, "exoticPartsMaxHP");
             return;
           }
-          if (Math.random() < 0.07 && tech.isExoticParts) {
+          if (Math.random() < 0.06 && tech.isExoticParts) {
             powerUps.spawn(x, y, "exoticPartsMaxE");
             return;
           }
+          if (Math.random() < 0.02*(tech.isExoticParts ? 0.6 : 1) || (tech.isBoostPowerUps && Math.random() < 0.142*(tech.isExoticParts ? 0.6 : 1))) {
+            powerUps.spawn(x, y, "boost");
+            return;
+          }
         } else {
+          if (Math.random() < 0.1 || (tech.isBoostPowerUps && Math.random() < 0.24)) {
+            powerUps.spawn(x, y, "boost");
+            return;
+          }
           if (Math.random() < 0.1) {
             powerUps.spawn(x, y, "research");
             return;

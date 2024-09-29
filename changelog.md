@@ -1,3 +1,17 @@
+# porting J (2024/09/29)
+- ported boost powerups
+- brought back and reworked j-gon treasure tech: now significantly boosts boost and research drops rates, but mobs cant drop anything else
+- exotic particles powerup drop rate reduction increased from 30% to 40%
+- foam now gains 50% more ammo from ammo powerups
+- ported nitinol, Verlet integration, aperture, diaphragm, depolarization and repolarization tech
+- sneakBoss no longer spawns on descent
+- the following tech now change m's appearance:
+- - non-unitary operator
+- - CPT symmetry
+- - mass energy equivalence
+- - tungsten carbide
+- - Higgs mechanism
+- non-unitary operator now decreases difficulty by 3 levels instead of 2
 # LaunchSite fix (2024/09/29)
 - fixed the LaunchSite elevator and added LaunchSite to modern community level rotation
 - fixed smaller elevator on flocculation

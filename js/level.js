@@ -164,7 +164,7 @@ const level = {
         }
         simulation.dmgScale = Math.max(0.1, 0.34 * simulation.difficulty) //damage done by mobs scales with total levels
         simulation.healScale = 1 / (1 + simulation.difficulty * 0.052) //a higher denominator makes for lower heals // m.health += heal * simulation.healScale;
-        if (tech.isArmoredConfig) simulation.dmgScale = Math.min(simulation.dmgScale, 0.34*simulation.difficulty*num*9);
+        //if (tech.isArmoredConfig) simulation.dmgScale = Math.min(simulation.dmgScale, 0.34*simulation.difficulty*num*9);
         // console.log(`CD = ${simulation.CDScale}`)
     },
     difficultyDecrease(num = 1) { //used in easy mode for simulation.reset()
@@ -177,7 +177,7 @@ const level = {
         if (simulation.difficulty < 1) simulation.difficulty = 0;
         simulation.dmgScale = Math.max(0.1, 0.34 * simulation.difficulty) //damage done by mobs scales with total levels
         simulation.healScale = 1 / (1 + simulation.difficulty * 0.052)
-        if (tech.isArmoredConfig) simulation.dmgScale = Math.min(simulation.dmgScale, 0.34*simulation.difficulty*num*9);
+        //if (tech.isArmoredConfig) simulation.dmgScale = Math.min(simulation.dmgScale, 0.34*simulation.difficulty*num*9);
     },
     difficultyText() {
     if (simulation.specialMode == false) {
@@ -27444,7 +27444,7 @@ const level = {
 	    array.splice(index, 1); // 2nd parameter means remove one item only
 	  }
 	}
-	let unacceptableBosses = ['pulsarBoss','shooterBoss','historyBoss','spiderBoss','cellBossCulture','growBossCulture','spawnerBossCulture','dragonFlyBoss','snakeSpitBoss','streamBoss']
+	let unacceptableBosses = ['pulsarBoss','shooterBoss','historyBoss','spiderBoss','cellBossCulture','growBossCulture','spawnerBossCulture','dragonFlyBoss','snakeSpitBoss','streamBoss','sneakBoss']
 	for (let boss of unacceptableBosses) {removeFromArray(acceptableBosses, boss)}
 	spawn.randomLevelBoss(10000, -10000, acceptableBosses) // spawn boss out of bounds as it will be teleported into the arena later
 	spawn.secondaryBossChance(10000, -10500, acceptableBosses) // spawn boss out of bounds as it will be teleported into the arena later
