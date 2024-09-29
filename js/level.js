@@ -15,7 +15,7 @@ const level = {
     modernCommunityLevels: ["dripp", "fortress", "commandeer", "clock", "buttonbutton", "downpour", /*"LaunchSite" broken elevator, */"shipwreck"], // todo: backport
     gimmickLevels: ["run", "testChamber2", "temple", "biohazard", "stereoMadness", "yingYang", "staircase", "superNgonBros", "underpass", "cantilever", "tlinat", "ruins",
     "dojo", "flappyGon", "rings", "trial"],
-    // ace is bugged, crimsonTowers is laggy and infringed copyright
+    // ace is bugged, crimsonTowers is laggy and infringes copyright
     // unchartedCave is laggy, arena uses non-existent matter functions
     // soft: soft-bodies dont despawn properly on level exit, causing buildup and lag
     trainingLevels: ["walk", "crouch", "jump", "hold", "throw", "throwAt", "deflect", "heal", "fire", "nailGun", "shotGun", "superBall", "matterWave", "missile", "stack", "mine", "grenades", "harpoon"],
