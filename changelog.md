@@ -1,3 +1,7 @@
+# LaunchSite fix (2024/09/29)
+- fixed the LaunchSite elevator and added LaunchSite to modern community level rotation
+- fixed smaller elevator on flocculation
+- you can no longer shoot with guns while choosing techs/guns/fields with eternalism
 # changelog (2024/09/29)
 - theres now a changelog
 # porting I - 21.5/22 community maps (2024/09/29)
