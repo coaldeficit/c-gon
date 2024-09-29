@@ -1478,7 +1478,9 @@ document.getElementById("difficulty-select").addEventListener("input", () => {
 document.getElementById("updates").addEventListener("toggle", function() {
     let text = `<strong>c-gon:</strong> <a href="https://github.com/coaldeficit/c-gon/commits/master">commit list</a><hr>`
     let changelog = ['timeout, refresh the page and try again']
-    fetch('https://raw.githubusercontent.com/coaldeficit/c-gon/main/changelog.md', {cache: "no-store",cache-control: "no-store"}) 
+    fetch('https://raw.githubusercontent.com/coaldeficit/c-gon/main/changelog.md', {
+      cache: "no-cache",
+    }) 
     .then(response => response.text())
     .then(result => changelog = result);
     setTimeout(()=>{
