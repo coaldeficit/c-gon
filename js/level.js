@@ -14,7 +14,7 @@ const level = {
     communityLevels: ["stronghold", "basement", "crossfire", "vats", "n-gon", "house", "perplex", "coliseum", "tunnel", "islands"],
     modernCommunityLevels: ["dripp", "fortress", "commandeer", "clock", "buttonbutton", "downpour", /*"LaunchSite" broken elevator, */"shipwreck"], // todo: backport
     gimmickLevels: ["run", "testChamber2", "temple", "biohazard", "stereoMadness", "yingYang", "staircase", "superNgonBros", "underpass", "cantilever", "tlinat", "ruins",
-    "dojo"],
+    "dojo", "flappyGon", "rings", "trial"],
     // ace is not being ported because its bugged, crimsonTowers is not being ported because of performance and copyright issues
     trainingLevels: ["walk", "crouch", "jump", "hold", "throw", "throwAt", "deflect", "heal", "fire", "nailGun", "shotGun", "superBall", "matterWave", "missile", "stack", "mine", "grenades", "harpoon"],
     levels: [],
@@ -26898,6 +26898,383 @@ const level = {
         };
         boss.showHealthBar = true;
         powerUps.addResearchToLevel() //needs to run after mobs are spawned
+    },
+    flappyGon() { //community map by digin
+        simulation.makeTextLog(`<strong>flappy n-gon</strong> by <span style="font-weight: bold;color: purple;">Digin</span>`);
+        setTimeout(() => { simulation.makeTextLog("<b>gravity</b> is a <b>choice</b>"); }, 1000);
+        setTimeout(() => { simulation.makeTextLog("everyone will fly"); }, 2000);
+        setTimeout(() => { simulation.makeTextLog("<b>jump from the post and find out</b>"); }, 3000);
+        level.setPosToSpawn(0, -50); //normal spawn
+        level.exit.x = 8600;
+        level.exit.y = -1100;
+        level.defaultZoom = 1800;
+        simulation.zoomTransition(level.defaultZoom);
+        document.body.style.backgroundColor = "#55FF55";
+
+        var slimey = level.hazard(-200, -10, 9000, 10);
+
+        // allow "flight"
+
+        const old_playerOffGroundCheck = playerOffGroundCheck;
+
+        playerOffGroundCheck = (event) => {
+            old_playerOffGroundCheck(event);
+            if (player.position.y < -300) {
+                m.onGround = true;
+            }
+        };
+
+        const oldNextLevel = level.nextLevel;
+        level.nextLevel = () => { // clear the flappy effects, because apparently there's no established api for this
+            playerOffGroundCheck = old_playerOffGroundCheck;
+
+            level.nextLevel = oldNextLevel;
+            oldNextLevel();
+        };
+
+        spawn.mapRect(level.enter.x, level.enter.y + 20, 100, 20); // standard bumps
+        spawn.mapRect(level.exit.x, level.exit.y + 20, 100, 20);
+        spawn.mapRect(level.exit.x - 100, level.exit.y + 40, 200, 100);
+
+        // room basis
+        spawn.mapRect(-200, 0, 9000, 100);
+        spawn.mapRect(-200, -1500, 9000, 100);
+        spawn.mapRect(-200, -1500, 100, 1500);
+        spawn.mapRect(8700, -1500, 100, 1500);
+
+        // somewhat randomized flappy pylons
+        const pylon = 1500; // height of the entire pylon assembly
+        for (var i = 0; i < 10; i++) {
+            var xbasis = 700 + i * 750;
+            var window = 300 + (10 - i) * 50;
+            var toph = pylon - window - 400 + (Math.random() - 0.5) * 400 - i * 50;
+            if (i == 0) { // on the first one, the lower pile will always have a height of 300
+                toph = pylon - window - 300;
+            }
+            spawn.mapRect(xbasis, -1500, 100, toph);
+            spawn.mapRect(xbasis, toph + window - pylon, 100, pylon - toph - window);
+            if (i < 9) {
+                spawn.randomMob(xbasis + 300, Math.random() * -1400);
+            }
+            else {
+                spawn.randomLevelBoss(xbasis + 300, Math.random() * -1400);
+            }
+            if (i == 5) {
+                spawn.secondaryBossChance(xbasis + 300, Math.random() * -1400);
+            }
+        }
+
+        level.custom = () => {
+            level.exit.drawAndCheck();
+            player.onGround = true;
+            level.enter.draw();
+        };
+        const slimeRise = 0.15;
+        level.customTopLayer = () => {
+            slimey.height += slimeRise;
+            slimey.min.y -= slimeRise;
+            slimey.query();
+        };
+        powerUps.addResearchToLevel();
+    },
+    rings() {
+        simulation.makeTextLog(`<strong>rings</strong> by <span style="font-weight: bold;color: purple;">ThatLittleFrog</span>`);
+        setTimeout(() => {
+            simulation.makeTextLog("<b>go up</b>");
+        }, 2000);
+        level.setPosToSpawn(0, -2000); // spawn high up so you can go to the bottom of the lowest ring without tripping the too-low reset
+        level.exit.x = 0;
+        level.exit.y = -6400;
+        spawn.mapRect(level.enter.x, level.enter.y + 20, 100, 20); //bump for level entrance
+        spawn.mapRect(level.exit.x, level.exit.y + 20, 100, 20); //bump for level exit
+        level.defaultZoom = 1800;
+        simulation.zoomTransition(level.defaultZoom);
+        document.body.style.backgroundColor = "#d8dadf";
+
+        function mkrect(x, y, w, h) {
+            let who = body[body.length] = Bodies.rectangle(x, y, w, h, {
+                collisionFilter: {
+                    category: cat.map,
+                    mask: cat.body | cat.player | cat.bullet | cat.powerUp | cat.mob | cat.mobBullet
+                },
+                inertia: Infinity, //prevents rotation
+                isNotHoldable: true,
+                friction: 1,
+                frictionStatic: 1,
+                restitution: 0,
+                frictionAir: 1,
+                isStatic: true
+            });
+            who.classType = "body";
+            return body[body.length - 1];
+        }
+
+        function makeRing(x, y, linegth, thicc = 200) { // I don't feel like doing trigonometry, so linegth is slightly different from the radius
+            var _shape = [undefined, undefined, undefined, undefined];
+            _shape[0] = mkrect(x - linegth / 2 - thicc, y - linegth / 2 - thicc, linegth, thicc);
+            _shape[1] = mkrect(x - linegth / 2 - thicc, y - linegth / 2, thicc, linegth);
+            _shape[2] = mkrect(x - linegth / 2, y + linegth / 2 - thicc, linegth, thicc);
+            _shape[3] = mkrect(x + linegth / 2 - thicc, y - linegth / 2 - thicc, thicc, linegth - thicc * 2);
+            let ret = {
+                shape: _shape,
+                x: x,
+                y: y,
+                r: 0,
+                rot(ang) {
+                    this.r = ang;
+                    let offs = 0;
+                    for (let shape of this.shape) {
+                        offs += Math.PI / 2;
+                        Matter.Body.setAngle(shape, ang);
+                        if (shape == this.shape[3]) {
+                            Matter.Body.setPosition(shape, {
+                                x: this.x + Math.cos(ang + offs) * (linegth / 2 - thicc / 2) - Math.cos(ang + offs + Math.PI / 2) * thicc,
+                                y: this.y + Math.sin(ang + offs) * (linegth / 2 - thicc / 2) - Math.sin(ang + offs + Math.PI / 2) * thicc
+                            });
+                        }
+                        else {
+                            Matter.Body.setPosition(shape, {
+                                x: this.x + Math.cos(ang + offs) * (linegth / 2 - thicc / 2),
+                                y: this.y + Math.sin(ang + offs) * (linegth / 2 - thicc / 2)
+                            });
+                        }
+                    }
+                },
+                rotBy(ang) {
+                    this.rot(this.r + ang);
+                }
+            };
+            ret.rot(0);
+            return ret;
+        }
+
+        var inner = makeRing(level.enter.x, level.enter.y, 1000);
+        var mid = makeRing(level.enter.x, level.enter.y, 2500);
+        var mid2 = makeRing(level.enter.x, level.enter.y, 4000);
+        var out = makeRing(level.enter.x, level.enter.y, 6000);
+
+        spawn.randomMob(level.enter.x + 250, level.enter.y);
+
+        spawn.randomMob(level.enter.x + 1250, level.enter.y);
+        spawn.randomMob(level.enter.x - 1250, level.enter.y);
+        spawn.randomMob(level.enter.x, level.enter.y + 1250);
+        spawn.randomMob(level.enter.x, level.enter.y - 1250);
+        spawn.randomMob(level.enter.x + 1250, level.enter.y + 500);
+        spawn.randomMob(level.enter.x - 1250, level.enter.y + 500);
+        spawn.randomMob(level.enter.x + 500, level.enter.y + 1250);
+        spawn.randomMob(level.enter.x + 500, level.enter.y - 1250);
+
+        spawn.randomMob(level.enter.x + 2750, level.enter.y);
+        spawn.randomMob(level.enter.x - 2750, level.enter.y);
+        spawn.randomMob(level.enter.x, level.enter.y + 2750);
+        spawn.randomMob(level.enter.x, level.enter.y - 2750);
+        spawn.randomMob(level.enter.x + 2750, level.enter.y + 500);
+        spawn.randomMob(level.enter.x - 2750, level.enter.y + 500);
+        spawn.randomMob(level.enter.x + 500, level.enter.y + 2750);
+        spawn.randomMob(level.enter.x + 500, level.enter.y - 2750);
+
+        spawn.randomLevelBoss(level.enter.x, level.enter.y - 4250);
+        spawn.secondaryBossChance(level.enter.x, level.enter.y + 4250);
+
+        level.custom = () => {
+            level.exit.drawAndCheck();
+            level.enter.draw();
+        };
+        level.customTopLayer = () => {
+            inner.rotBy(0.01);
+            mid.rotBy(-0.005);
+            mid2.rotBy(0.003);
+            out.rotBy(-0.002);
+        };
+
+        powerUps.addResearchToLevel();
+    },
+    trial() { // trial, collab between Cirryn and Tarantula Hawk
+        simulation.makeTextLog(`<strong>trial</strong> by <span class='color-var'>Cirryn and Tarantula Hawk</span>`);
+        level.setPosToSpawn(0, -50);
+        level.exit.x = 4150;
+        level.exit.y = -30;
+        spawn.mapRect(level.enter.x, level.enter.y + 20, 100, 20); //bump for level entrance
+        spawn.mapRect(level.exit.x, level.exit.y + 20, 100, 20); //bump for level exit
+        level.defaultZoom = 1800;
+        simulation.zoomTransition(level.defaultZoom);
+        document.body.style.backgroundColor = "#d8dadf";
+        const button = level.button(2000, 0);
+        const door = level.door(3930, -300, 40, 300, 300, 10);
+        door.isClosing = false;
+        var didTrialBegin = false;
+
+        const customMob = {
+            assassin(x, y) { // modified slasher
+                mobs.spawn(x, y, 3, 30, "black");
+                let me = mob[mob.length - 1];
+                Matter.Body.rotate(me, 2 * Math.PI * Math.random());
+                me.accelMag = 0.0008 * simulation.accelScale;
+                me.torqueMagnitude = 0.00002 * me.inertia * (Math.random() > 0.5 ? -1 : 1);
+                me.frictionStatic = 0;
+                me.frictionAir = 0.08;
+                me.delay = 120 * simulation.CDScale;
+                me.cd = 0;
+                spawn.shield(me, x, y);
+                me.damageReduction = 0;
+                const start = window.performance.now(); // they only last ~ten seconds
+                const lifespan = 15000 + 700 * (Math.random() - 0.5);
+                me.onDamage = function () {
+                    Matter.Body.setAngularVelocity(me, me.angularVelocity + 1);
+                };
+                me.do = function () {
+                    this.checkStatus();
+                    this.alwaysSeePlayer();
+                    this.attraction();
+                    this.health = 1 - (window.performance.now() - start) / lifespan;
+                    if (this.health < 0) {
+                        this.death();
+                    }
+                    Matter.Body.setAngularVelocity(me, me.angularVelocity + 0.05);
+                };
+            },
+            mercenary(x, y) { // fast boi
+                mobs.spawn(x, y, 3, 60, "white");
+                let me = mob[mob.length - 1];
+                Matter.Body.rotate(me, 2 * Math.PI * Math.random());
+                me.accelMag = 0.001 * simulation.accelScale;
+                me.torqueMagnitude = 0.00001 * me.inertia * (Math.random() > 0.5 ? -1 : 1);
+                me.frictionStatic = 0;
+                me.frictionAir = 0.03;
+                me.delay = 120 * simulation.CDScale;
+                me.cd = 0;
+                spawn.shield(me, x, y);
+                me.damageReduction = 0;
+                const start = window.performance.now(); // they only last ~ten seconds
+                const lifespan = 25000 + 700 * (Math.random() - 0.5);
+                me.onDamage = function () {
+                    Matter.Body.setAngularVelocity(me, me.angularVelocity + 1);
+                };
+                me.do = function () {
+                    this.checkStatus();
+                    this.attraction();
+                    this.health = 1 - (window.performance.now() - start) / lifespan;
+                    if (this.health < 0) {
+                        this.death();
+                    }
+                    this.alwaysSeePlayer();
+                };
+            }
+            // eventually maybe add more custom mob types
+        };
+
+        function randomWave(count, source) { // generates a wave list from a source
+            // checks in spawn first, then customMob, for the sources
+            var ret = [];
+            for (var i = 0; i < count; i++) {
+                var pick = source[Math.floor(Math.random() * source.length)];
+                if (spawn[pick]) {
+                    ret.push(spawn[pick]);
+                }
+                else if (customMob[pick]) {
+                    ret.push(customMob[pick]);
+                }
+            }
+            return ret;
+        }
+
+        function wave(mobs) { // takes a list of functions that accept x,y coordinates to spawn a mob and spawns them in the ceiling
+            for (var i = 0; i < mobs.length; i++) {
+                var x = 1000 + 2400 * i / mobs.length + 200 * (Math.random() - 0.5);
+                var y = -950 - 100 * Math.random();
+                mobs[i](x, y);
+            }
+            const ammoCount = Math.random() * (10 - simulation.difficulty / 4);
+            for (var i = 0; i < ammoCount; i++) {
+                powerUps.spawn(3300, -1000, "ammo");
+            }
+        }
+
+        level.custom = () => {
+            door.openClose();
+            level.exit.drawAndCheck();
+            level.enter.draw();
+        };
+        level.customTopLayer = () => {
+            button.query();
+            button.draw();
+            door.draw();
+            if (!button.isUp && !didTrialBegin) {
+                didTrialBegin = true;
+                simulation.makeTextLog('<strong>The Trial has begun.</strong>');
+
+                setTimeout(() => {
+                    simulation.makeTextLog('<span style="color: purple;">first wave (domitable)</span>');
+                    wave(randomWave(2 + simulation.difficulty * 0.1, spawn.fullPickList));
+                }, 3000);
+
+                setTimeout(() => {
+                    simulation.makeTextLog('<span style="color: purple;">second wave (domitable)</span>');
+                    wave(randomWave(2 + simulation.difficulty * 0.1, spawn.fullPickList));
+                }, 13000);
+
+                setTimeout(() => {
+                    simulation.makeTextLog('<span style="color: purple;">third wave <strong>(indomitable)</strong></span>');
+                    wave(randomWave(4, ["assassin"]));
+                }, 23000);
+
+                setTimeout(() => {
+                    simulation.makeTextLog('<span style="color: purple;">fourth wave (domitable)</span>');
+                    wave(randomWave(4 + simulation.difficulty / 2, spawn.fullPickList));
+                }, 39000);
+
+                setTimeout(() => {
+                    simulation.makeTextLog('<span style="color: purple;">fifth wave (domitable)</span>');
+                    wave(randomWave(4 + simulation.difficulty / 2, spawn.fullPickList));
+                }, 49000);
+
+                setTimeout(() => {
+                    simulation.makeTextLog('<span style="color: purple;">sixth wave <strong>(indomitable)</strong></span>');
+                    wave(randomWave(7, ["mercenary"]));
+                }, 59000);
+
+                setTimeout(() => {
+                    simulation.makeTextLog('<span style="color: red;">seventh wave <strong>(boss)</strong></span>');
+                    spawn.randomLevelBoss(700, -1000);
+                    var mainBoss = mob[mob.length - 1];
+                    mainBoss.oldOnDeath = mainBoss.onDeath;
+                    mainBoss.onDeath = () => {
+                        door.isClosing = false;
+                        powerUps.spawn(4150, -30, "tech");
+                        powerUps.spawn(4150, -30, "tech");
+                        mainBoss.oldOnDeath();
+                    }
+                    spawn.secondaryBossChance(3500, -1000);
+                }, 86000);
+
+                door.isClosing = true;
+            }
+        };
+
+        spawn.mapRect(-100, 0, 10000, 10000); // the left half of the room
+        spawn.mapRect(-10000, -300, 9900, 10000);
+        spawn.mapRect(-100, -300, 400, 100);
+        spawn.mapRect(200, -800, 100, 500);
+        spawn.mapRect(200, -800, 500, 100);
+        spawn.mapRect(600, -1000, 100, 200);
+
+        spawn.mapRect(600, -1100, 3000, 100); // the ceiling
+
+        spawn.mapRect(3500, -1000, 100, 200); // the right half of the room
+        spawn.mapRect(3500, -800, 500, 100);
+        spawn.mapRect(3900, -800, 100, 500);
+        spawn.mapRect(3900, -300, 400, 100);
+        spawn.mapRect(4300, -300, 10000, 10000);
+
+        for (var i = 0; i < 4; i++) { // "door" at the entrance
+            spawn.bodyRect(200, -200 + i * 50, 20, 50);
+        }
+
+        for (var i = 0; i < 5; i++) { // some random rubble in the first half of the room
+            spawn.bodyRect(400 + Math.random() * 1000, -200, 40 + Math.random() * 40, 40 + Math.random() * 40);
+        }
+
+        powerUps.addResearchToLevel(); //needs to run after mobs are spawneds
     },
     
     // ********************************************************************************************************
