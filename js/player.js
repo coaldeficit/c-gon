@@ -3900,7 +3900,7 @@ const m = {
 
                 //thrust
                 if (input.up) {
-                    var grd2 = ctx.createLinearGradient(0, 0, -150, 0);
+                    let grd2 = ctx.createLinearGradient(0, 0, -150, 0);
                     // grd2.addColorStop(0, 'rgba(255, 255, 155, 0.8)');
                     // grd2.addColorStop(1, 'rgba(255, 200, 0, 0.1)');
                     grd2.addColorStop(0, 'rgba(150, 200, 255, 0.7)');
@@ -3913,7 +3913,7 @@ const m = {
                     ctx.lineTo(-50 - 100 * Math.random(), 0);
                     ctx.fill();
                 } else if (input.down) {
-                    var grd2 = ctx.createLinearGradient(0, 0, 80, 0);
+                    let grd2 = ctx.createLinearGradient(0, 0, 80, 0);
                     grd2.addColorStop(0, 'rgba(150, 200, 255, 0.7)');
                     grd2.addColorStop(1, 'rgba(150, 200, 255, 0)');
                     ctx.fillStyle = grd2;

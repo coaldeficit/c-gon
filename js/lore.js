@@ -466,7 +466,7 @@ const lore = {
     // () => { lore.miriam.text("Simply put there are many different simulations all choosing different technology combinations.") },
     // () => {
     //     function product_Range(a, b) {
-    //         var prd = a,
+    //         let prd = a,
     //             i = a;
     //         while (i++ < b) prd *= i;
     //         return prd;
@@ -529,7 +529,7 @@ const lore = {
 
 
 // speech: function(say) {
-//   var utterance = new SpeechSynthesisUtterance(say);
+//   let utterance = new SpeechSynthesisUtterance(say);
 //   //msg.voice = voices[10]; // Note: some voices don't support altering params
 //   //msg.voiceURI = 'native';
 //   //utterance.volume = 1; // 0 to 1
@@ -560,6 +560,6 @@ const lore = {
 //   console.log(voice.name, voice.default ? voice.default :'');
 // });
 // Then set a different voice, by setting .voice on the utterance object:
-// var msg = new SpeechSynthesisUtterance('I see dead people!');
+// let msg = new SpeechSynthesisUtterance('I see dead people!');
 // msg.voice = speechSynthesis.getVoices().filter(function(voice) { return voice.name == 'Whisper'; })[0];
 // speechSynthesis.speak(msg);
