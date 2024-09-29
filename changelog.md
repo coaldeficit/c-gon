@@ -5,7 +5,7 @@
 - - unchartedCave: performance issues
 - - arena: non-existent functions in matter.js
 - - soft: soft-body objects dont despawn properly on level exit, causing buildup and performance issues if level is repeated
-- began work on actual ingame changelog, expect to see it relatively soon
+- began work on an actual ingame changelog, expect to see it relatively soon
 # porting H - 16/22 community maps (2024/09/28)
 - ported buttonbutton, downpour, superNgonBros, underpass, cantilever, tlinat and ruins maps
 - ace and crimsonTowers have been excluded:
