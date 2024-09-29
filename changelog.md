@@ -1,4 +1,4 @@
-# porting J (2024/09/29)
+# porting J (2024/09/30)
 - ported boost powerups
 - brought back and reworked j-gon treasure tech: now significantly boosts boost and research drops rates, but mobs cant drop anything else
 - exotic particles powerup drop rate reduction increased from 30% to 40%
