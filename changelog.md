@@ -1,3 +1,5 @@
+# changelog (2024/09/29)
+- theres now a changelog
 # porting I - 21.5/22 community maps (2024/09/29)
 - ported LaunchSite, shipwreck, dojo, flappyGon, rings and trial community maps
 - excluded the following maps:
@@ -54,3 +56,6 @@
 - added split, a new c-gon exclusive map
 - added map settings for easy control over which maps you get to experience
 - ported lock, towers, flocculation, factory and subway from base n-gon
+# armored config nerf (2024/09/19)
+- armored configuration no longer increases damage, but is instead capped at 100% reduction, loses more reduction on hit and reduction regenerates slower
+# j-gon updates unavailable

@@ -1476,40 +1476,30 @@ document.getElementById("difficulty-select").addEventListener("input", () => {
 
 
 document.getElementById("updates").addEventListener("toggle", function() {
-    function loadJSON(path, success, error) { //generic function to get JSON
-        var xhr = new XMLHttpRequest();
-        xhr.onreadystatechange = function() {
-            if (xhr.readyState === XMLHttpRequest.DONE) {
-                if (xhr.status === 200) {
-                    if (success)
-                        success(JSON.parse(xhr.responseText));
-                } else {
-                    if (error)
-                        error(xhr);
-                }
-            }
-        };
-        xhr.open("GET", path, true);
-        xhr.send();
-    }
-    let text = `<strong>n-gon</strong>: <a href="https://github.com/landgreen/n-gon/blob/master/todo.txt">todo list</a> and complete <a href="https://github.com/landgreen/n-gon/commits/master">change-log</a><hr>`
-    document.getElementById("updates-div").innerHTML = text
-
-    ///  https://api.github.com/repos/landgreen/n-gon/stats/commit_activity
-    loadJSON('https://api.github.com/repos/landgreen/n-gon/commits',
-        function(data) {
-             console.log(data)
-            for (let i = 0, len = 30; i < len; i++) {
-                text += "<strong>" + data[i].commit.author.date.substr(0, 10) + "</strong> - "; //+ "<br>"
-                text += data[i].commit.message
-                if (i < len - 1) text += "<hr>"
-            }
-            document.getElementById("updates-div").innerHTML = text.replace(/\n/g, "<br />")
-        },
-        function(xhr) {
-            console.error(xhr);
+    let text = `<strong>c-gon</strong> <a href="https://github.com/coaldeficit/c-gon/commits/master">commit list</a><hr>`
+    let changelog = ['timeout, refresh the page and try again']
+    fetch('https://raw.githubusercontent.com/coaldeficit/c-gon/main/changelog.md') 
+    .then(response => response.text())
+    .then(result => changelog = result);
+    setTimeout(()=>{
+      changelog = changelog.split('\n')
+      for (let i=0;i<changelog.length;i++) {
+        if (changelog[i].substring(0,2) == '# ') {changelog[i] = `<strong>` + changelog[i].substring(2,changelog[i].length) + `</strong>`}
+        if (changelog[i][0] == '-') {
+          changelog[i] = '•' + changelog[i].slice(1)
+          if (changelog[i].substring(1,4) == ' - ') changelog[i] = changelog[i].substring(0,2) + '◦' + changelog[i].substring(3,changelog[i].length)
         }
-    );
+        changelog[i] += `<br>`
+        if (changelog[Math.min(i+1,changelog.length-1)].substring(0,2) == '# ' && i != changelog.length-1) changelog[i] += `<hr>`
+      }
+      console.log(changelog)
+      let fullchangelog = ''
+      for (let i=0;i<changelog.length;i++) {
+        fullchangelog+=changelog[i]
+      }
+      text += fullchangelog
+      document.getElementById("updates-div").innerHTML = text
+    },500)
 })
 const sound = {
     tone(frequency, end = 1000, gain = 0.05) {
