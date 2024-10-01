@@ -1158,6 +1158,7 @@ const mobs = {
                     if (tech.isVerlet && !m.isBodiesAsleep) {
                         requestAnimationFrame(() => {
                             simulation.timeSkip(30)
+                            simulation.loop()
                         }); //wrapping in animation frame prevents errors, probably
                     }
                     if (tech.isEnergyLoss) m.energy *= 0.75;
@@ -1212,6 +1213,16 @@ const mobs = {
                                 m.setMaxHealth();
                             }
                         }
+                    }
+                    if (tech.isEastinKnill && tech.isFlipFlopOn && this.isBoss) powerUps.spawn(this.position.x, this.position.y, "tech", false)
+                    if (tech.isWKB && tech.isFlipFlopOn) {
+                        tech.WKBcurrentMobCount++
+                        requestAnimationFrame(() => {
+                          if (!simulation.paused && m.alive) {
+                            ctx.transform(1, 0.25 * (Math.random() - 0.5), 0.25 * (Math.random() - 0.5), 1, 0, 0); //ctx.transform(Horizontal scaling. A value of 1 results in no scaling,  Vertical skewing,   Horizontal skewing,   Vertical scaling. A value of 1 results in no scaling,   Horizontal translation (moving),   Vertical translation (moving)) //https://developer.mozilla.org/en-US/docs/Web/API/CanvasRenderingContext2D/setTransform
+                            tech.WKBtransform = ctx.getTransform()
+                          }
+                        })
                     }
                     if (tech.removeMaxHealthOnKill) {
                         const amount = 0.002

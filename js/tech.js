@@ -1,5 +1,6 @@
 const tech = {
     totalCount: null,
+    altTechCount: null,
     setupAllTech() {
         for (let i = 0, len = tech.tech.length; i < len; i++) {
             tech.tech[i].count = 0
@@ -59,6 +60,7 @@ const tech = {
         tech.tech[index].remove();
         tech.tech[index].count = 0;
         tech.totalCount -= totalRemoved
+        if (tech.tech[index].isAltRealityTech) tech.altTechCount -= totalRemoved
         simulation.updateTechHUD();
         tech.tech[index].isLost = true
         simulation.updateTechHUD();
@@ -166,6 +168,7 @@ const tech = {
             tech.tech[index].effect(); //give specific tech
             tech.tech[index].count++
             tech.totalCount++ //used in power up randomization
+            if (tech.tech[index].isAltRealityTech) tech.altTechCount++
             simulation.updateTechHUD();
         }
     },
@@ -251,6 +254,8 @@ const tech = {
         if (tech.isVerlet) dmg *= 2.5
         if (tech.isAperture) dmg *= (1.4 + (0.8 * Math.sin(m.cycle * 0.01)))
         if (tech.isDepolarization && m.lastKillCycle + (240-tech.isRepolarization) < m.cycle) dmg *= 2.25
+        if (tech.isAntiunitary) dmg *= 1 + (tech.antiunitaryRealityCount*0.04)
+        if (tech.isQuantumTunnel && tech.isFlipFlopOn && simulation.isTimeSkipping) dmg *= 2.5
         return dmg * tech.slowFire * tech.aimDamage
     },
     duplicationChance() {
@@ -1866,9 +1871,9 @@ const tech = {
             frequency: 1,
             frequencyDefault: 1,
             allowed() {
-                return !tech.isRelay
+                return !tech.isRelay && !tech.isQubit
             },
-            requires: "not relay switch",
+            requires: "not relay switch, qubit",
             effect() {
                 tech.isFlipFlop = true //do you have this tech?
                 tech.isFlipFlopOn = true //what is the state of flip-Flop?
@@ -1891,7 +1896,7 @@ const tech = {
             frequency: 4,
             frequencyDefault: 4,
             allowed() {
-                return tech.isFlipFlop || tech.isRelay
+                return tech.isFlipFlop || tech.isRelay || tech.isQubit
             },
             requires: "ON/OFF tech",
             effect() {
@@ -1909,7 +1914,7 @@ const tech = {
             frequency: 4,
             frequencyDefault: 4,
             allowed() {
-                return tech.isFlipFlop || tech.isRelay
+                return tech.isFlipFlop || tech.isRelay || tech.isQubit
             },
             requires: "ON/OFF tech",
             effect() {
@@ -1941,9 +1946,9 @@ const tech = {
             frequency: 1,
             frequencyDefault: 1,
             allowed() {
-                return !tech.isFlipFlop
+                return !tech.isFlipFlop && !tech.isQubit
             },
-            requires: "not flip-flop",
+            requires: "not flip-flop, qubit",
             effect() {
                 tech.isRelay = true //do you have this tech?
                 tech.isFlipFlopOn = true //what is the state of flip-Flop?
@@ -3035,6 +3040,7 @@ const tech = {
             frequencyDefault: 1,
             allowed() { return true },
             requires: "",
+            isAltRealityTech: true,
             effect() {
                 tech.isImmortal = true;
             },
@@ -3045,7 +3051,7 @@ const tech = {
         {
             name: "non-unitary operator",
             link: `<a target="_blank" href='https://en.wikipedia.org/wiki/Unitary_operator' class="link">non-unitary operator</a>`,
-            description: "reduce combat <strong>difficulty</strong> by <strong>3 levels</strong>, but<br>after a <strong>collision</strong> enter an <strong class='alt'>alternate reality</strong>",
+            description: "reduce combat <strong>difficulty</strong> by <strong>2 levels</strong>, but<br>after a <strong>collision</strong> enter an <strong class='alt'>alternate reality</strong>",
             maxCount: 1,
             count: 0,
             frequency: 1,
@@ -3054,15 +3060,16 @@ const tech = {
                 return !tech.isResearchReality && !tech.isSwitchReality
             },
             requires: "not Ψ(t) collapse, many-worlds",
+            isAltRealityTech: true,
             effect() {
                 tech.isCollisionRealitySwitch = true;
-                level.difficultyDecrease(simulation.difficultyMode * 3)
+                level.difficultyDecrease(simulation.difficultyMode * 2)
 				if (!m.isShipMode) m.skin.anodize()
             },
             remove() {
                 tech.isCollisionRealitySwitch = false;
                 if (this.count > 0) {
-                    level.difficultyIncrease(simulation.difficultyMode * 3)
+                    level.difficultyIncrease(simulation.difficultyMode * 2)
 			        if (!m.isShipMode) m.resetSkin()
                 }
             }
@@ -3079,6 +3086,7 @@ const tech = {
                 return !tech.isResearchReality && !tech.isCollisionRealitySwitch
             },
             requires: "not Ψ(t) collapse, non-unitary",
+            isAltRealityTech: true,
             effect() {
                 tech.isSwitchReality = true;
             },
@@ -3098,12 +3106,183 @@ const tech = {
                 return !tech.isSwitchReality && !tech.isCollisionRealitySwitch && !tech.isJunkResearch
             },
             requires: "not many-worlds, non-unitary, pseudoscience",
+            isAltRealityTech: true,
             effect() {
                 tech.isResearchReality = true;
                 for (let i = 0; i < 16; i++) powerUps.spawn(m.pos.x + Math.random() * 60, m.pos.y + Math.random() * 60, "research", false);
             },
             remove() {
                 tech.isResearchReality = false;
+            }
+        },
+        {
+            name: "Hilbert space",
+            descriptionFunction() {
+                return "reduce <strong class='color-harm'>harm</strong> taken by <strong>6%</strong><br>for every <strong class='alt'>alternate reality</strong> tech you own <em>(" + (Math.floor(0.1*Math.round(1000-((0.94**tech.altTechCount)*1000)))) + "%)</em>"
+            },
+            maxCount: 1,
+            count: 0,
+            frequency: 3,
+            frequencyDefault: 3,
+            allowed() {
+                return tech.isResearchReality || tech.isCollisionRealitySwitch || tech.isSwitchReality
+            },
+            requires: "any multi-use alternate reality tech",
+            isAltRealityTech: true,
+            effect() {
+                tech.isHilbertSpace = true;
+            },
+            remove() {
+                tech.isHilbertSpace = false;
+            }
+        },
+        {
+            name: "antiunitary transformation",
+            descriptionFunction() {
+                return "upon entering an <strong class='alt'>alternate reality</strong><br>increase your <strong class='color-d'>damage</strong> by <strong>4%</strong> <em>(" + (tech.antiunitaryRealityCount*4) + "%)</em>"
+            },
+            maxCount: 1,
+            count: 0,
+            frequency: 3,
+            frequencyDefault: 3,
+            allowed() {
+                return (tech.isResearchReality || tech.isCollisionRealitySwitch || tech.isSwitchReality) && !tech.isQuantumJump
+            },
+            requires: "any multi-use alternate reality tech, not quantum jump",
+            isAltRealityTech: true,
+            effect() {
+                tech.antiunitaryRealityCount = 0;
+                tech.isAntiunitary = true;
+            },
+            remove() {
+                tech.antiunitaryRealityCount = 0;
+                tech.isAntiunitary = false;
+            }
+        },
+        {
+            name: "quantum jump",
+            description: `upon entering an <strong class='alt'>alternate reality</strong><br>spawn ${powerUps.orb.boost(3)}`,
+            maxCount: 1,
+            count: 0,
+            frequency: 3,
+            frequencyDefault: 3,
+            allowed() {
+                return (tech.isResearchReality || tech.isCollisionRealitySwitch || tech.isSwitchReality) && !tech.isAntiunitary
+            },
+            requires: "any multi-use alternate reality tech, not antiunitary",
+            isAltRealityTech: true,
+            effect() {
+                tech.isQuantumJump = true;
+            },
+            remove() {
+                tech.isQuantumJump = false;
+            }
+        },
+        {
+            name: "qubit",
+            description: `toggle <strong class="color-flop">ON</strong> and <strong class="color-flop">OFF</strong> upon <strong class='alt'>switching realities</strong><br>unlock advanced <strong class='color-m'>tech</strong> that runs if <strong class="color-flop">ON</strong>`,
+            nameInfo: "<span id = 'tech-qubit'></span>",
+            addNameInfo() {
+                setTimeout(function() {
+                    if (document.getElementById("tech-qubit")) {
+                        if (tech.isFlipFlopOn) {
+                            document.getElementById("tech-qubit").innerHTML = ` = <strong>ON</strong>`
+                            m.eyeFillColor = `rgb(${Math.floor(255 * Math.random())},${Math.floor(255 * Math.random())},${Math.floor(255 * Math.random())})` //'#5af'
+                        } else {
+                            document.getElementById("tech-qubit").innerHTML = ` = <strong>OFF</strong>`
+                            m.eyeFillColor = "transparent"
+                        }
+                    }
+                }, 100);
+            },
+            maxCount: 1,
+            count: 0,
+            frequency: 2,
+            frequencyDefault: 2,
+            allowed() {
+                return (tech.isResearchReality || tech.isCollisionRealitySwitch || tech.isSwitchReality) && !tech.isFlipFlop && !tech.isRelay
+            },
+            requires: "any multi-use alternate reality tech, not flip-flop, relay switch",
+            isAltRealityTech: true,
+            effect() {
+                tech.isQubit = true
+                tech.isFlipFlopOn = false // set to false to prevent abuse by avoiding switching realities whatsoever
+                if (!m.isShipMode) {
+                    m.draw = m.drawFlipFlop
+                }
+            },
+            remove() {
+                tech.isQubit = false
+                tech.isFlipFlopOn = false
+                m.eyeFillColor = 'transparent'
+				if (!m.isShipMode) m.resetSkin()
+            }
+        },
+        {
+            name: "quantum tunneling",
+            description: "if <strong>qubit</strong> is in the <strong class='color-flop'>ON</strong> state<br>skip every <strong>5th</strong> second<br>and do <strong>150%</strong> extra <strong class='color-d'>damage</strong> during <strong>skipped time</strong>",
+            maxCount: 1,
+            count: 0,
+            frequency: 3,
+            frequencyDefault: 3,
+            allowed() {
+                return tech.isQubit
+            },
+            requires: "qubit",
+            isAltRealityTech: true,
+            effect() {
+                tech.isQuantumTunnel = true;
+            },
+            remove() {
+                tech.isQuantumTunnel = false;
+            }
+        },
+        {
+            name: "Eastin-Knill theorem",
+            description: "if <strong>qubit</strong> is in the <strong class='color-flop'>ON</strong> state<br><strong>bosses</strong> spawn <strong>1</strong> extra <strong class='color-m'>tech</strong> after they <strong>die</strong><br>if <strong>qubit</strong> is in the <strong class='color-flop'>OFF</strong> state<br><strong class='alt'>randomize</strong> one of your techs once per <strong>2</strong> seconds",
+            maxCount: 1,
+            count: 0,
+            frequency: 3,
+            frequencyDefault: 3,
+            allowed() {
+                return tech.isQubit
+            },
+            requires: "qubit",
+            isAltRealityTech: true,
+            effect() {
+                tech.isEastinKnill = true;
+            },
+            remove() {
+                tech.isEastinKnill = false;
+            }
+        },
+        {
+            name: "WKB approximation",
+            description: "if <strong>qubit</strong> is in the <strong class='color-flop'>ON</strong> state<br>killing mobs <strong>warps</strong> your vision<br>when <strong>qubit</strong> switches to the <strong class='color-flop'>OFF</strong> state<br>reset vision <strong>warp</strong> and grant <strong>0.5%</strong> <strong class='color-harm'>harm</strong> reduction<br>for all <strong>mob kills</strong> prior to <strong>qubit</strong> switching",
+            maxCount: 1,
+            count: 0,
+            frequency: 2,
+            frequencyDefault: 2,
+            allowed() {
+                return tech.isQubit
+            },
+            requires: "qubit",
+            isAltRealityTech: true,
+            effect() {
+                tech.WKBmobCount = 0;
+                tech.WKBcurrentMobCount = 0;
+                tech.isWKB = true;
+            },
+            remove() {
+                tech.WKBmobCount = 0;
+                tech.WKBcurrentMobCount = 0;
+                tech.isWKB = false;
+                requestAnimationFrame(() => {
+                    requestAnimationFrame(() => {
+                        ctx.setTransform(1, 0, 0, 1, 0, 0); //reset warp effect
+                        tech.WKBtransform = ctx.getTransform()
+                    })
+                })
             }
         },
         {
@@ -3888,7 +4067,7 @@ const tech = {
                 tech.isLooting = 0
             }
         },
-        { // TODO: rework
+        {
             name: "treasure",
             description: `mobs drop way more ${powerUps.orb.research(1)} and ${powerUps.orb.boost(1)}<br>mobs cant drop anything else`,
             maxCount: 1,
@@ -9881,6 +10060,17 @@ const tech = {
     bulletSize: null,
     energySiphon: null,
     healthDrain: null,
+    WKBtransform: null,
+    WKBmobCount: 0,
+    WKBcurrentMobCount: 0,
+    isWKB: null,
+    isEastinKnill: null,
+    isQuantumTunnel: null,
+    isQubit: null,
+	isQuantumJump: null,
+    antiunitaryRealityCount: 0,
+	isAntiunitary: null,
+	isHilbertSpace: null,
 	isRepolarization: 0,
 	isDepolarization: null,
 	isDiaphragm: null,
