@@ -1,3 +1,15 @@
+# mildly deranged realities (2024/10/01)
+- added 7 tech:
+- - Hilbert space: reduces harm by 6% per alternate reality tech you own
+- - antiunitary transformation: permanently increases damage by 4% when entering alternate realities
+- - quantum jump: spawns 3 boosts when entering alternate realities
+- - qubit: flips on/off when entering alternate realities
+- - quantum tunneling: when qubit is ON, skips every 5th second and increases damage by 200% during skipped time
+- - eastin-knill theorem: when qubit is ON, bosses drop 1 extra tech. otherwise, replace a random tech with another once per 2 seconds
+- - WKB approximation: when qubit is ON, killing mobs distorts the screen. when qubit is set to OFF, resets screen distortion and permanently increases harm reduction by 0.5% for every mob killed while qubit was ON
+- fixed Verlet integration graphical issues
+- doubled armored configuration harm reduction regeneration rate
+- non-unitary operator now decreases difficulty by 2 levels instead of 3
 # porting J (2024/09/30)
 - ported boost powerups
 - brought back and reworked j-gon treasure tech: now significantly boosts boost and research drops rates, but mobs cant drop anything else

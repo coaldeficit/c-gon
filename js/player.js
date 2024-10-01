@@ -346,7 +346,9 @@ const m = {
                     tech.tech[i].name !== "many-worlds" &&
                     tech.tech[i].name !== "Ψ(t) collapse" &&
                     tech.tech[i].name !== "non-unitary operator" &&
-                    tech.tech[i].name !== "-quantum leap-"
+                    tech.tech[i].name !== "-quantum leap-" &&
+                    !tech.tech[i].isAltRealityTech &&
+                    ((tech.isQubit && (tech.tech[i].name == 'NAND gate' || tech.tech[i].name == 'transistor')) ? false : true)
                 ) {
                     totalTech += tech.tech[i].count
                     tech.tech[i].remove();
@@ -354,6 +356,24 @@ const m = {
                     tech.tech[i].count = 0
                 }
             }
+        }
+        if (tech.isAntiunitary) tech.antiunitaryRealityCount++
+        if (tech.isQuantumJump) {
+          for (let i=0;i<3;i++) {
+            powerUps.spawn(m.pos.x+(Math.random()-0.5)*20, m.pos.y+(Math.random()-0.5)*20, "boost");
+          }
+        }
+        if (tech.isQubit) {
+          tech.isFlipFlopOn = !tech.isFlipFlopOn
+          if (tech.isWKB && !tech.isFlipFlopOn) {
+            tech.WKBmobCount += tech.WKBcurrentMobCount
+            tech.WKBcurrentMobCount = 0
+            requestAnimationFrame(() => {
+              requestAnimationFrame(() => {
+                ctx.setTransform(1, 0, 0, 1, 0, 0); //reset warp effect
+              })
+            })
+          }
         }
         // lore.techCount = 0;
         // tech.removeLoreTechFromPool();
@@ -398,7 +418,7 @@ const m = {
             //find what tech I could get
             let options = [];
             for (let i = 0, len = tech.tech.length; i < len; i++) {
-                if (tech.tech[i].count < tech.tech[i].maxCount && tech.tech[i].allowed() && !tech.tech[i].isBadRandomOption && !tech.tech[i].isLore && !tech.tech[i].isJunk) {
+                if (tech.tech[i].count < tech.tech[i].maxCount && tech.tech[i].allowed() && !tech.tech[i].isBadRandomOption && !tech.tech[i].isLore && !tech.tech[i].isJunk && !tech.tech[i].isAltRealityTech) {
                     for (let j = 0; j < tech.tech[i].frequency; j++) options.push(i);
                 }
             }
@@ -417,9 +437,9 @@ const m = {
     death() {
         if (tech.isImmortal) { //if player has the immortality buff, spawn on the same level with randomized damage
             //remove immortality tech
-            // for (let i = 0; i < tech.tech.length; i++) {
-            //     if (tech.tech[i].name === "quantum immortality") tech.removeTech(i)
-            // }
+            for (let i = 0; i < tech.tech.length; i++) {
+                if (tech.tech[i].name === "quantum immortality") tech.removeTech(i)
+            }
 
             m.setMaxHealth()
             m.health = 1;
@@ -546,6 +566,8 @@ const m = {
                 for (let i = 0, len = b.inventory.length; i < len; i++) dmg *= 0.87 // 1 - 0.15
             }
             if (tech.isDiaphragm) dmg *= 0.875 + (0.475 * Math.sin(m.cycle * 0.0075));
+            if (tech.isHilbertSpace) dmg *= 0.94**tech.altTechCount
+            if (tech.isWKB) dmg *= 0.995**tech.WKBmobCount
         } else {
             dmg = tech.armoredConfigDamageReduct
         }

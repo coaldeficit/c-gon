@@ -1201,8 +1201,59 @@ const simulation = {
 		}
 	      }
 	    }
+	    if (!(m.cycle % 300)) {
+	      if (tech.isQuantumTunnel && tech.isFlipFlopOn) {
+            simulation.timeSkip(60)
+            simulation.loop()
+	      }
+	    }
+	    if (!(m.cycle % 120)) {
+	      if (tech.isEastinKnill && !tech.isFlipFlopOn) {
+            const have = [] //find which tech you have
+            for (let i = 0; i < tech.tech.length; i++) {
+                if (tech.tech[i].count > 0 &&
+                    !tech.tech[i].isNonRefundable &&
+                    !tech.tech[i].isFromAppliedScience &&
+                    tech.tech[i].name !== "many-worlds" &&
+                    tech.tech[i].name !== "Ψ(t) collapse" &&
+                    tech.tech[i].name !== "non-unitary operator" &&
+                    tech.tech[i].name !== "-quantum leap-" &&
+                    !tech.tech[i].isAltRealityTech &&
+                    ((tech.isQubit && (tech.tech[i].name == 'NAND gate' || tech.tech[i].name == 'transistor')) ? false : true)
+                ) have.push(i)
+            }
+            if (have.length) {
+                index = have[Math.floor(Math.random() * have.length)]
+                let count = tech.tech[index].count
+                simulation.isTextLogOpen = false
+                tech.removeTech(index)
+                simulation.isTextLogOpen = true
+                tech.tech[index].isLost = false
+                for (let i=0;i<count;i++) {
+                  let options = [];
+                  for (let i = 0; i < tech.tech.length; i++) {
+                    if (tech.tech[i].count < tech.tech[i].maxCount && tech.tech[i].allowed() && !tech.tech[i].isJunk && !tech.tech[i].isLore && !tech.tech[i].isBadRandomOption &&
+                    !tech.tech[i].isNonRefundable &&
+                    !tech.tech[i].isFromAppliedScience &&
+                    tech.tech[i].name !== "many-worlds" &&
+                    tech.tech[i].name !== "Ψ(t) collapse" &&
+                    tech.tech[i].name !== "non-unitary operator" &&
+                    tech.tech[i].name !== "-quantum leap-" &&
+                    !tech.tech[i].isAltRealityTech &&
+                    ((tech.isQubit && (tech.tech[i].name == 'NAND gate' || tech.tech[i].name == 'transistor')) ? false : true)
+                    ) options.push(i);
+                  }
+                  // give a random tech from the tech I don't have
+                  if (options.length > 0) {
+                    let newTech = options[Math.floor(Math.random() * options.length)]
+                    tech.giveTech(newTech)
+                  }
+                }
+            }
+	      }
+	    }
         if (tech.isArmoredConfig) {
-          tech.armoredConfigDamageReduct = Math.max(tech.armoredConfigDamageReduct-0.0125,0)
+          tech.armoredConfigDamageReduct = Math.max(tech.armoredConfigDamageReduct-0.025,0)
         }
             if (!(m.cycle % 420)) { //once every 7 seconds
                 if (tech.isZeno) {

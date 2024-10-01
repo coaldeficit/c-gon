@@ -258,6 +258,14 @@ function setupCanvas() {
         ctx.translate(0, canvas.height); // Move the origin down to the bottom
         ctx.scale(1, -1); // Flip vertically
     }
+    
+                requestAnimationFrame(() => {
+                    requestAnimationFrame(() => {
+    if (tech.isWKB && tech.isFlipFlopOn && tech.WKBtransform != null) {
+      ctx.setTransform(tech.WKBtransform)
+    }
+                    })
+                })
 }
 setupCanvas();
 window.onresize = () => {
