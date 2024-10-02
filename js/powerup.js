@@ -552,11 +552,11 @@ const powerUps = {
                     const target = b.guns[b.activeGun]
                     if (target.ammo !== Infinity) {
                         if (tech.ammoCap) {
-                            const ammoAdded = Math.ceil(target.ammoPack * 0.7 * tech.ammoCap * Math.max(1,(Math.log(simulation.difficultyMode+4)+1)-Math.log(6))) //0.7 is average
+                            const ammoAdded = Math.ceil(target.ammoPack * 0.7 * tech.ammoCap * Math.max(1,(Math.log(simulation.difficultyMode+4)+1)-Math.log(6)) * ((tech.isMarginalUtility && i==len-1) ? 2 : 1)) //0.7 is average
                             target.ammo = ammoAdded
                             // simulation.makeTextLog(`${target.name}.<span class='color-g'>ammo</span> <span class='color-symbol'>=</span> ${ammoAdded}`)
                         } else {
-                            const ammoAdded = Math.ceil((0.7 * Math.random() + 0.7 * Math.random()) * target.ammoPack * Math.max(1,(Math.log(simulation.difficultyMode+4)+1)-Math.log(6)))
+                            const ammoAdded = Math.ceil((0.7 * Math.random() + 0.7 * Math.random()) * target.ammoPack * Math.max(1,(Math.log(simulation.difficultyMode+4)+1)-Math.log(6)) * ((tech.isMarginalUtility && i==len-1) ? 2 : 1))
                             target.ammo += ammoAdded
                             // simulation.makeTextLog(`${target.name}.<span class='color-g'>ammo</span> <span class='color-symbol'>+=</span> ${ammoAdded}`)
                         }
@@ -567,11 +567,11 @@ const powerUps = {
                         const target = b.guns[b.inventory[i]]
                         if (target.ammo !== Infinity) {
                             if (tech.ammoCap) {
-                                const ammoAdded = Math.ceil(target.ammoPack * 0.45 * tech.ammoCap * Math.max(1,(Math.log(simulation.difficultyMode+4)+1)-Math.log(6))) //0.45 is average
+                                const ammoAdded = Math.ceil(target.ammoPack * 0.45 * tech.ammoCap * Math.max(1,(Math.log(simulation.difficultyMode+4)+1)-Math.log(6)) * ((tech.isMarginalUtility && i==len-1) ? 2 : 1)) //0.45 is average
                                 target.ammo = ammoAdded
                                 // textLog += `${target.name}.<span class='color-g'>ammo</span> <span class='color-symbol'>=</span> ${ammoAdded}<br>`
                             } else {
-                                const ammoAdded = Math.ceil((0.45 * Math.random() + 0.45 * Math.random()) * target.ammoPack * Math.max(1,(Math.log(simulation.difficultyMode+4)+1)-Math.log(6))) //Math.ceil(Math.random() * target.ammoPack)
+                                const ammoAdded = Math.ceil((0.45 * Math.random() + 0.45 * Math.random()) * target.ammoPack * Math.max(1,(Math.log(simulation.difficultyMode+4)+1)-Math.log(6)) * ((tech.isMarginalUtility && i==len-1) ? 2 : 1)) //Math.ceil(Math.random() * target.ammoPack)
                                 target.ammo += ammoAdded
                                 // textLog += `${target.name}.<span class='color-g'>ammo</span> <span class='color-symbol'>+=</span> ${ammoAdded}<br>`
                             }

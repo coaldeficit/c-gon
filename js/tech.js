@@ -30,6 +30,7 @@ const tech = {
         // tech.addLoreTechToPool();
         tech.extraMaxHealth = 0;
         tech.totalCount = 0;
+        tech.altTechCount = 0;
         simulation.updateTechHUD();
     },
     removeTech(index = 'random') {
@@ -235,7 +236,7 @@ const tech = {
         if (tech.isDupDamage) dmg *= 1 + Math.min(1, tech.duplicationChance())
         if (tech.isLowEnergyDamage) dmg *= 1 + 0.7 * Math.max(0, 1 - m.energy)
         if (tech.isMaxEnergyTech) dmg *= 1.5
-        if (tech.isEnergyNoAmmo) dmg *= 1.88
+        if (tech.isEnergyNoAmmo) dmg *= 2
         if (tech.isDamageForGuns) dmg *= 1 + 0.13 * b.inventory.length
         if (tech.isLowHealthDmg) dmg *= 1 + Math.max(0, 1 - m.health) * 0.5
         if (tech.isHarmDamage && m.lastHarmCycle + 600 > m.cycle) dmg *= 3;
@@ -256,6 +257,7 @@ const tech = {
         if (tech.isDepolarization && m.lastKillCycle + (240-tech.isRepolarization) < m.cycle) dmg *= 2.25
         if (tech.isAntiunitary) dmg *= 1 + (tech.antiunitaryRealityCount*0.04)
         if (tech.isQuantumTunnel && tech.isFlipFlopOn && simulation.isTimeSkipping) dmg *= 2.5
+        if (tech.isDivisor && b.activeGun !== undefined && b.activeGun !== null && b.guns[b.activeGun].ammo % 3 === 0) dmg *= 1.9
         return dmg * tech.slowFire * tech.aimDamage
     },
     duplicationChance() {
@@ -309,49 +311,6 @@ const tech = {
         }
     },
     tech: [
-      {
-          name: "aperture",
-          description: "every <strong>10.47</strong> seconds your <strong class='color-d'>damage</strong> cycles between<br>being <strong>40%</strong> lower and <strong>120%</strong> higher",
-          maxCount: 1,
-          count: 0,
-          frequency: 1,
-          frequencyDefault: 1,
-          isSkin: true,
-          allowed() {
-              return true
-          },
-          requires: "",
-          effect() {
-			  tech.isAperture = true
-			  if (!m.isShipMode) m.skin.dilate()
-          },
-          remove() {
-			  tech.isAperture = false
-			  if (!m.isShipMode) m.resetSkin()
-          }
-      },
-      {
-          name: "diaphragm",
-          description: "every <strong>13.96</strong> seconds your <strong class='color-harm'>harm</strong> reduction cycles<br>between being <strong>35%</strong> lower and <strong>60%</strong> higher",
-          maxCount: 1,
-          count: 0,
-          frequency: 1,
-          frequencyDefault: 1,
-          isSkin: true,
-          allowed() {
-              return tech.isAperture
-          },
-          requires: "aperture",
-          effect() {
-			  tech.isDiaphragm = true
-			  if (!m.isShipMode) m.resetSkin()
-			  if (!m.isShipMode) m.skin.dilate2()
-          },
-          remove() {
-			  tech.isDiaphragm = false
-			  if (!m.isShipMode) m.resetSkin()
-          }
-      },
 	  {
             name: "gun sciences",
             description: "</strong>triple</strong> the <strong class='flicker'>frequency</strong> of finding <strong class='color-g'>gun</strong><strong class='color-m'>tech</strong><br>spawn a <strong class='color-g'>gun</strong>",
@@ -442,6 +401,27 @@ const tech = {
             remove() {}
         },
         {
+            name: "ternary", //"divisor",
+            descriptionFunction() {
+                return `increase <strong class='color-d'>damage</strong> by <strong>90%</strong> while your <strong class='color-ammo'>ammo</strong><br>is evenly <strong>divisible</strong> by <strong>3</strong><em style ="float: right;">(${((b.activeGun !== undefined && b.activeGun !== null && b.guns[b.activeGun].ammo % 3 === 0) ? "90" : "0")}%)</em>` //if (tech.isDivisor && b.activeGun !== undefined && b.activeGun !== null && b.guns[b.activeGun].ammo % 3 === 0) dmg *= 1.9
+            },
+            maxCount: 1,
+            count: 0,
+            frequency: 1,
+            frequencyDefault: 1,
+            allowed() {
+                return b.inventory.length
+            },
+            requires: "",
+            // divisible: 3, // + Math.floor(6 * Math.random()),
+            effect() {
+                tech.isDivisor = true;
+            },
+            remove() {
+                tech.isDivisor = false;
+            }
+        },
+        {
             name: "integrated armament",
             link: `<a target="_blank" href='https://en.wikipedia.org/wiki/Weapon' class="link">integrated armament</a>`,
             description: `<span style = 'font-size:95%;'>increase <strong class='color-d'>damage</strong> by <strong>25%</strong>, but new <strong class='color-g'>guns</strong><br>replace your current <strong class='color-g'>gun</strong> and convert <strong class='color-g'>gun</strong><strong class='color-m'>tech</strong></span>`,
@@ -489,6 +469,33 @@ const tech = {
             }
         },
         {
+            name: "pigeonhole principle",
+            descriptionFunction() {
+                let info = ""
+                if (this.count > 0 && Number.isInteger(tech.buffedGun) && b.inventory.length) {
+                    let gun = b.guns[b.inventory[tech.buffedGun]].name
+                    info = `<br>this level: <strong>${(30 * Math.max(0, b.inventory.length))}%</strong> increased <strong class='color-d'>damage</strong> for <strong class="highlight">${gun}</strong>`
+                }
+                return `<span style = 'font-size:90%;'>a new <strong class='color-g'>gun</strong> in your inventory is <strong>chosen</strong> each <strong>level</strong><br>if it's equipped, increase <strong class='color-d'>damage</strong> by <strong>30%</strong> per <strong class='color-g'>gun</strong> in your inventory${info}</span>`
+            },
+            maxCount: 1,
+            count: 0,
+            frequency: 1,
+            frequencyDefault: 1,
+            allowed() {
+                return b.inventory.length > 1 && !tech.isGunCycle
+            },
+            requires: "at least 2 guns, not generalist",
+            effect() {
+                tech.isGunChoice = true
+                //switches gun on new level
+                //generalist uses the same chosen gun so they match
+            },
+            remove() {
+                tech.isGunChoice = false;
+            }
+        },
+        {
             name: "generalist",
             description: "spawn <strong>7</strong> <strong class='color-g'>guns</strong>, but you can't <strong>switch</strong> <strong class='color-g'>guns</strong><br><strong class='color-g'>guns</strong> cycle automatically with each new level",
             maxCount: 1,
@@ -496,9 +503,9 @@ const tech = {
             frequency: 1,
             frequencyDefault: 1,
             allowed() {
-                return b.inventory.length < b.guns.length - 5 && b.inventory.length > 1 //(tech.isDamageForGuns || tech.isFireRateForGuns) &&
+                return b.inventory.length < b.guns.length - 5 && b.inventory.length > 1 && !tech.isGunChoice
             },
-            requires: "at least 2 guns, at least 5 unclaimed guns",
+            requires: "at least 2 guns, at least 5 unclaimed guns, not pigeonhole principle",
             effect() {
                 tech.isGunCycle = true;
                 for (let i = 0; i < 7; i++) powerUps.spawn(m.pos.x + 10 * Math.random(), m.pos.y + 10 * Math.random(), "gun");
@@ -586,6 +593,58 @@ const tech = {
             }
         },
         {
+            name: "marginal utility",
+            description: `${powerUps.orb.ammo()} give <strong>100%</strong> more <strong class='color-ammo'>ammo</strong><br>for your newest <strong class='color-g'>gun</strong>`,
+            maxCount: 1,
+            count: 0,
+            frequency: 1,
+            frequencyDefault: 1,
+            allowed() {
+                return b.inventory.length > 1 && !tech.isEnergyNoAmmo
+            },
+            requires: "at least 2 guns, not non-renewables",
+            effect() {
+                tech.isMarginalUtility = true;
+            },
+            remove() {
+                tech.isMarginalUtility = false;
+            }
+        },
+        {
+            name: "Pareto efficiency",
+            description: `for each <strong class='color-g'>gun</strong> in your inventory<br>set <strong class='color-ammo'>ammo</strong> per ${powerUps.orb.ammo()} to <strong>25%</strong> or <strong>400%</strong> `,
+            maxCount: 1,
+            count: 0,
+            frequency: 1,
+            frequencyDefault: 1,
+            allowed() {
+                return b.inventory.length > 2 && !tech.isEnergyNoAmmo
+            },
+            requires: "at least 3 guns, not non-renewables",
+            isBadRandomOption: true,
+            isNonRefundable: true,
+            effect() {
+                let scales = []
+                let options = []
+                for (let i = 0; i < b.inventory.length; i++) options.push(b.inventory[i])
+                options = shuffle(options)
+                for (let i = 0; i < options.length; i++) {
+                    const index = options[i]
+                    const scale = (i < options.length / 2) ? 4 : 0.25
+                    simulation.makeTextLog(`${(b.guns[index].ammoPack).toFixed(1)} <span ${scale < 1 ? 'style="color: #f00;"' : ''}>→</span> ${(b.guns[index].ammoPack * scale).toFixed(1)} average <strong class='color-ammo'>ammo</strong> per ${powerUps.orb.ammo(1)} for <strong>${b.guns[index].name}</strong>`, Infinity)
+                    b.guns[index].ammoPack *= scale
+                    scales.push([index, scale])
+                }
+                tech.paretoAmmoScales = scales
+            },
+            remove() {
+                /*for (let i = 0; i < tech.paretoAmmoScales.length; i++) {
+                    const index = tech.paretoAmmoScales[i][0]
+                    b.guns[index].ammoPack /= tech.paretoAmmoScales[i][1]
+                }*/
+            }
+        },
+        {
             name: "logistics",
             description: `${powerUps.orb.ammo()} give <strong>80%</strong> more <strong class='color-ammo'>ammo</strong>, but<br>it's only added to your current <strong class='color-g'>gun</strong>`,
             maxCount: 1,
@@ -595,7 +654,7 @@ const tech = {
             allowed() {
                 return !tech.isEnergyNoAmmo
             },
-            requires: "not exciton",
+            requires: "not non-renewables",
             effect() {
                 tech.isAmmoForGun = true;
             },
@@ -617,7 +676,7 @@ const tech = {
             allowed() {
                 return !tech.isEnergyNoAmmo
             },
-            requires: "not exciton",
+            requires: "not non-renewables",
             effect() {
                 tech.ammoCap = 16;
                 powerUps.ammo.effect()
@@ -636,7 +695,7 @@ const tech = {
             allowed() {
                 return !tech.isEnergyNoAmmo && !tech.isEnergyHealth
             },
-            requires: "not exciton, mass-energy",
+            requires: "not non-renewables, mass-energy",
             effect: () => {
                 tech.isAmmoFromHealth = true;
             },
@@ -664,8 +723,8 @@ const tech = {
             }
         },
         {
-            name: "exciton",
-            description: `increase <strong class='color-d'>damage</strong> by <strong>88%</strong>, but<br>${powerUps.orb.ammo()} will no longer <strong>spawn</strong>`,
+            name: "non-renewables",
+            description: `increase <strong class='color-d'>damage</strong> by <strong>100%</strong>, but<br>${powerUps.orb.ammo()} will no longer <strong>spawn</strong>`,
             maxCount: 1,
             count: 0,
             frequency: 1,
@@ -932,6 +991,49 @@ const tech = {
             remove() {
                 tech.slowFire = 1;
                 b.setFireCD();
+            }
+        },
+        {
+            name: "aperture",
+            description: "every <strong>10.47</strong> seconds your <strong class='color-d'>damage</strong> cycles between<br>being <strong>40%</strong> lower and <strong>120%</strong> higher",
+            maxCount: 1,
+            count: 0,
+            frequency: 1,
+            frequencyDefault: 1,
+            isSkin: true,
+            allowed() {
+                return true
+            },
+            requires: "",
+            effect() {
+			    tech.isAperture = true
+			    if (!m.isShipMode) m.skin.dilate()
+            },
+            remove() {
+		  	    tech.isAperture = false
+			    if (!m.isShipMode) m.resetSkin()
+            }
+        },
+        {
+            name: "diaphragm",
+            description: "every <strong>13.96</strong> seconds your <strong class='color-harm'>harm</strong> reduction cycles<br>between being <strong>35%</strong> lower and <strong>60%</strong> higher",
+            maxCount: 1,
+            count: 0,
+            frequency: 1,
+            frequencyDefault: 1,
+            isSkin: true,
+            allowed() {
+                return tech.isAperture
+            },
+            requires: "aperture",
+            effect() {
+			    tech.isDiaphragm = true
+			    if (!m.isShipMode) m.resetSkin()
+			    if (!m.isShipMode) m.skin.dilate2()
+            },
+            remove() {
+			    tech.isDiaphragm = false
+			    if (!m.isShipMode) m.resetSkin()
             }
         },
         {
@@ -2286,7 +2388,7 @@ const tech = {
         },
         {
             name: "Verlet integration",
-            description: "increase <strong class='color-d'>damage</strong> by <strong>150%</strong> extra <br>after mobs <strong>die</strong> advance time <strong>0.5</strong> seconds",
+            description: "increase <strong class='color-d'>damage</strong> by <strong>150%</strong><br>after mobs <strong>die</strong> advance time <strong>0.5</strong> seconds",
             maxCount: 1,
             count: 0,
             frequency: 1,
@@ -10060,6 +10162,11 @@ const tech = {
     bulletSize: null,
     energySiphon: null,
     healthDrain: null,
+    paretoAmmoScales: [],
+    isMarginalUtility: null,
+    buffedGun: 0,
+    isGunChoice: null,
+    isDivisor: null,
     WKBtransform: null,
     WKBmobCount: 0,
     WKBcurrentMobCount: 0,

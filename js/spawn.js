@@ -2058,10 +2058,6 @@ const spawn = {
                     this.springTarget.y = goal.y;
                     this.cons.length = -200;
                     this.cons2.length = 100 + 1.5 * this.radius;
-                    
-                    for (let i = 0; i < this.babyList.length; i++) {
-                        if (this.babyList[i].alive) this.babyList[i].damageReduction = this.startingDamageReduction
-                    }
                 } else if (!(simulation.cycle % this.seePlayerFreq)) {
                     const unit = Vector.normalise(Vector.sub(this.seePlayer.position, this.position))
                     const goal = Vector.add(this.position, Vector.mult(unit, stepRange))
@@ -2069,15 +2065,17 @@ const spawn = {
                     this.springTarget2.y = goal.y;
                     this.cons.length = 100 + 1.5 * this.radius;
                     this.cons2.length = -200;
-
-                    for (let i = 0; i < this.babyList.length; i++) {
-                        if (this.babyList[i].alive) this.babyList[i].damageReduction = this.startingDamageReduction
-                    }
                 }
                 if (!(simulation.cycle % 300)) {
                     this.damageReduction = this.startingDamageReduction
                     this.isInvulnerable = false
                     this.invulnerabilityCountDown = 80 + Math.max(0, 70 - simulation.difficulty)
+                    for (let i = 0; i < this.babyList.length; i++) {
+                        if (this.babyList[i].alive) {
+                            this.babyList[i].isInvulnerable = false
+                            this.babyList[i].damageReduction = this.startingDamageReduction
+                        }
+                    }
                 }
             } else {
                 this.torque = this.lookTorque * this.inertia;
