@@ -101,6 +101,12 @@ const level = {
             tech.healMaxEnergyBonus += 0.1 * powerUps.totalPowerUps //Math.min(0.02 * powerUps.totalPowerUps, 0.51)
             m.setMaxEnergy();
         }
+        if (tech.isGunChoice && Number.isInteger(tech.buffedGun) && b.inventory.length) {
+            tech.buffedGun++
+            if (tech.buffedGun > b.inventory.length - 1) tech.buffedGun = 0;
+            var gun = b.guns[b.inventory[tech.buffedGun]].name
+            simulation.makeTextLog(`pigeonhole principle: <strong>${(30 * Math.max(0, b.inventory.length))}%</strong> extra <strong class='color-d'>damage</strong> for <strong>${gun}</strong>`, 600);
+        }
         if (tech.isGunCycle) {
             b.inventoryGun++;
             if (b.inventoryGun > b.inventory.length - 1) b.inventoryGun = 0;

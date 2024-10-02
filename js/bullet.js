@@ -5304,6 +5304,7 @@ const b = {
             description: "fire <strong>3</strong> balls in a wide arc<br>balls <strong>bounce</strong> with no momentum loss",
             ammo: 0,
             ammoPack: 10,
+            defaultAmmoPack: 10,
             have: false,
             // num: 5,
             do() {},
@@ -5761,6 +5762,7 @@ const b = {
             description: "launch <strong>homing</strong> missiles that <strong class='color-e'>explode</strong>",
             ammo: 0,
             ammoPack: 5,
+            defaultAmmoPack: 5,
             have: false,
             fireCycle: 0,
             do() {},
@@ -5854,6 +5856,7 @@ const b = {
             description: "lob a single <strong>bouncy</strong> projectile<br><strong class='color-e'>explodes</strong> on <strong>contact</strong> or after one second",
             ammo: 0,
             ammoPack: 5,
+            defaultAmmoPack: 5,
             have: false,
             do() {}, //do is set in b.setGrenadeMode()
             fire() {
@@ -5872,6 +5875,7 @@ const b = {
             description: "fire a <strong class='color-p' style='letter-spacing: 2px;'>sporangium</strong> that discharges <strong class='color-p' style='letter-spacing: 2px;'>spores</strong><br><strong class='color-p' style='letter-spacing: 2px;'>spores</strong> seek out nearby mobs",
             ammo: 0,
             ammoPack: 2.3,
+            defaultAmmoPack: 2.3,
             have: false,
             do() {},
             fire() {
@@ -6031,6 +6035,7 @@ const b = {
             description: "spray bubbly foam that <strong>sticks</strong> to mobs<br><strong class='color-s'>slows</strong> mobs and does <strong class='color-d'>damage</strong> over time",
             ammo: 0,
             ammoPack: 36,
+            defaultAmmoPack: 36,
             have: false,
             charge: 0,
             isDischarge: false,
@@ -6147,6 +6152,7 @@ const b = {
             description: "fire a <strong>self-steering</strong> harpoon that uses <strong class='color-f'>energy</strong><br>to <strong>retract</strong> and refund its <strong class='color-ammo'>ammo</strong> cost",
             ammo: 0,
             ammoPack: 0.6, //update this in railgun tech
+            defaultAmmoPack: 0.6,
             have: false,
             fire() {},
             do() {},
@@ -6663,6 +6669,7 @@ const b = {
             description: "toss a <strong>proximity</strong> mine that <strong>sticks</strong> to walls<br>refund <strong>undetonated</strong> mines on <strong>exiting</strong> a level", //fires <strong>nails</strong> at mobs within range
             ammo: 0,
             ammoPack: 1.25,
+            defaultAmmoPack: 1.25,
             have: false,
             do() {
                 if (!input.field && input.down && !tech.isLaserMine) {
@@ -7092,6 +7099,7 @@ const b = {
             description: "emit a <strong>beam</strong> of collimated coherent <strong class='color-laser'>light</strong><br>drains <strong class='color-f'>energy</strong> instead of ammunition",
             ammo: 0,
             ammoPack: Infinity,
+            defaultAmmoPack: Infinity,
             have: false,
             charge: 0,
             isStuckOn: false,

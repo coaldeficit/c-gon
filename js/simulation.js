@@ -813,6 +813,9 @@ const simulation = {
             if (b.guns[i].name === "harpoon") b.guns[i].chooseFireMethod()
             if (b.guns[i].name === "foam") b.guns[i].chooseFireMethod()
         }
+        for (i = 0, len = b.guns.length; i < len; i++) {
+            b.guns[i].ammoPack = b.guns[i].defaultAmmoPack
+        }
         tech.dynamoBotCount = 0;
         tech.nailBotCount = 0;
         tech.laserBotCount = 0;
