@@ -1,5 +1,5 @@
 # porting K (2024/10/02)
-- Hilbert space alternate reality count now properly resets on death
+- Hilbert space alternate reality tech count now properly resets on death
 - fixed typo in Verlet integration description
 - ported ternary, pigeonhole principle, marginal utility and Pareto efficiency tech
 - renamed exciton to non-renewables and buffed damage increase from 88% -> 100%
