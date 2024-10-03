@@ -1,3 +1,11 @@
+# enemy variety (2024/10/03)
+- added 2 new bosses:
+- - tripwireBoss: can only see you if you damage it or pass through its lasers
+- - springBoss: spawns groups of enemies attached to it with springs that make it invulnerable while they're alive
+- added 2 new mobs:
+- - drifter: unpredictably floats and moves around you
+- - rainer: flies above you and rains down bullets
+- stingers are now slightly less common
 # porting K (2024/10/02)
 - Hilbert space alternate reality count now properly resets on death
 - fixed typo in Verlet integration description
