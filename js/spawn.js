@@ -7423,6 +7423,7 @@ const spawn = {
         me.seeAtDistance2 = 2000000 //1400 vision range
         me.laserRange = 370;
         Matter.Body.setDensity(me, 0.0017 + 0.0002 * Math.sqrt(simulation.difficulty))
+        me.isHealBossSpecifically = true
         me.onDeath = function() {
             powerUps.spawnBossPowerUp(this.position.x, this.position.y)
         };
@@ -7431,10 +7432,12 @@ const spawn = {
             this.attraction();
             this.checkStatus();
             this.harmZone();
+            if (!this.isStunned) {
 	    for (let jej of mob) {
-	      jej.health += 0.0125 * (jej.isBoss ? 0.333 : 1)
+	      jej.health += 0.01 * (jej.isBoss ? 0.333 : 1)
 	      if (jej.health > tech.mobSpawnWithHealth) jej.health = tech.mobSpawnWithHealth
 	    }
+            }
         };
     },
 
@@ -7494,8 +7497,8 @@ const spawn = {
         me.frictionAir = 0.001;
         me.accelMag = 0.001 + (0.00005*simulation.difficulty)
         // me.torque -= me.inertia * 0.002
-        Matter.Body.setDensity(me, 0.06); //extra dense //normal is 0.001 //makes effective life much larger
-        me.damageReduction = 0.5 / (tech.isScaleMobsWithDuplication ? 1 + tech.duplicationChance() : 1)
+        Matter.Body.setDensity(me, 0.03); //extra dense //normal is 0.001 //makes effective life much larger
+        me.damageReduction = 0.25 / (tech.isScaleMobsWithDuplication ? 1 + tech.duplicationChance() : 1)
         me.isBoss = true;
         // spawn.shield(me, x, y, 1);  //not working, not sure why
         me.onDeath = function() {
@@ -7758,7 +7761,7 @@ const spawn = {
         me.imprecision = 1
         me.rainerState = 0
         me.rainTime = 0
-        me.seeAtDistance2 = 2500000
+        me.seeAtDistance2 = 1500000
         me.rainerType = (Math.random() > (level.levelsCleared % 2 ? 0.75 : 0.25) ? 1 : 0)
         me.targetYOffset = 0
         me.do = function() {

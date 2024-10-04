@@ -1,3 +1,17 @@
+# infinitode (2024/10/04)
+- added a new gun: blast: creates a short range damaging, stunning shockwave centered on you
+- added 5 tech:
+- - quake: after not using blast for 2 seconds, your next detonation has doubled radius and guaranteed stun
+- - acetylene: stackable detonation damage and radius increase
+- - deflagration: stackable detonation radius increase but detonation damage decrease
+- - car bomb: after not using blast for 2 seconds, move faster and take less harm
+- - white phosphorus: mobs stunned by blast explode
+- decreased rainer detection range
+- historyBoss and sneakBoss can no longer spawn on split
+- springBoss, mantisBoss and launcherBoss can no longer spawn on descent
+- halved tripwireBoss density but doubled its damage reduction
+- fixed WKB approximation screen warp amount not being reset alongside the screen warp itself
+- healBoss no longer heals while stunned, and also now heals slower
 # enemy variety (2024/10/03)
 - added 2 new bosses:
 - - tripwireBoss: can only see you if you damage it or pass through its lasers

@@ -253,6 +253,20 @@ const b = {
         }
         ctx.fillStyle = color.bullet;
         ctx.fill();
+        for (let i=0;i<b.guns[12].activeDetonationEffects.length;i++) {
+            let shockwave = b.guns[12].activeDetonationEffects[i]
+            shockwave.progress += 0.08
+            ctx.lineWidth = 80
+            ctx.beginPath()
+            let gradient = ctx.createRadialGradient(shockwave.x, shockwave.y, (shockwave.targetRange*shockwave.progress)-40, shockwave.x, shockwave.y, (shockwave.targetRange*shockwave.progress)+40)
+            gradient.addColorStop(0, "rgba(0,0,0,0)")
+            gradient.addColorStop(0.5, "rgba(68, 68, 68, "+Math.max(0, (1-shockwave.progress)/2)+")")
+            gradient.addColorStop(1, "rgba(0,0,0,0)")
+            ctx.strokeStyle = gradient
+            ctx.arc(shockwave.x, shockwave.y, shockwave.targetRange*shockwave.progress, 0, 2*Math.PI)
+            ctx.stroke()
+            if (shockwave.progress > 1) b.guns[12].activeDetonationEffects.splice(i,1)
+        }
     },
     bulletDo() {
         for (let i = 0, len = bullet.length; i < len; i++) {
@@ -273,6 +287,7 @@ const b = {
         if (tech.isFastTime) b.fireCDscale *= 0.5
         if (tech.isFireRateForGuns) b.fireCDscale *= Math.pow(0.8, b.inventory.length)
         if (tech.isFireMoveLock) b.fireCDscale *= 0.5
+        if (tech.isNitinol) b.fireCDscale *= 1.55
     },
     fireAttributes(dir, rotate = true) {
         if (rotate) {
@@ -3712,6 +3727,70 @@ const b = {
             }
         };
         bullet[me].do = function() {};
+    },
+    getDetonationRange() {
+        let range = 500
+        if (tech.isQuake && m.cycle > m.fireCDcycle + 120) range *= 2
+        range *= tech.isAcetylene
+        if (tech.isDeflagration) range *= 1+(0.4*tech.isDeflagration)
+        return range
+    },
+    getDetonationDamage() {
+        let dmg = 2
+        dmg *= tech.isAcetylene
+        if (tech.isDeflagration) dmg *= 0.778**tech.isDeflagration
+        return dmg
+    },
+    detonation(pos, range = b.getDetonationRange(), dmg = b.getDetonationDamage()) {
+        b.guns[12].activeDetonationEffects.push({
+            x: pos.x,
+            y: pos.y,
+            targetRange: range,
+            progress: 0,
+        })
+        for (let i = body.length - 1; i > -1; i--) {
+            if (!body[i].isNotHoldable) {
+                sub = Vector.sub(pos, body[i].position);
+                dist = Vector.magnitude(sub);
+                if (dist < range) {
+                    knock = Vector.mult(Vector.normalise(sub), (-Math.sqrt(dmg) * body[i].mass) * 0.044);
+                    body[i].force.x += knock.x;
+                    body[i].force.y += knock.y;
+                }
+            }
+        }
+        //power up knock backs
+        for (let i = 0, len = powerUp.length; i < len; ++i) {
+            sub = Vector.sub(pos, powerUp[i].position);
+            dist = Vector.magnitude(sub);
+            if (dist < range) {
+                knock = Vector.mult(Vector.normalise(sub), (-Math.sqrt(dmg) * powerUp[i].mass) * 0.026);
+                powerUp[i].force.x += knock.x;
+                powerUp[i].force.y += knock.y;
+            }
+        }
+        //mob damage and knock back with alert
+        for (let i = 0, len = mob.length; i < len; ++i) {
+            if (mob[i].alive && !mob[i].isShielded) {
+                sub = Vector.sub(pos, mob[i].position);
+                dist = Vector.magnitude(sub) - mob[i].radius;
+                if (dist < range) {
+                    if (mob[i].shield) dmg *= 2.5 //balancing explosion dmg to shields
+                    if (Matter.Query.ray(map, mob[i].position, pos).length > 0) dmg *= 0.2 //significantly reduce damage if a wall is in the way
+                    mob[i].damage(dmg * m.dmgScale);
+                    mob[i].foundPlayer();
+                    knock = Vector.mult(Vector.normalise(sub), (-Math.sqrt(dmg) * mob[i].mass) * 0.02 * (mob[i].isBoss ? 0.2 : 1));
+                    mob[i].force.x += knock.x;
+                    mob[i].force.y += knock.y;
+                    if (Math.random() < 0.15 || (tech.isQuake && m.cycle > m.fireCDcycle + 120) || mob[i].isHealBossSpecifically) {
+                        mobs.statusStun(mob[i], 120)
+                        if (tech.isWhitePhosphorus) b.explosion(mob[i].position, 90)
+                    }
+                } else if (!mob[i].seePlayer.recall && dist < range*2) {
+                    mob[i].locatePlayer();
+                }
+            }
+        }
     },
     needle(angle = m.angle) {
         const me = bullet.length;
@@ -7352,6 +7431,27 @@ const b = {
             //         b.pulse(energy, m.angle)
             //     }
             // },
+        }, {
+            name: "blast",
+            description: "accumulate and release air in a <strong class='color-blast'>self-detonation</strong><br>that <strong>stuns</strong> and pushing away nearby <strong>mobs</strong>", //fires <strong>nails</strong> at mobs within range
+            ammo: 0,
+            ammoPack: 28,
+            defaultAmmoPack: 28,
+            have: false,
+            activeDetonationEffects: [], // shockwave effect handling
+            do() {
+                if (!input.field && input.down) {
+                    ctx.strokeStyle = "rgba(68, 68, 68, 0.2)" //color.map
+                    ctx.lineWidth = 2
+                    ctx.beginPath()
+                    ctx.arc(player.position.x, player.position.y, b.getDetonationRange(), 0, 2*Math.PI)
+                    ctx.stroke()
+                }
+            },
+            fire() {
+                b.detonation(player.position, b.getDetonationRange(), b.getDetonationDamage())
+                m.fireCDcycle = m.cycle + Math.floor(15 * b.fireCDscale); // cool down
+            }
         },
     ],
     // gunRewind: { //this gun is added with a tech

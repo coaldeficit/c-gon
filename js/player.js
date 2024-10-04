@@ -81,7 +81,7 @@ const m = {
     setMovement() {
         // m.Fx = 0.08 / mass * tech.squirrelFx 
         // m.FxAir = 0.4 / mass / mass 
-        m.Fx = tech.baseFx * tech.squirrelFx * (tech.isFastTime ? 1.5 : 1) * (tech.isNitinol ? 1.7 : 1) / player.mass //base player mass is 5
+        m.Fx = tech.baseFx * tech.squirrelFx * (tech.isFastTime ? 1.5 : 1) * (tech.isNitinol ? 1.7 : 1) * (tech.isCarBomb && b.guns[b.activeGun].name == 'blast' && m.cycle > m.fireCDcycle + 120 ? 1.8 : 1) / player.mass //base player mass is 5
         m.jumpForce = tech.baseJumpForce * tech.squirrelJump * (tech.isFastTime ? 1.13 : 1) * (tech.isNitinol ? 1.21 : 1) / player.mass / player.mass //base player mass is 5
     },
     FxAir: 0.016, // 0.4/5/5  run Force in Air
@@ -371,6 +371,7 @@ const m = {
             requestAnimationFrame(() => {
               requestAnimationFrame(() => {
                 ctx.setTransform(1, 0, 0, 1, 0, 0); //reset warp effect
+                tech.WKBtransform = ctx.getTransform()
               })
             })
           }
@@ -568,6 +569,7 @@ const m = {
             if (tech.isDiaphragm) dmg *= 0.875 + (0.475 * Math.sin(m.cycle * 0.0075));
             if (tech.isHilbertSpace) dmg *= 0.94**tech.altTechCount
             if (tech.isWKB) dmg *= 0.995**tech.WKBmobCount
+            if (tech.isCarBomb && b.guns[b.activeGun].name == 'blast' && m.cycle > m.fireCDcycle + 120) dmg *= 0.6
         } else {
             dmg = tech.armoredConfigDamageReduct
         }

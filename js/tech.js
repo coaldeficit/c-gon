@@ -221,7 +221,7 @@ const tech = {
         }
     },
     hasExplosiveDamageCheck() {
-        return tech.haveGunCheck("missiles") || tech.isMissileField || tech.missileBotCount > 0 || tech.boomBotCount > 1 || tech.isIncendiary || tech.isPulseLaser || tech.isTokamak || (tech.haveGunCheck("grenades") && !tech.isNeutronBomb)
+        return tech.haveGunCheck("missiles") || tech.isMissileField || tech.missileBotCount > 0 || tech.boomBotCount > 1 || tech.isIncendiary || tech.isPulseLaser || tech.isTokamak || (tech.haveGunCheck("grenades") && !tech.isNeutronBomb) || tech.isWhitePhosphorus
     },
     damageFromTech() {
         let dmg = 1 //m.fieldDamage
@@ -852,14 +852,12 @@ const tech = {
             requires: "not squirrel-cage rotor",
             effect() {
 		  	    tech.isNitinol = true
-                tech.fireRate *= 1.55
                 b.setFireCD();
                 m.setMovement()
 			    if (!m.isShipMode) m.skin.mech()
             },
             remove() {
 			    tech.isNitinol = false
-                tech.fireRate /= 1.55
                 b.setFireCD();
                 m.setMovement()
 			    if (!m.isShipMode) m.resetSkin()
@@ -1063,7 +1061,7 @@ const tech = {
             frequency: 2,
             frequencyDefault: 2,
             allowed() {
-                return tech.isStunField || tech.oneSuperBall || tech.isCloakStun || tech.orbitBotCount > 1 || tech.isExplosionStun
+                return tech.isStunField || tech.oneSuperBall || tech.isCloakStun || tech.orbitBotCount > 1 || tech.isExplosionStun || tech.haveGunCheck("blast")
             },
             requires: "a stun effect",
             effect() {
@@ -5187,7 +5185,7 @@ const tech = {
             frequency: 2,
             frequencyDefault: 2,
             allowed() {
-                return tech.explosiveRadius === 1 && !tech.isSmallExplosion && (tech.haveGunCheck("missiles") || tech.missileBotCount || tech.isIncendiary || (tech.haveGunCheck("grenades") && !tech.isNeutronBomb) || tech.isPulseLaser || tech.isMissileField || tech.boomBotCount > 1 || tech.isTokamak)
+                return tech.explosiveRadius === 1 && !tech.isSmallExplosion && (tech.haveGunCheck("missiles") || tech.missileBotCount || tech.isIncendiary || (tech.haveGunCheck("grenades") && !tech.isNeutronBomb) || tech.isPulseLaser || tech.isMissileField || tech.boomBotCount > 1 || tech.isTokamak || tech.isWhitePhosphorus)
             },
             requires: "an explosive damage source, not ammonium nitrate or nitroglycerin",
             effect: () => {
@@ -5322,7 +5320,7 @@ const tech = {
             frequency: 2,
             frequencyDefault: 2,
             allowed() {
-                return !tech.isImmuneExplosion && (build.isExperimentSelection || powerUps.research.count > 2) && (tech.haveGunCheck("missiles") || tech.isMissileField || tech.missileBotCount > 0 || tech.isIncendiary || tech.isPulseLaser || tech.isTokamak || (tech.haveGunCheck("grenades") && !tech.isNeutronBomb))
+                return !tech.isImmuneExplosion && (build.isExperimentSelection || powerUps.research.count > 2) && (tech.haveGunCheck("missiles") || tech.isMissileField || tech.missileBotCount > 0 || tech.isIncendiary || tech.isPulseLaser || tech.isTokamak || (tech.haveGunCheck("grenades") && !tech.isNeutronBomb) || tech.isWhitePhosphorus)
             },
             requires: "an explosive damage source, not electric reactive armor",
             effect: () => {
@@ -6745,6 +6743,101 @@ const tech = {
             },
             remove() {
                 tech.isPulseAim = false;
+            }
+        },
+        {
+            name: "quake",
+            description: "after not using <strong class='color-blast'>blast</strong> for <strong>2</strong> seconds<br>your next <strong class='color-blast'>detonation</strong> has <strong>100%</strong> increased<br><strong>radius</strong> and guaranteed <strong>stun</strong>",
+            isGunTech: true,
+            maxCount: 1,
+            count: 0,
+            frequency: 2,
+            frequencyDefault: 2,
+            allowed() {
+                return tech.haveGunCheck("blast") && !tech.isCarBomb
+            },
+            requires: "blast gun, not car bomb",
+            effect() {
+                tech.isQuake = true;
+            },
+            remove() {
+                tech.isQuake = false;
+            }
+        },
+        {
+            name: "acetylene",
+            description: "increase <strong class='color-blast'>detonation</strong> <strong class='color-d'>damage</strong> by <strong>18.8%</strong><br>increase <strong class='color-blast'>detonation</strong> <strong>radius</strong> by <strong>18.8%</strong>",
+            isGunTech: true,
+            maxCount: 9,
+            count: 0,
+            frequency: 2,
+            frequencyDefault: 2,
+            allowed() {
+                return tech.haveGunCheck("blast")
+            },
+            requires: "blast gun",
+            effect() {
+                tech.isAcetylene += 0.188;
+            },
+            remove() {
+                tech.isAcetylene = 1;
+            }
+        },
+        {
+            name: "deflagration",
+            description: "increase <strong class='color-blast'>detonation</strong> <strong>radius</strong> by <strong>40%</strong><br>decrease <strong class='color-blast'>detonation</strong> <strong class='color-d'>damage</strong> by <strong>22.2%</strong>",
+            isGunTech: true,
+            maxCount: 9,
+            count: 0,
+            frequency: 2,
+            frequencyDefault: 2,
+            allowed() {
+                return tech.haveGunCheck("blast")
+            },
+            requires: "blast gun",
+            effect() {
+                tech.isDeflagration += 1;
+            },
+            remove() {
+                tech.isDeflagration = 0;
+            }
+        },
+        {
+            name: "car bomb",
+            description: "after not using <strong class='color-blast'>blast</strong> for <strong>2</strong> seconds<br>increase <strong>movement</strong> by <strong>80%</strong><br>reduce <strong class='color-harm'>harm</strong> by <strong>40%</strong>",
+            isGunTech: true,
+            maxCount: 1,
+            count: 0,
+            frequency: 2,
+            frequencyDefault: 2,
+            allowed() {
+                return tech.haveGunCheck("blast") && !tech.isQuake
+            },
+            requires: "blast gun, not quake",
+            effect() {
+                tech.isCarBomb = true;
+            },
+            remove() {
+                tech.isCarBomb = false;
+            }
+        },
+        {
+            name: "white phosphorus",
+            description: "mobs <strong>stunned</strong> by <strong class='color-blast'>detonations</strong> <strong class='color-e'>explode</strong>",
+            isGunTech: true,
+            maxCount: 1,
+            count: 0,
+            frequency: 2,
+            frequencyDefault: 2,
+            allowed() {
+                return tech.haveGunCheck("blast")
+            },
+            requires: "blast gun",
+            effect() {
+                tech.isWhitePhosphorus = true;
+            },
+            remove() {
+                tech.isWhitePhosphorus = false;
             }
         },
         //************************************************** 
@@ -10162,6 +10255,10 @@ const tech = {
     bulletSize: null,
     energySiphon: null,
     healthDrain: null,
+    isCarBomb: null,
+    isDeflagration: 0,
+    isAcetylene: 1,
+    isQuake: null,
     paretoAmmoScales: [],
     isMarginalUtility: null,
     buffedGun: 0,
