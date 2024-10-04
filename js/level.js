@@ -27450,7 +27450,7 @@ const level = {
 	    array.splice(index, 1); // 2nd parameter means remove one item only
 	  }
 	}
-	let unacceptableBosses = ['pulsarBoss','shooterBoss','historyBoss','spiderBoss','cellBossCulture','growBossCulture','spawnerBossCulture','dragonFlyBoss','snakeSpitBoss','streamBoss','sneakBoss']
+	let unacceptableBosses = ['pulsarBoss','shooterBoss','historyBoss','spiderBoss','cellBossCulture','growBossCulture','spawnerBossCulture','dragonFlyBoss','snakeSpitBoss','streamBoss','sneakBoss','springBoss','mantisBoss','launcherBoss']
 	for (let boss of unacceptableBosses) {removeFromArray(acceptableBosses, boss)}
 	spawn.randomLevelBoss(10000, -10000, acceptableBosses) // spawn boss out of bounds as it will be teleported into the arena later
 	spawn.secondaryBossChance(10000, -10500, acceptableBosses) // spawn boss out of bounds as it will be teleported into the arena later
@@ -27759,7 +27759,7 @@ const level = {
       // spawn.randomGroup(1700, -900, 0.4);
       if (simulation.difficulty > 1) {
         let acceptableBosses = spawn.randomBossList.concat(['tetherBoss'])
-        let unacceptableBosses = ['constraintBoss', 'blinkBoss', 'pulsarBoss'].concat(spawn.nonCollideBossList)
+        let unacceptableBosses = ['constraintBoss', 'blinkBoss', 'pulsarBoss', 'historyBoss', 'sneakBoss'].concat(spawn.nonCollideBossList)
         acceptableBosses = acceptableBosses.filter((boss)=>!unacceptableBosses.includes(boss))
         spawn.randomLevelBoss(0, 860, acceptableBosses);
         spawn.secondaryBossChance(500, 860, acceptableBosses);

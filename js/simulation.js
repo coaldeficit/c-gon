@@ -1255,6 +1255,11 @@ const simulation = {
             }
 	      }
 	    }
+	    if (!(m.cycle % 5)) {
+	      if (tech.isCarBomb) {
+            m.setMovement()
+	      }
+	    }
         if (tech.isArmoredConfig) {
           tech.armoredConfigDamageReduct = Math.max(tech.armoredConfigDamageReduct-0.025,0)
         }
