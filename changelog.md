@@ -1,3 +1,7 @@
+# porting L (2024/10/05)
+- ported mechatronics, exciton, band gap, polariton, collider, cascading failure, topological defect and anyon tech
+- increased frequency of looting subtechs
+- removed isotropic radiator tech
 # more blast guntech (2024/10/05)
 - blast tech changes:
 - - deflagration and acetylene now stack additively with eachother, not multiplicatively

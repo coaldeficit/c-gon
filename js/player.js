@@ -570,6 +570,7 @@ const m = {
             if (tech.isHilbertSpace) dmg *= 0.94**tech.altTechCount
             if (tech.isWKB) dmg *= 0.995**tech.WKBmobCount
             if (tech.isCarBomb && b.guns[b.activeGun].name == 'blast' && m.cycle > m.fireCDcycle + 120) dmg *= 0.6
+            if (tech.isPolariton && powerUps.boost.endCycle > simulation.cycle) dmg *= 0.4
         } else {
             dmg = tech.armoredConfigDamageReduct
         }
