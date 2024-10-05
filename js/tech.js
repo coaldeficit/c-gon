@@ -258,6 +258,7 @@ const tech = {
         if (tech.isAntiunitary) dmg *= 1 + (tech.antiunitaryRealityCount*0.04)
         if (tech.isQuantumTunnel && tech.isFlipFlopOn && simulation.isTimeSkipping) dmg *= 2.5
         if (tech.isDivisor && b.activeGun !== undefined && b.activeGun !== null && b.guns[b.activeGun].ammo % 3 === 0) dmg *= 1.9
+        if (tech.isMechatronics) dmg *= 1 + tech.isMechatronics
         return dmg * tech.slowFire * tech.aimDamage
     },
     duplicationChance() {
@@ -1052,7 +1053,23 @@ const tech = {
                 b.setFireCD();
             }
         },
-
+        {
+            name: "mechatronics",
+            descriptionFunction() {
+                return "randomly increase <strong class='color-d'>damage</strong> between<br><strong>0%</strong> and <strong>40%</strong> <em>(" + Math.round(tech.isMechatronics*100) + "%)</em>"
+            },
+            maxCount: 9,
+            count: 0,
+            frequency: 1,
+            frequencyDefault: 1,
+            allowed() { return true },
+            effect() {
+                tech.isMechatronics += (Math.floor((Math.random() * 0.4) * 100)) / 100
+            },
+            remove() {
+                tech.isMechatronics = 0;
+            }
+        },
         {
             name: "fracture analysis",
             description: "bullet impacts do <strong>400%</strong> <strong class='color-d'>damage</strong><br>to <strong>stunned</strong> mobs",
@@ -1139,9 +1156,9 @@ const tech = {
             frequency: 1,
             frequencyDefault: 1,
             allowed() {
-                return true //tech.nailsDeathMob || tech.sporesOnDeath || tech.isExplodeMob || tech.botSpawner || tech.isMobBlockFling || tech.iceIXOnDeath
+                return !tech.isMobFullHealthCloak
             },
-            requires: "", //"any mob death tech",
+            requires: "not topological defect", //"any mob death tech",
             effect: () => {
                 tech.mobSpawnWithHealth *= 0.89
 
@@ -1152,6 +1169,24 @@ const tech = {
             },
             remove() {
                 tech.mobSpawnWithHealth = 1;
+            }
+        },
+        {
+            name: "cascading failure",
+            description: "mobs under <strong>25% health</strong><br>take <strong>200%</strong> increased <strong class='color-d'>damage</strong>",
+            maxCount: 1,
+            count: 0,
+            frequency: 2,
+            frequencyDefault: 2,
+            allowed() {
+                return tech.mobSpawnWithHealth < 1
+            },
+            requires: "reaction inhibitor",
+            effect: () => {
+                tech.isCascadingFailure = true
+            },
+            remove() {
+                tech.isCascadingFailure = false
             }
         },
         {
@@ -2670,9 +2705,9 @@ const tech = {
             frequency: 2,
             frequencyDefault: 2,
             allowed() {
-                return m.energy > m.maxEnergy || build.isExperimentSelection
+                return (m.energy > m.maxEnergy || build.isExperimentSelection) && !tech.isDupEnergy
             },
-            requires: "energy above your max",
+            requires: "energy above your max, not anyon",
             effect() {
                 tech.overfillDrain = 0.92 //70% = 1-(1-0.75)/(1-0.15) //92% = 1-(1-0.75)/(1-0.87)
                 this.refundAmount += tech.addJunkTechToPool(0.1)
@@ -3806,25 +3841,6 @@ const tech = {
             }
         },
         {
-            name: "options exchange",
-            link: `<a target="_blank" href='https://en.wikipedia.org/wiki/Option_(finance)' class="link">options exchange</a>`,
-            description: `clicking <strong style = 'font-size:150%;'>×</strong> for a <strong class='color-f'>field</strong>, <strong class='color-m'>tech</strong>, or <strong class='color-g'>gun</strong> has a <strong>90%</strong><br>chance to randomize <strong>choices</strong> and not <strong>cancel</strong>`,
-            maxCount: 1,
-            count: 0,
-            frequency: 1,
-            frequencyDefault: 1,
-            allowed() {
-                return !tech.isSuperDeterminism //&& (tech.isCancelRerolls || tech.isCancelDuplication)
-            },
-            requires: "not superdeterminism", //futures exchange, commodities exchange, 
-            effect() {
-                tech.isCancelTech = true
-            },
-            remove() {
-                tech.isCancelTech = false
-            }
-        },
-        {
             name: "commodities exchange",
             description: `clicking <strong style = 'font-size:150%;'>×</strong> to <strong>cancel</strong> a <strong class='color-f'>field</strong>, <strong class='color-m'>tech</strong>, or <strong class='color-g'>gun</strong><br>spawns <strong>5-10</strong> ${powerUps.orb.heal()}, ${powerUps.orb.ammo()}, or ${powerUps.orb.research(1)}`,
             maxCount: 1,
@@ -3860,6 +3876,25 @@ const tech = {
             remove() {
                 tech.isCancelDuplication = false
                 powerUps.setDupChance(); //needed after adjusting duplication chance
+            }
+        },
+        {
+            name: "options exchange",
+            link: `<a target="_blank" href='https://en.wikipedia.org/wiki/Option_(finance)' class="link">options exchange</a>`,
+            description: `clicking <strong style = 'font-size:150%;'>×</strong> for a <strong class='color-f'>field</strong>, <strong class='color-m'>tech</strong>, or <strong class='color-g'>gun</strong> has a <strong>90%</strong><br>chance to randomize <strong>choices</strong> and not <strong>cancel</strong>`,
+            maxCount: 1,
+            count: 0,
+            frequency: 1,
+            frequencyDefault: 1,
+            allowed() {
+                return !tech.isSuperDeterminism //&& (tech.isCancelRerolls || tech.isCancelDuplication)
+            },
+            requires: "not superdeterminism", //futures exchange, commodities exchange, 
+            effect() {
+                tech.isCancelTech = true
+            },
+            remove() {
+                tech.isCancelTech = false
             }
         },
         {
@@ -4172,12 +4207,12 @@ const tech = {
             description: `mobs drop way more ${powerUps.orb.research(1)} and ${powerUps.orb.boost(1)}<br>mobs cant drop anything else`,
             maxCount: 1,
             count: 0,
-            frequency: 1,
-            frequencyDefault: 1,
+            frequency: 2,
+            frequencyDefault: 2,
             allowed() {
-                return tech.isLooting && !tech.isExoticParts
+                return tech.isLooting && !tech.isExoticParts && !tech.collidePowerUps
             },
-            requires: "looting, not exotic particles",
+            requires: "looting, not exotic particles, collider",
             effect: () => {
               tech.isTreasure = true
             },
@@ -4190,17 +4225,83 @@ const tech = {
             description: `mobs drop <strong>40%</strong> less power ups on death<br>mobs can drop <strong class='color-h'>exotic</strong> <strong class='color-f'>power ups</strong>`,
             maxCount: 1,
             count: 0,
-            frequency: 1,
-            frequencyDefault: 1,
+            frequency: 2,
+            frequencyDefault: 2,
             allowed() {
-                return tech.isLooting && !tech.isTreasure && !tech.isEnergyHealth && !tech.isOverHeal
+                return tech.isLooting && !tech.isTreasure && !tech.collidePowerUps && !tech.isEnergyHealth && !tech.isOverHeal
             },
-            requires: "looting, not mass-energy equivalence, quenching",
+            requires: "looting, not treasure, collider, mass-energy equivalence, quenching",
             effect: () => {
                 tech.isExoticParts = 1
             },
             remove() {
                 tech.isExoticParts = 0
+            }
+        },
+        {
+            name: "exciton",
+            description: `mobs drop way more ${powerUps.orb.boost(1)}`,
+            maxCount: 1,
+            count: 0,
+            frequency: 2,
+            frequencyDefault: 2,
+            allowed() { return tech.isLooting },
+            requires: "looting",
+            effect() {
+                tech.isBoostPowerUps = true
+            },
+            remove() {
+                tech.isBoostPowerUps = false
+            }
+        },
+        {
+            name: "band gap",
+            description: `${powerUps.orb.boost(1)} grant an additional <strong>${(75)}%</strong> <strong class='color-d'>damage</strong><br>but their <strong>duration</strong> is reduced by <strong>1</strong> second`,
+            maxCount: 9,
+            count: 0,
+            frequency: 3,
+            frequencyDefault: 3,
+            allowed() { return tech.isBoostPowerUps || tech.isQuantumJump },
+            requires: "boost drop rate increase tech",
+            effect() {
+                powerUps.boost.duration -= 60
+                powerUps.boost.damage += 0.75
+            },
+            remove() {
+                powerUps.boost.duration = 600
+                powerUps.boost.damage = 1.25
+            }
+        },
+        {
+            name: "polariton",
+            description: `${powerUps.orb.boost(1)} grant <strong>60%</strong> harm reduction<br>for their duration`,
+            maxCount: 1,
+            count: 0,
+            frequency: 3,
+            frequencyDefault: 3,
+            allowed() { return tech.isBoostPowerUps || tech.isQuantumJump },
+            requires: "boost drop rate increase tech",
+            effect() {
+                tech.isPolariton = true
+            },
+            remove() {
+                tech.isPolariton = false
+            }
+        },
+        {
+            name: "collider",
+            description: "after mobs <strong>die</strong> existing <strong>power ups</strong><br><strong>collide</strong> to form new <strong>power ups</strong>",
+            maxCount: 1,
+            count: 0,
+            frequency: 2,
+            frequencyDefault: 2,
+            allowed() { return tech.isLooting && !tech.isTreasure && !tech.isExoticParts },
+            requires: "looting, not treasure, exotic particles",
+            effect() {
+                tech.collidePowerUps = true
+            },
+            remove() {
+                tech.collidePowerUps = false
             }
         },
         {
@@ -5039,7 +5140,7 @@ const tech = {
                 tech.isLongitudinal = false;
             }
         },
-        {
+        /*{ // bad
             name: "isotropic radiator",
             description: "<strong>matter wave</strong> expands in <strong>all</strong> directions<br><span style = 'font-size:90%;'><strong>range</strong> reduced <strong>40%</strong> and <strong class='color-d'>damage</strong> increased <strong>50%</strong></span>",
             isGunTech: true,
@@ -5069,7 +5170,7 @@ const tech = {
                     }
                 }
             }
-        },
+        },*/
         {
             name: "cruise missile",
             description: "<strong>missiles</strong> travel <strong>50%</strong> slower,<br>but have a <strong>100%</strong> larger <strong class='color-e'>explosive</strong> payload",
@@ -7875,6 +7976,25 @@ const tech = {
             }
         },
         {
+            name: "topological defect",
+            description: "do <strong>111%</strong> increased <strong class='color-d'>damage</strong><br>to <strong>mobs</strong> at maximum <strong>health</strong>",
+            isFieldTech: true,
+            maxCount: 1,
+            count: 0,
+            frequency: 2,
+            frequencyDefault: 2,
+            allowed() {
+                return (m.fieldUpgrades[m.fieldMode].name === "metamaterial cloaking" || m.fieldUpgrades[m.fieldMode].name === "pilot wave") && tech.mobSpawnWithHealth == 1
+            },
+            requires: "cloaking, pilot wave, not reaction inhibitor",
+            effect() {
+                tech.isMobFullHealthCloak = true
+            },
+            remove() {
+                tech.isMobFullHealthCloak = false
+            }
+        },
+        {
             name: "ambush",
             description: "metamaterial cloaking field <strong class='color-d'>damage</strong> effect<br>is increased from <span style = 'text-decoration: line-through;'>333%</span> to <strong>666%</strong>",
             isFieldTech: true,
@@ -8041,6 +8161,27 @@ const tech = {
             },
             remove() {
                 tech.isWormholeWorms = false
+            }
+        },
+        {
+            name: "anyon",
+            description: "<strong>double</strong> your <strong class='color-f'>energy</strong> after <strong class='color-dup'>duplicating</strong> a power up<br><strong class='color-f'>energy</strong> above your max decays <strong>300%</strong> faster",
+            isFieldTech: true,
+            maxCount: 1,
+            count: 0,
+            frequency: 1,
+            frequencyDefault: 1,
+            allowed() {
+                return tech.duplicationChance() >= 0.35 && (m.fieldUpgrades[m.fieldMode].name === "wormhole" || m.fieldUpgrades[m.fieldMode].name === "standing wave") && tech.overfillDrain <= 0.7
+            },
+            requires: "atleast 35% duplication chance and wormhole, standing wave, not maxwell's demon",
+            effect() {
+                tech.isDupEnergy = true;
+                tech.overfillDrain = 0.7/4
+            },
+            remove() {
+                tech.isDupEnergy = false;
+                tech.overfillDrain = 0.7
             }
         },
         {
@@ -10182,7 +10323,7 @@ const tech = {
             allowed() { return true },
             requires: "",
             effect() {
-                const urls = ["https://scratch.mit.edu/projects/14005697/fullscreen/", "https://scratch.mit.edu/projects/41429974/fullscreen/", "https://scratch.mit.edu/projects/43690666/fullscreen/", "https://codepen.io/lilgreenland/full/ozXNWZ", "https://codepen.io/lilgreenland/full/wzARJY", "https://landgreen.github.io/sidescroller/classic/7-1-2017/", "https://landgreen.github.io/sidescroller/classic/4-15-2018/", "https://landgreen.github.io/sidescroller/classic/7-11-2019/", "https://landgreen.github.io/sidescroller/classic/9-8-2019/", "https://landgreen.github.io/sidescroller/classic/7-15-2020/", "https://landgreen.github.io/sidescroller/classic/6-1-2021/", "https://landgreen.github.io/sidescroller"]
+                const urls = ["https://scratch.mit.edu/projects/14005697/fullscreen/", "https://scratch.mit.edu/projects/41429974/fullscreen/", "https://scratch.mit.edu/projects/43690666/fullscreen/", "https://codepen.io/lilgreenland/full/ozXNWZ", "https://codepen.io/lilgreenland/full/wzARJY", "https://landgreen.github.io/sidescroller/classic/7-1-2017/", "https://landgreen.github.io/sidescroller/classic/4-15-2018/", "https://landgreen.github.io/sidescroller/classic/7-11-2019/", "https://landgreen.github.io/sidescroller/classic/9-8-2019/", "https://landgreen.github.io/sidescroller/classic/7-15-2020/", "https://landgreen.github.io/sidescroller/classic/6-1-2021/", "https://therealivyx.github.io/j-gon"]
                 const choose = urls[Math.floor(Math.random() * urls.length)]
                 console.log(`opening new tab" ${choose}`)
                 let tab = window.open(choose, "_blank");
@@ -10352,6 +10493,12 @@ const tech = {
     bulletSize: null,
     energySiphon: null,
     healthDrain: null,
+    isMobFullHealthCloak: null,
+    isCascadingFailure: null,
+    collidePowerUps: null,
+    isPolariton: null,
+    isBoostPowerUps: null,
+    isMechatronics: 0,
     isHeavyShell: null,
     isBlastWave: 0,
     isBLEVE: null,

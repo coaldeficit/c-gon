@@ -1073,6 +1073,60 @@ const mobs = {
             damage(dmg, isBypassShield = false) {
                 if ((!this.isShielded || isBypassShield) && this.alive) {
                     dmg *= tech.damageFromTech()
+                        if (this.isDropPowerUp) {
+                            if (this.health === 1) {
+                                if (tech.isMobFullHealthCloak) {
+                                    dmg *= 2.11
+                                    simulation.ephemera.push({
+                                        name: "damage outline",
+                                        count: 7, //cycles before it self removes
+                                        vertices: this.vertices,
+                                        do() {
+                                            this.count--
+                                            if (this.count < 0) simulation.removeEphemera(this.name)
+                                            //draw body
+                                            ctx.beginPath();
+                                            const vertices = this.vertices;
+                                            ctx.moveTo(vertices[0].x, vertices[0].y);
+                                            for (let j = 1, len = vertices.length; j < len; ++j) {
+                                                ctx.lineTo(vertices[j].x, vertices[j].y);
+                                            }
+                                            ctx.lineTo(vertices[0].x, vertices[0].y);
+                                            ctx.fillStyle = `rgba(255,0,100,0.15)` //"rgba(150,150,225,0.5)";
+                                            ctx.fill()
+                                            ctx.lineWidth = 3 //60 * (0.25 - this.damageReductionGoal)
+                                            ctx.strokeStyle = `#f08` //"rgba(150,150,225,0.5)";
+                                            ctx.stroke();
+                                        },
+                                    })
+                                }
+                            } else if (tech.isCascadingFailure && this.health < 0.25) {
+                                dmg *= 3
+
+                                simulation.ephemera.push({
+                                    name: "damage outline",
+                                    count: 2, //cycles before it self removes
+                                    vertices: this.vertices,
+                                    do() {
+                                        this.count--
+                                        if (this.count < 0) simulation.removeEphemera(this.name)
+                                        //draw body
+                                        ctx.beginPath();
+                                        const vertices = this.vertices;
+                                        ctx.moveTo(vertices[0].x, vertices[0].y);
+                                        for (let j = 1, len = vertices.length; j < len; ++j) {
+                                            ctx.lineTo(vertices[j].x, vertices[j].y);
+                                        }
+                                        ctx.lineTo(vertices[0].x, vertices[0].y);
+                                        ctx.fillStyle = `rgba(255,50,100,0.2)` //"rgba(150,150,225,0.5)";
+                                        ctx.fill()
+                                        ctx.lineWidth = 3 //60 * (0.25 - this.damageReductionGoal)
+                                        ctx.strokeStyle = `#f38` //"rgba(150,150,225,0.5)";
+                                        ctx.stroke();
+                                    },
+                                })
+                            }
+                        }
                     //mobs specific damage changes
                     if (tech.isFarAwayDmg) dmg *= 1 + Math.sqrt(Math.max(500, Math.min(3000, this.distanceToPlayer())) - 500) * 0.0067 //up to 50% dmg at max range of 3500
                     // if (this.shield) dmg *= 0.075
@@ -1136,6 +1190,7 @@ const mobs = {
             leaveBody: true,
             isDropPowerUp: true,
             death() {
+                if (tech.collidePowerUps && this.isDropPowerUp) powerUps.randomize(this.position) //needs to run before onDeath spawns power ups
                 this.onDeath(this); //custom death effects
                 this.removeConsBB();
                 this.alive = false; //triggers mob removal in mob[i].replace(i)

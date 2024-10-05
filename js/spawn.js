@@ -1230,7 +1230,7 @@ const spawn = {
         me.damageReduction = 0
         me.invulnerabilityCountDown = 30 + simulation.difficulty
         me.onHit = function() { //run this function on hitting player
-	   if (m.health <= m.maxHealth/3) {
+	   if ((m.health < m.maxHealth*0.35 && !tech.isEnergyHealth) || (m.energy < m.maxEnergy*0.35 && tech.isEnergyHealth)) {
               if (powerUps.ejectTech()) {
                    powerUps.ejectGraphic("150, 138, 255");
                    powerUps.spawn(m.pos.x + 60 * (Math.random() - 0.5), m.pos.y + 60 * (Math.random() - 0.5), "ammo");
@@ -1312,7 +1312,7 @@ const spawn = {
         // me.invulnerabilityCountDown = 60 + simulation.difficulty * 2
 
         me.onHit = function() { //run this function on hitting player
-	   if (m.health <= m.maxHealth*0.7) {
+	   if ((m.health < m.maxHealth*0.7 && !tech.isEnergyHealth) || (m.energy < m.maxEnergy*0.7 && tech.isEnergyHealth)) {
               if (powerUps.ejectTech()) {
                    powerUps.ejectGraphic("150, 138, 255");
                    powerUps.spawn(m.pos.x + 60 * (Math.random() - 0.5), m.pos.y + 60 * (Math.random() - 0.5), "ammo");

@@ -1063,12 +1063,12 @@ const powerUps = {
             powerUps.spawn(x, y, "exoticPartsMaxE");
             return;
           }
-          if (Math.random() < 0.02*(tech.isExoticParts ? 0.6 : 1) || (tech.isBoostPowerUps && Math.random() < 0.142*(tech.isExoticParts ? 0.6 : 1))) {
+          if (Math.random() < (0.02+(tech.isBoostPowerUps?0.14:0))*(tech.isExoticParts ? 0.6 : 1)) {
             powerUps.spawn(x, y, "boost");
             return;
           }
         } else {
-          if (Math.random() < 0.1 || (tech.isBoostPowerUps && Math.random() < 0.24)) {
+          if (Math.random() < 0.1+(tech.isBoostPowerUps?0.14:0)) {
             powerUps.spawn(x, y, "boost");
             return;
           }
@@ -1254,6 +1254,55 @@ const powerUps = {
         }
         Composite.add(engine.world, powerUp[index]); //add to world
     },
+    randomize(where) { //makes a random power up convert into a random different power up
+        //put 10 power ups close together
+        const len = Math.min(10, powerUp.length)
+        for (let i = 0; i < len; i++) { //collide the first 10 power ups
+            const unit = Vector.rotate({ x: 1, y: 0 }, 6.28 * Math.random())
+            Matter.Body.setPosition(powerUp[i], Vector.add(where, Vector.mult(unit, 20 + 25 * Math.random())));
+            Matter.Body.setVelocity(powerUp[i], Vector.mult(unit, 20));
+        }
+
+        //count big power ups and small power ups
+        let options = ["heal", "research", "ammo", "boost"]
+        let bigIndexes = []
+        let smallIndexes = []
+        for (let i = 0; i < powerUp.length; i++) {
+            if (powerUp[i].name === "tech" || powerUp[i].name === "gun" || powerUp[i].name === "field") {
+                bigIndexes.push(i)
+            } else {
+                smallIndexes.push(i)
+            }
+        }
+
+
+        if (smallIndexes.length > 2 && Math.random() < 0.66) {             // console.log("no big, at least 3 small can combine")
+            for (let j = 0; j < 3; j++) {
+                for (let i = 0; i < powerUp.length; i++) {
+                    if (powerUp[i].name === "heal" || powerUp[i].name === "research" || powerUp[i].name === "ammo" || powerUp[i].name === "coupling" || powerUp[i].name === "boost") {
+                        Matter.Composite.remove(engine.world, powerUp[i]);
+                        powerUp.splice(i, 1);
+                        break
+                    }
+                }
+            }
+
+            options = ["tech", "tech", "tech", "gun", "gun", "field"]
+            powerUps.directSpawn(where.x, where.y, options[Math.floor(Math.random() * options.length)], false)
+        } else if (bigIndexes.length > 0 && Math.random() < 0.5) { // console.log("at least 1 big can spilt")
+            const index = bigIndexes[Math.floor(Math.random() * bigIndexes.length)]
+            for (let i = 0; i < 3; i++) powerUps.directSpawn(where.x, where.y, options[Math.floor(Math.random() * options.length)], false)
+
+            Matter.Composite.remove(engine.world, powerUp[index]);
+            powerUp.splice(index, 1);
+        } else if (smallIndexes.length > 0) { // console.log("no big, at least 1 small will swap flavors")
+            const index = Math.floor(Math.random() * powerUp.length)
+            options = options.filter(e => e !== powerUp[index].name); //don't repeat the current power up type
+            powerUps.directSpawn(where.x, where.y, options[Math.floor(Math.random() * options.length)], false)
+            Matter.Composite.remove(engine.world, powerUp[index]);
+            powerUp.splice(index, 1);
+        }
+    },
     spawn(x, y, target, moving = true, mode = null, size = powerUps[target].size()) {
         if (
             (!tech.isSuperDeterminism || (target !== 'research')) &&
@@ -1265,6 +1314,7 @@ const powerUps = {
                 powerUps.directSpawn(x, y, target, moving, mode, size)
                 powerUp[powerUp.length - 1].isDuplicated = true
                 // if (tech.isPowerUpsVanish) powerUp[powerUp.length - 1].endCycle = simulation.cycle + 300
+                if (tech.isDupEnergy) m.energy *= 2
             }
         }
     },
