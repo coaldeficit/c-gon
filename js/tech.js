@@ -5483,7 +5483,7 @@ const tech = {
             frequency: 2,
             frequencyDefault: 2,
             allowed() {
-                return tech.isNailRadiation || tech.isWormholeDamage || tech.isNeutronBomb || tech.isExplodeRadio
+                return tech.isNailRadiation || tech.isWormholeDamage || tech.isNeutronBomb || tech.isExplodeRadio || tech.isNitrogen17
             },
             requires: "radiation damage source",
             effect() {
@@ -6766,7 +6766,7 @@ const tech = {
         },
         {
             name: "acetylene",
-            description: "increase <strong class='color-blast'>detonation</strong> <strong class='color-d'>damage</strong> by <strong>18.8%</strong><br>increase <strong class='color-blast'>detonation</strong> <strong>radius</strong> by <strong>18.8%</strong>",
+            description: "increase <strong class='color-blast'>detonation</strong> <strong class='color-d'>damage</strong> by <strong>18.8%</strong><br>increase <strong class='color-blast'>detonation</strong> <strong>radius</strong> by <strong>8.4%</strong>",
             isGunTech: true,
             maxCount: 9,
             count: 0,
@@ -6785,9 +6785,9 @@ const tech = {
         },
         {
             name: "deflagration",
-            description: "increase <strong class='color-blast'>detonation</strong> <strong>radius</strong> by <strong>40%</strong><br>decrease <strong class='color-blast'>detonation</strong> <strong class='color-d'>damage</strong> by <strong>22.2%</strong>",
+            description: "increase <strong class='color-blast'>detonation</strong> <strong>radius</strong> by <strong>50%</strong><br>decrease <strong class='color-blast'>detonation</strong> <strong class='color-d'>damage</strong> by <strong>30%</strong>",
             isGunTech: true,
-            maxCount: 9,
+            maxCount: 1,
             count: 0,
             frequency: 2,
             frequencyDefault: 2,
@@ -6796,10 +6796,10 @@ const tech = {
             },
             requires: "blast gun",
             effect() {
-                tech.isDeflagration += 1;
+                tech.isDeflagration = true;
             },
             remove() {
-                tech.isDeflagration = 0;
+                tech.isDeflagration = false;
             }
         },
         {
@@ -6830,14 +6830,111 @@ const tech = {
             frequency: 2,
             frequencyDefault: 2,
             allowed() {
-                return tech.haveGunCheck("blast")
+                return tech.haveGunCheck("blast") && !tech.isBLEVE
             },
-            requires: "blast gun",
+            requires: "blast gun, not BLEVE",
             effect() {
                 tech.isWhitePhosphorus = true;
             },
             remove() {
                 tech.isWhitePhosphorus = false;
+            }
+        },
+        {
+            name: "nitrogen-17",
+            description: "<strong class='color-blast'>detonations</strong> are <strong class='color-p'>radioactive</strong><br>about <strong>120%</strong> more <strong class='color-d'>damage</strong> over <strong>4</strong> seconds",
+            isGunTech: true,
+            maxCount: 1,
+            count: 0,
+            frequency: 2,
+            frequencyDefault: 2,
+            allowed() {
+                return tech.haveGunCheck("blast")
+            },
+            requires: "blast gun",
+            effect() {
+                tech.isNitrogen17 = true;
+            },
+            remove() {
+                tech.isNitrogen17 = false;
+            }
+        },
+        {
+            name: "counterblast",
+            link: `<a target="_blank" href='https://en.wikipedia.org/wiki/Backlash_(sociology)' class="link">counterblast</a>`,
+            description: "<strong class='color-blast'>detonations</strong> pull in <strong>mobs</strong><br>that are slightly outside of their <strong>radius</strong>",
+            isGunTech: true,
+            maxCount: 1,
+            count: 0,
+            frequency: 2,
+            frequencyDefault: 2,
+            allowed() {
+                return tech.haveGunCheck("blast")
+            },
+            requires: "blast gun",
+            effect() {
+                tech.isCounterblast = true;
+            },
+            remove() {
+                tech.isCounterblast = false;
+            }
+        },
+        {
+            name: "BLEVE",
+            description: "increase <strong class='color-blast'>detonation</strong> <strong class='color-d'>damage</strong> by <strong>250%</strong><br><strong class='color-blast'>detonations</strong> cause you <strong class='color-harm'>harm</strong>",
+            isGunTech: true,
+            maxCount: 1,
+            count: 0,
+            frequency: 2,
+            frequencyDefault: 2,
+            allowed() {
+                return tech.haveGunCheck("blast") && tech.isQuake && !tech.isWhitePhosphorus
+            },
+            requires: "blast gun, quake, not white phosphorus",
+            effect() {
+                tech.isBLEVE = true;
+            },
+            remove() {
+                tech.isBLEVE = false;
+            }
+        },
+        {
+            name: "blast wave",
+            description: "increase <strong class='color-blast'>detonation</strong> <strong>stun chance</strong> by <strong>7%</strong><br>increase <strong class='color-blast'>detonation</strong> <strong>stun duration</strong> by <strong>0.3</strong> seconds",
+            isGunTech: true,
+            maxCount: 9,
+            count: 0,
+            frequency: 2,
+            frequencyDefault: 2,
+            allowed() {
+                return tech.haveGunCheck("blast")
+            },
+            requires: "blast gun",
+            effect() {
+                tech.isBlastWave += 1;
+            },
+            remove() {
+                tech.isBlastWave = 0;
+            }
+        },
+        {
+            name: "heavy shell",
+            link: `<a target="_blank" href='https://en.wikipedia.org/wiki/Shell_(projectile)' class="link">heavy shell</a>`,
+            description: "increase <strong class='color-blast'>blast</strong> <strong><em>delay</em></strong> after firing<br><strong class='color-d'>damage</strong> and <strong>stun chance</strong> by <strong>22%</strong>",
+            isGunTech: true,
+            maxCount: 1,
+            count: 0,
+            frequency: 2,
+            frequencyDefault: 2,
+            allowed() {
+                return tech.haveGunCheck("blast")
+            },
+            requires: "blast gun",
+            effect() {
+                tech.isHeavyShell = true;
+            },
+            remove() {
+                tech.isHeavyShell = false;
             }
         },
         //************************************************** 
@@ -10255,8 +10352,14 @@ const tech = {
     bulletSize: null,
     energySiphon: null,
     healthDrain: null,
+    isHeavyShell: null,
+    isBlastWave: 0,
+    isBLEVE: null,
+    isCounterblast: null,
+    isNitrogen17: null,
+    isWhitePhosphorus: null,
     isCarBomb: null,
-    isDeflagration: 0,
+    isDeflagration: null,
     isAcetylene: 1,
     isQuake: null,
     paretoAmmoScales: [],
@@ -10281,6 +10384,7 @@ const tech = {
 	isAperture: null,
 	isVerlet: null,
     isNitinol: null,
+    isTreasure: null,
     isLooting: null,
     isEnemyStomp: null,
     crouchAmmoCount: null,
