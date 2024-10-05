@@ -5525,6 +5525,7 @@ const b = {
             propagationRate: 20,
             waves: [], //used in longitudinal mode
             chooseFireMethod() { //set in simulation.startGame
+                tech.is360Longitudinal = false
                 this.waves = [];
                 if (tech.isLongitudinal) {
                     if (tech.is360Longitudinal) {
