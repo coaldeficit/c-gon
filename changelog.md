@@ -1,3 +1,15 @@
+# more blast guntech (2024/10/05)
+- blast tech changes:
+- - deflagration and acetylene now stack additively with eachother, not multiplicatively
+- - deflagration is no longer stackable and instead increases detonation radius by 50% but reduces damage by 30%
+- - acetylene range increase nerfed from 18.8% to 8.4%
+- - white phosphorus base explosion radius increased from 90 to 150
+- added 5 tech:
+- - nitrogen-17: makes detonations radioactive
+- - counterblast: detonations pull in mobs that are slightly outside of your detonation radius. suggested by garfunkel
+- - BLEVE: detonations do significantly more damage but cause harm. suggested by Pcat
+- - blast wave: stackable stun chance and duration increase
+- - heavy shell: increases blast firing delay but increases damage and stun chance by the same amount
 # infinitode (2024/10/04)
 - added a new gun: blast: creates a short range damaging, stunning shockwave centered on you
 - added 5 tech:

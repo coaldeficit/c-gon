@@ -260,7 +260,7 @@ const b = {
             ctx.beginPath()
             let gradient = ctx.createRadialGradient(shockwave.x, shockwave.y, (shockwave.targetRange*shockwave.progress)-40, shockwave.x, shockwave.y, (shockwave.targetRange*shockwave.progress)+40)
             gradient.addColorStop(0, "rgba(0,0,0,0)")
-            gradient.addColorStop(0.5, "rgba(68, 68, 68, "+Math.max(0, (1-shockwave.progress)/2)+")")
+            gradient.addColorStop(0.5, "rgba("+shockwave.color+","+Math.max(0, (1-shockwave.progress)/2)+")")
             gradient.addColorStop(1, "rgba(0,0,0,0)")
             ctx.strokeStyle = gradient
             ctx.arc(shockwave.x, shockwave.y, shockwave.targetRange*shockwave.progress, 0, 2*Math.PI)
@@ -3730,21 +3730,24 @@ const b = {
     },
     getDetonationRange() {
         let range = 500
+        range += 500*(0.084/0.188)*(tech.isAcetylene-1)
+        if (tech.isDeflagration) range += 250
         if (tech.isQuake && m.cycle > m.fireCDcycle + 120) range *= 2
-        range *= tech.isAcetylene
-        if (tech.isDeflagration) range *= 1+(0.4*tech.isDeflagration)
         return range
     },
     getDetonationDamage() {
         let dmg = 2
         dmg *= tech.isAcetylene
-        if (tech.isDeflagration) dmg *= 0.778**tech.isDeflagration
+        if (tech.isDeflagration) dmg *= 0.7
+        if (tech.isBLEVE) dmg *= 3.5
+        if (tech.isHeavyShell) dmg *= 1.22
         return dmg
     },
-    detonation(pos, range = b.getDetonationRange(), dmg = b.getDetonationDamage()) {
+    detonation(pos, range = b.getDetonationRange(), dmg = b.getDetonationDamage(), color = (tech.isNitrogen17 ? "0,102,119" : "68,68,68")) {
         b.guns[12].activeDetonationEffects.push({
             x: pos.x,
             y: pos.y,
+            color: color,
             targetRange: range,
             progress: 0,
         })
@@ -3782,15 +3785,24 @@ const b = {
                     knock = Vector.mult(Vector.normalise(sub), (-Math.sqrt(dmg) * mob[i].mass) * 0.02 * (mob[i].isBoss ? 0.2 : 1));
                     mob[i].force.x += knock.x;
                     mob[i].force.y += knock.y;
-                    if (Math.random() < 0.15 || (tech.isQuake && m.cycle > m.fireCDcycle + 120) || mob[i].isHealBossSpecifically) {
-                        mobs.statusStun(mob[i], 120)
-                        if (tech.isWhitePhosphorus) b.explosion(mob[i].position, 90)
+                    if (tech.isNitrogen17) mobs.statusDoT(mob[i], dmg*0.17142857142, 240)
+                    if (Math.random() < 0.15 + (tech.isBlastWave ? 0.07*tech.isBlastWave : 0) + (tech.isHeavyShell ? 0.22 : 0) || (tech.isQuake && m.cycle > m.fireCDcycle + 120) || mob[i].isHealBossSpecifically) {
+                        mobs.statusStun(mob[i], 120 + (tech.isBlastWave ? 18*tech.isBlastWave : 0))
+                        if (tech.isWhitePhosphorus) b.explosion(mob[i].position, 150)
                     }
                 } else if (!mob[i].seePlayer.recall && dist < range*2) {
-                    mob[i].locatePlayer();
+                    if (dist < range * 1.67 && tech.isCounterblast) {
+                        knock = Vector.mult(Vector.normalise(sub), (Math.sqrt(dmg) * mob[i].mass) * 0.02 * (mob[i].isBoss ? 0.2 : 1));
+                        mob[i].force.x += knock.x;
+                        mob[i].force.y += knock.y;
+                    }
+                    mob[i].foundPlayer();
                 }
             }
         }
+        sub = Vector.sub(pos, player.position);
+        dist = Vector.magnitude(sub);
+        if (dist < range && tech.isBLEVE) m.damage(0.1 * simulation.dmgScale)
     },
     needle(angle = m.angle) {
         const me = bullet.length;
@@ -7446,11 +7458,17 @@ const b = {
                     ctx.beginPath()
                     ctx.arc(player.position.x, player.position.y, b.getDetonationRange(), 0, 2*Math.PI)
                     ctx.stroke()
+                    if (tech.isCounterblast) {
+                        ctx.strokeStyle = "rgba(68, 68, 68, 0.1)" //color.map
+                        ctx.beginPath()
+                        ctx.arc(player.position.x, player.position.y, b.getDetonationRange()*1.67, 0, 2*Math.PI)
+                        ctx.stroke()
+                    }
                 }
             },
             fire() {
                 b.detonation(player.position, b.getDetonationRange(), b.getDetonationDamage())
-                m.fireCDcycle = m.cycle + Math.floor(15 * b.fireCDscale); // cool down
+                m.fireCDcycle = m.cycle + Math.floor(15 * b.fireCDscale * (tech.isHeavyShell ? 1.22 : 1)); // cool down
             }
         },
     ],
