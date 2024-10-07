@@ -293,7 +293,7 @@ const level = {
             }
             if (simulation.mapSettings.intermission == 'modernonly' || simulation.mapSettings.intermission == 'modern') {
                 if (!bannedLevels.includes('factory')) intermissionLevelsA.push('factory')
-                if (!bannedLevels.includes('gravityInterferometer')) intermissionLevelsA.push('gravityInterferometer')
+                if (!bannedLevels.includes('gravityInterferometer') && simulation.mapSettings.gimmick) intermissionLevelsA.push('gravityInterferometer')
             }
             if (intermissionLevelsA.length != 0) level.levels.splice(Math.floor(Math.seededRandom((level.levels.length) * 0.6, level.levels.length)), 0, intermissionLevelsA[Math.floor(Math.random()*intermissionLevelsA.length)]);level.levels.splice(0, 1);//add level to the back half of the randomized levels list
             if (simulation.mapSettings.intermission != 'none' && simulation.mapSettings.intermission != 'modernonly' && !bannedLevels.includes('reactor')) {level.levels.splice(Math.floor(Math.seededRandom((level.levels.length) * 0.6, level.levels.length)), 0, "reactor");level.levels.splice(0, 1);} //add level to the back half of the randomized levels list
