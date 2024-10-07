@@ -3,9 +3,7 @@
 - - shows up as a modern main map
 - ported (most) testChamber2 changes:
 - - renamed to gravityInterferometer
-- - now can replace reservoir or factory in runs if intermission maps are set to modern or modern only
-- - no longer in gimmick maps
-- - reminder that because i actually care about the user experience, you can blacklist maps like reservoir, factory, reactor and most importantly gravityInterferometer if you find them annoying and it actually works. the literal only maps you cant blacklist are intro and final
+- - now can replace reservoir or factory in runs if intermission maps are set to modern or modern only and gimmick maps are enabled
 # porting L (2024/10/05)
 - ported mechatronics, exciton, band gap, polariton, collider, cascading failure, topological defect and anyon tech
 - increased frequency of looting subtechs

@@ -3942,10 +3942,10 @@ const b = {
     // **************************************************************************************************
     // **************************************************************************************************
     totalBots() {
-        return tech.dynamoBotCount + tech.foamBotCount + tech.nailBotCount + tech.laserBotCount + tech.boomBotCount + tech.orbitBotCount + tech.plasmaBotCount + tech.missileBotCount
+        return tech.dynamoBotCount + tech.foamBotCount + tech.nailBotCount + tech.laserBotCount + tech.boomBotCount + tech.orbitBotCount + tech.plasmaBotCount + tech.missileBotCount + tech.soundBotCount
     },
     hasBotUpgrade() {
-        return tech.isNailBotUpgrade + tech.isFoamBotUpgrade + tech.isBoomBotUpgrade + tech.isLaserBotUpgrade + tech.isOrbitBotUpgrade + tech.isDynamoBotUpgrade
+        return tech.isNailBotUpgrade + tech.isFoamBotUpgrade + tech.isBoomBotUpgrade + tech.isLaserBotUpgrade + tech.isOrbitBotUpgrade + tech.isDynamoBotUpgrade + tech.isSoundBotUpgrade
     },
     convertBotsTo(type) { //type can be a string like "dynamoBotCount"
         const totalPermanentBots = b.totalBots()
@@ -4004,6 +4004,10 @@ const b = {
             tech.dynamoBotCount--
             return
         }
+        if (tech.soundBotCount > 1) {
+            tech.soundBotCount--
+            return
+        }
         if (tech.missileBotCount > 1) {
             tech.missileBotCount--
             return
@@ -4021,6 +4025,7 @@ const b = {
         tech.boomBotCount = 0
         tech.orbitBotCount = 0
         tech.missileBotCount = 0
+        tech.soundBotCount = 0
     },
     respawnBots() {
         for (let i = 0; i < tech.dynamoBotCount; i++) b.dynamoBot({ x: player.position.x + 50 * (Math.random() - 0.5), y: player.position.y + 50 * (Math.random() - 0.5) }, false)
@@ -4031,6 +4036,7 @@ const b = {
         for (let i = 0; i < tech.orbitBotCount; i++) b.orbitBot({ x: player.position.x + 50 * (Math.random() - 0.5), y: player.position.y + 50 * (Math.random() - 0.5) }, false)
         for (let i = 0; i < tech.plasmaBotCount; i++) b.plasmaBot({ x: player.position.x + 50 * (Math.random() - 0.5), y: player.position.y + 50 * (Math.random() - 0.5) }, false)
         for (let i = 0; i < tech.missileBotCount; i++) b.missileBot({ x: player.position.x + 50 * (Math.random() - 0.5), y: player.position.y + 50 * (Math.random() - 0.5) }, false)
+        for (let i = 0; i < tech.soundBotCount; i++) b.soundBot({ x: player.position.x + 50 * (Math.random() - 0.5), y: player.position.y + 50 * (Math.random() - 0.5) }, false)
         if (tech.isIntangible && m.isCloak) {
             for (let i = 0; i < bullet.length; i++) {
                 if (bullet[i].botType) bullet[i].collisionFilter.mask = cat.map | cat.bullet | cat.mobBullet | cat.mobShield
@@ -4057,9 +4063,15 @@ const b = {
             } else if (tech.isDynamoBotUpgrade) {
                 b.dynamoBot(where, isKeep)
                 if (isKeep) tech.dynamoBotCount++;
-            } else if (Math.random() < 0.166 && isLaser) { //random
+            } else if (tech.isSoundBotUpgrade) {
+                b.soundBot(where, isKeep)
+                if (isKeep) tech.soundBotCount++;
+            } else if (Math.random() < 0.142 && isLaser) { //random
                 b.laserBot(where, isKeep)
                 if (isKeep) tech.laserBotCount++;
+            } else if (Math.random() < 0.166) { //random
+                b.soundBot(where, isKeep)
+                if (isKeep) tech.soundBotCount++;
             } else if (Math.random() < 0.2) {
                 b.dynamoBot(where, isKeep)
                 if (isKeep) tech.dynamoBotCount++;
@@ -4077,10 +4089,13 @@ const b = {
                 if (isKeep) tech.boomBotCount++;
             }
         } else { //else don't match scrap bot to upgrade
-            if (Math.random() < 0.166 && isLaser) { //random
+            if (Math.random() < 0.142 && isLaser) { //random
                 b.laserBot(where, isKeep)
                 if (isKeep) tech.laserBotCount++;
-            } else if (Math.random() < 0.2) {
+            } else if (Math.random() < 0.166) {
+                b.soundBot(where, isKeep)
+                if (isKeep) tech.soundBotCount++;
+            }  else if (Math.random() < 0.2) {
                 b.dynamoBot(where, isKeep)
                 if (isKeep) tech.dynamoBotCount++;
             } else if (Math.random() < 0.25) {
@@ -4888,6 +4903,171 @@ const b = {
                 index++
             }
         }
+    },
+    soundBot(position = { x: player.position.x + 50 * (Math.random() - 0.5), y: player.position.y + 50 * (Math.random() - 0.5) }, isKeep = true) {
+        const me = bullet.length;
+        const dir = m.angle;
+        bullet[me] = Bodies.rectangle(position.x, position.y, 12, 30, {
+            isUpgraded: tech.isSoundBotUpgrade,
+            botType: "sound",
+            angle: dir,
+            friction: 0,
+            frictionStatic: 0,
+            frictionAir: 0.05,
+            restitution: 0.6 * (1 + 0.5 * Math.random()),
+            dmg: 0, // 0.14   //damage done in addition to the damage from momentum
+            minDmgSpeed: 2,
+            lookFrequency: 17 + Math.floor(7 * Math.random()) - 3 * tech.isSoundBotUpgrade,
+            cd: 0,
+            fireCount: 0,
+            fireLimit: 5 - isKeep,
+            delay: Math.floor(140),// + 30 - 20 * tech.isFoamBotUpgrade,//20 + Math.floor(85 * b.fireCDscale) - 20 * tech.isFoamBotUpgrade,
+            acceleration: (isKeep ? 0.005 : 0.001) * (1 + 0.5 * Math.random()),
+            range: 60 * (1 + 0.3 * Math.random()) + 3 * b.totalBots() + !isKeep * 100, //how far from the player the bot will move
+            endCycle: Infinity,
+            classType: "bullet",
+            collisionFilter: {
+                category: cat.bullet,
+                mask: b.totalBots() < 50 ? cat.map | cat.body | cat.bullet | cat.mob | cat.mobBullet | cat.mobShield : cat.map | cat.body | cat.mob | cat.mobBullet | cat.mobShield //if over 50 bots, they no longer collide with each other
+            },
+            beforeDmg() { },
+            onEnd() { },
+            fireTarget: { x: 0, y: 0 },
+            waves: [],
+            phononWaveCD: 0,
+            addWave(where, angle) {
+                const halfArc = 0.2 * (tech.isBulletTeleport ? 0.66 + (Math.random() - 0.5) : 1) + 0.04 * tech.isSoundBotUpgrade //6.28 is a full circle, but these arcs needs to stay small because we are using small angle linear approximation, for collisions
+                this.waves.push({
+                    position: where,
+                    angle: angle - halfArc, //used in drawing ctx.arc
+                    unit1: { x: Math.cos(angle - halfArc), y: Math.sin(angle - halfArc) }, //used for collision
+                    unit2: { x: Math.cos(angle + halfArc), y: Math.sin(angle + halfArc) }, //used for collision
+                    arc: halfArc * 2,
+                    radius: 25,
+                    resonanceCount: 0,
+                    dmg: (tech.isUpgraded ? 9 : 1.5) * m.dmgScale * tech.wavePacketDamage * tech.waveBeamDamage * (tech.isBulletTeleport ? 1.5 : 1),
+                })
+            },
+            fire() {
+                if (!(simulation.cycle % 6)) {
+                    this.fireCount++
+                    if (this.fireCount > this.fireLimit) {
+                        this.fireCount = 0
+                        this.cd = simulation.cycle + this.delay;
+                    }
+                    this.addWave({ x: this.position.x, y: this.position.y }, Math.atan2(this.fireTarget.y - this.position.y, this.fireTarget.x - this.position.x) + tech.isBulletTeleport * 0.3 * (Math.random() - 0.5)) //add wave to waves array
+                    //face target
+                    Matter.Body.setAngle(this, Vector.angle(this.position, this.fireTarget));
+                }
+            },
+            do() {
+                if (this.fireCount === 0) { //passive mode: look for targets and following player
+                    const distanceToPlayer = Vector.magnitude(Vector.sub(this.position, m.pos))
+                    if (distanceToPlayer > this.range) { //if far away move towards player
+                        this.force = Vector.mult(Vector.normalise(Vector.sub(m.pos, this.position)), this.mass * this.acceleration)
+                    } else { //close to player
+                        Matter.Body.setVelocity(this, Vector.add(Vector.mult(this.velocity, 0.90), Vector.mult(player.velocity, 0.17))); //add player's velocity
+                    }
+                    if (this.cd < simulation.cycle && !m.isCloak && !(simulation.cycle % this.lookFrequency)) {
+                        for (let i = 0, len = mob.length; i < len; i++) {
+                            const dist2 = Vector.magnitudeSquared(Vector.sub(this.position, mob[i].position));
+                            if (dist2 < 1300000 && !mob[i].isBadTarget && (Matter.Query.ray(map, this.position, mob[i].position).length === 0 || dist2 < 300000) && !mob[i].isInvulnerable) {
+                                this.fireTarget = Vector.add(mob[i].position, Vector.mult(mob[i].velocity, Math.sqrt(dist2) / 60)) //set target to where the mob will be in 1 second
+                                this.fire()
+                                break;
+                            }
+                        }
+                    }
+                } else { //fire mode: quickly fire at targets and doesn't follow player
+                    this.fire()
+                }
+                if (!m.isBodiesAsleep) { //update current waves
+                    ctx.strokeStyle = "rgba(0,0,0,0.6)" //"000";
+                    ctx.lineWidth = 2 * tech.wavePacketDamage
+                    ctx.beginPath();
+                    const end = 1200 * Math.sqrt(tech.bulletsLastLonger)
+                    //this does less damage than the player phonon waves  2.3 -> 2
+                    for (let i = this.waves.length - 1; i > -1; i--) {
+                        const v1 = Vector.add(this.waves[i].position, Vector.mult(this.waves[i].unit1, this.waves[i].radius))
+                        const v2 = Vector.add(this.waves[i].position, Vector.mult(this.waves[i].unit2, this.waves[i].radius))
+                        //draw wave
+                        ctx.moveTo(v1.x, v1.y)
+                        ctx.arc(this.waves[i].position.x, this.waves[i].position.y, this.waves[i].radius, this.waves[i].angle, this.waves[i].angle + this.waves[i].arc);
+                        //using small angle linear approximation of circle arc, this will not work if the arc gets large   // https://stackoverflow.com/questions/13652518/efficiently-find-points-inside-a-circle-sector
+                        let hits = Matter.Query.ray(mob, v1, v2, 50)
+                        for (let j = 0; j < hits.length; j++) {
+                            const who = hits[j].body
+                            if (!who.isShielded) {
+                                who.force.x += 0.01 * (Math.random() - 0.5) * who.mass
+                                who.force.y += 0.01 * (Math.random() - 0.5) * who.mass
+                                Matter.Body.setVelocity(who, { x: who.velocity.x * 0.98, y: who.velocity.y * 0.98 });
+                                let vertices = who.vertices;
+                                const vibe = 50 + who.radius * 0.15
+                                ctx.moveTo(vertices[0].x + vibe * (Math.random() - 0.5), vertices[0].y + vibe * (Math.random() - 0.5));
+                                for (let j = 1; j < vertices.length; j++) ctx.lineTo(vertices[j].x + vibe * (Math.random() - 0.5), vertices[j].y + vibe * (Math.random() - 0.5));
+                                ctx.lineTo(vertices[0].x + vibe * (Math.random() - 0.5), vertices[0].y + vibe * (Math.random() - 0.5));
+                                who.locatePlayer();
+                                who.damage(this.waves[i].dmg / Math.pow(who.radius, 0.33));
+
+
+                                if (tech.isPhononWave && this.phononWaveCD < m.cycle) {
+                                    this.phononWaveCD = m.cycle + 10 * (1 + this.waves[i].resonanceCount)
+                                    let closestMob, dist
+                                    let range = end - 30 * this.waves[i].resonanceCount
+                                    for (let i = 0, len = mob.length; i < len; i++) {
+                                        if (who !== mob[i] && !mob[i].isBadTarget && !mob[i].isInvulnerable) {
+                                            dist = Vector.magnitude(Vector.sub(who.position, mob[i].position));
+                                            if (dist < range) {
+                                                closestMob = mob[i]
+                                                range = dist
+                                            }
+                                        }
+                                    }
+                                    if (closestMob) { //add wave to waves array
+                                        this.addWave(who.position, Math.atan2(closestMob.position.y - who.position.y, closestMob.position.x - who.position.x) + tech.isBulletTeleport * 0.3 * (Math.random() - 0.5))
+                                    } else {
+                                        this.addWave(who.position, Math.random() * Math.PI)
+                                    }
+                                    this.waves[this.waves.length - 1].resonanceCount = this.waves[i].resonanceCount + 1
+                                    break
+                                }
+                            }
+                        }
+
+                        hits = Matter.Query.ray(body, v1, v2, 50) //Matter.Query.ray(bodies, startPoint, endPoint, [rayWidth])
+                        for (let j = 0, len = Math.min(30, hits.length); j < len; j++) {
+                            const who = hits[j].body
+                            //make them shake around
+                            who.force.x += 0.005 * (Math.random() - 0.5) * who.mass
+                            who.force.y += (0.005 * (Math.random() - 0.5) - simulation.g * 0.1) * who.mass //remove force of gravity
+                            let vertices = who.vertices;
+                            const vibe = 25
+                            ctx.moveTo(vertices[0].x + vibe * (Math.random() - 0.5), vertices[0].y + vibe * (Math.random() - 0.5));
+                            for (let j = 1; j < vertices.length; j++) {
+                                ctx.lineTo(vertices[j].x + vibe * (Math.random() - 0.5), vertices[j].y + vibe * (Math.random() - 0.5));
+                            }
+                            ctx.lineTo(vertices[0].x + vibe * (Math.random() - 0.5), vertices[0].y + vibe * (Math.random() - 0.5));
+
+                            if (tech.isPhononBlock && !who.isNotHoldable && who.speed < 5 && who.angularSpeed < 0.1) {
+                                if (Math.random() < 0.5) b.targetedBlock(who, 50 - Math.min(25, who.mass * 3)) //    targetedBlock(who, speed = 50 - Math.min(20, who.mass * 2), range = 1600) {
+                                // Matter.Body.setAngularVelocity(who, (0.25 + 0.12 * Math.random()) * (Math.random() < 0.5 ? -1 : 1));
+                                who.torque += who.inertia * 0.001 * (Math.random() - 0.5)
+                            }
+                        }
+
+                        this.waves[i].radius += tech.waveBeamSpeed * 2
+                        if (this.waves[i].radius > end - 30 * this.waves[i].resonanceCount) {
+                            this.waves.splice(i, 1) //end
+                        }
+                    }
+                    ctx.stroke();
+                }
+
+
+
+            }
+        })
+        Composite.add(engine.world, bullet[me]); //add bullet to world
     },
     // **************************************************************************************************
     // **************************************************************************************************
