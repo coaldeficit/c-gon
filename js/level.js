@@ -7626,7 +7626,13 @@ const level = {
                                 buildMapOutline()
                                 buildNormalMap(); //rewrite flipped version of map
                                 simulation.draw.setPaths() //update map graphics
-                                level.addToWorld()
+                                
+                                for (let i = 0; i < map.length; i++) {
+                                  map[i].collisionFilter.category = cat.map;
+                                  map[i].collisionFilter.mask = cat.player | cat.map | cat.body | cat.bullet | cat.powerUp | cat.mob | cat.mobBullet;
+                                  Matter.Body.setStatic(map[i], true); //make static
+                                  Composite.add(engine.world, map[i]); //add to world
+                                }
                             }
                             simulation.unFlipCameraVertical(flipAnimationCycles, normalMap)
                         } else {
@@ -7636,7 +7642,13 @@ const level = {
                                 buildMapOutline()
                                 buildVerticalFLippedMap(); //rewrite flipped version of map
                                 simulation.draw.setPaths() //update map graphics
-                                level.addToWorld()
+                                
+                                for (let i = 0; i < map.length; i++) {
+                                  map[i].collisionFilter.category = cat.map;
+                                  map[i].collisionFilter.mask = cat.player | cat.map | cat.body | cat.bullet | cat.powerUp | cat.mob | cat.mobBullet;
+                                  Matter.Body.setStatic(map[i], true); //make static
+                                  Composite.add(engine.world, map[i]); //add to world
+                                }
                             }
                             simulation.flipCameraVertical(flipAnimationCycles, flipMap)
                         }
