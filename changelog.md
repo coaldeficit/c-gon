@@ -9,7 +9,7 @@
 - gauntlet now always spawns a boss when its not the pre-final level
 - descent changes:
 - - snakeBoss and beetleBoss no longer spawn on it
-- - the slime drains after the bosses are defeates
+- - the slime drains after the bosses are defeated
 # porting M (2024/10/07)
 - ported gravityObservatory
 - - shows up as a modern main map
