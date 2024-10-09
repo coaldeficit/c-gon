@@ -2902,6 +2902,181 @@ const level = {
             }
         ]
         upDownOptions = [ //extra tall vertical section 3000x3000  //this is where the level boss is
+            (x = offset.x, y = offset.y) => { //mover
+                const toggle = level.toggle(x + 950, y + 0, false, true) //    toggle(x, y, isOn = false, isLockOn = false) {
+                toggle.isAddedElements = false
+                doCustomTopLayer.push(
+                    () => {
+                        if (true) {
+                            toggle.query();
+                            if (toggle.isOn && !toggle.isAddedElements) {
+                                toggle.isAddedElements = true
+                                const mapStartingLength = map.length //track this so you know how many you added when running addMapToLevelInProgress
+                                addMapToLevelInProgress = (who) => { //adds new map elements to the level while the level is already running  //don't forget to run simulation.draw.setPaths() after you all the the elements so they show up visually
+                                    who.collisionFilter.category = cat.map;
+                                    who.collisionFilter.mask = cat.player | cat.map | cat.body | cat.bullet | cat.powerUp | cat.mob | cat.mobBullet;
+                                    Matter.Body.setStatic(who, true); //make static
+                                    Composite.add(engine.world, who); //add to world
+                                }
+                                //map elements go here
+                                //box around portals
+                                spawn.mapRect(x + -50, y + -2700, 150, 110);
+                                spawn.mapRect(x + -50, y + -2440, 150, 25);
+                                spawn.mapRect(x + 1900, y + -2715, 150, 550);
+                                spawn.mapRect(x + 1900, y + -2015, 150, 50);
+                                spawn.mapRect(x + 1900, y + -1115, 150, 150);
+                                spawn.mapRect(x + 1900, y + -815, 150, 50);
+                                spawn.mapRect(x + -50, y + -340, 150, 50);
+                                // spawn.mapRect(x + -50, y + -640, 150, 150);
+                                spawn.mapRect(x + 1975, y - 1015, 50, 225);
+                                spawn.mapRect(x + 1975, y - 2190, 50, 200);
+                                spawn.mapRect(x + -25, y - 2615, 50, 200);
+                                spawn.mapRect(x + -25, y - 515, 75, 200);
+
+                                //ledge to get to upper left door
+                                // spawn.mapRect(x + -50, y - 1400, 100, 25);
+                                spawn.mapRect(x + -25, y - 1075, 250, 25);
+                                spawn.mapRect(x + -50, y - 1075, 150, 590);
+
+
+                                const rampSpeed = 8 //+ Math.floor(4 * Math.random())
+                                const mover4 = level.mover(x, y + -2425, 1000, 50, rampSpeed)
+                                const mover3 = level.mover(x + 1000, y + -2000, 1000, 50, rampSpeed)
+                                const mover2 = level.mover(x + 1000, y + -800, 1000, 50, -rampSpeed)
+                                const mover1 = level.mover(x, y + -325, 1000, 50, -rampSpeed)
+                                const portal1 = level.portal({
+                                    x: x + 125,
+                                    y: y - 415
+                                }, 2 * Math.PI, { //right
+                                    x: x + 125,
+                                    y: y - 2515
+                                }, 2 * Math.PI) //right
+
+                                const portal2 = level.portal({
+                                    x: x + 1875,
+                                    y: y - 890
+                                }, Math.PI, { //left
+                                    x: x + 1875,
+                                    y: y - 2090
+                                }, Math.PI) //left
+
+                                doCustom.push(() => {
+                                    portal1[2].query()
+                                    portal1[3].query()
+                                    portal2[2].query()
+                                    portal2[3].query()
+                                    mover1.push();
+                                    mover2.push();
+                                    mover3.push();
+                                    mover4.push();
+                                })
+                                doCustomTopLayer.push(() => {
+                                    portal1[0].draw();
+                                    portal1[1].draw();
+                                    portal1[2].draw();
+                                    portal1[3].draw();
+                                    portal2[0].draw();
+                                    portal2[1].draw();
+                                    portal2[2].draw();
+                                    portal2[3].draw();
+                                    mover1.draw();
+                                    mover2.draw();
+                                    mover3.draw();
+                                    mover4.draw();
+                                })
+                                for (let i = 0, numberOfMapElementsAdded = map.length - mapStartingLength; i < numberOfMapElementsAdded; i++) addMapToLevelInProgress(map[map.length - 1 - i])
+                                simulation.draw.setPaths() //update map graphics
+
+                                //blocks that ride the movers and portals
+                                spawn.bodyRect(x + 175, y + -2525, 50, 75);
+                                body[body.length-1].collisionFilter.category = cat.body;
+                                body[body.length-1].collisionFilter.mask = cat.player | cat.map | cat.body | cat.bullet | cat.mob | cat.mobBullet
+                                body[body.length-1].classType = "body";
+                                Composite.add(engine.world, body[body.length-1]); //add to world
+                                spawn.bodyRect(x + 300, y + -2525, 50, 50);
+                                body[body.length-1].collisionFilter.category = cat.body;
+                                body[body.length-1].collisionFilter.mask = cat.player | cat.map | cat.body | cat.bullet | cat.mob | cat.mobBullet
+                                body[body.length-1].classType = "body";
+                                Composite.add(engine.world, body[body.length-1]); //add to world
+                                spawn.bodyRect(x + 500, y + -2525, 80, 75);
+                                body[body.length-1].collisionFilter.category = cat.body;
+                                body[body.length-1].collisionFilter.mask = cat.player | cat.map | cat.body | cat.bullet | cat.mob | cat.mobBullet
+                                body[body.length-1].classType = "body";
+                                Composite.add(engine.world, body[body.length-1]); //add to world
+
+                                //mobs go here
+                                spawn.randomMob(x + 175, y + -125, 0);
+                                spawn.randomMob(x + 1775, y + -125, 0);
+                                // spawn.randomMob(x + 1750, y + -525, 0);
+                                spawn.randomMob(x + 225, y + -1000, 0);
+                                spawn.randomMob(x + 1675, y + -1075, 0);
+                                // spawn.randomMob(x + 1575, y + -2450, 0);
+                                spawn.randomMob(x + 425, y + -1850, 0);
+                                spawn.randomMob(x + 1425, y + -1200, 0);
+                                spawn.randomMob(x + 350, y + -1000, 0);
+                                spawn.randomLevelBoss(x + 475, y + -1475);
+                                spawn.secondaryBossChance(x + 1425, y + -1425);
+                            }
+                        }
+                    }
+                )
+            },
+            (x = offset.x, y = offset.y) => { //hopBoss2
+                const toggle = level.toggle(x + 950, y + 0, false, true) //    toggle(x, y, isOn = false, isLockOn = false) {
+                toggle.isAddedElements = false
+                // spawn.mapVertex(x + 5, y + -1318, "0 0  0 -250  125 -250"); //left ledges
+                // spawn.mapVertex(x + 1995, y + -1318, "0 0  0 -250  -125 -250"); // right ledges
+                doCustomTopLayer.push(
+                    () => {
+                        if (true) {
+                            toggle.query();
+                            if (toggle.isOn && !toggle.isAddedElements) {
+                                toggle.isAddedElements = true
+                                const mapStartingLength = map.length //track this so you know how many you added when running addMapToLevelInProgress
+                                addMapToLevelInProgress = (who) => { //adds new map elements to the level while the level is already running  //don't forget to run simulation.draw.setPaths() after you all the the elements so they show up visually
+                                    who.collisionFilter.category = cat.map;
+                                    who.collisionFilter.mask = cat.player | cat.map | cat.body | cat.bullet | cat.powerUp | cat.mob | cat.mobBullet;
+                                    Matter.Body.setStatic(who, true); //make static
+                                    Composite.add(engine.world, who); //add to world
+                                }
+                                //map elements go here
+                                spawn.mapRect(x + 150, y + -1400, 750, 50);
+                                spawn.mapRect(x + 1100, y + -1400, 750, 50);
+                                spawn.mapRect(x + 1825, y + -1050, 200, 50);
+                                spawn.mapRect(x + -25, y + -1050, 200, 50);
+                                spawn.mapRect(x + 1825, y + -325, 200, 50);
+                                spawn.mapRect(x + -25, y + -325, 200, 50);
+                                spawn.mapRect(x + 275, y + -700, 525, 50);
+                                spawn.mapRect(x + 1200, y + -700, 525, 50);
+                                spawn.mapRect(x + -25, y + -1400, 125, 1125); //side walls
+                                spawn.mapRect(x + 1900, y + -1400, 150, 1125);
+                                spawn.mapRect(x + 1900, y + -2700, 125, 1000);
+                                spawn.mapRect(x + -50, y + -2725, 150, 1025);
+                                spawn.mapRect(x + -25, y + -1750, 450, 50);
+                                spawn.mapRect(x + 1575, y + -1750, 450, 50);
+                                spawn.mapRect(x + 525, y + -1750, 950, 50);
+                                for (let i = 0, numberOfMapElementsAdded = map.length - mapStartingLength; i < numberOfMapElementsAdded; i++) addMapToLevelInProgress(map[map.length - 1 - i])
+                                simulation.draw.setPaths() //update map graphics
+                                //mobs go here
+                                powerUps.directSpawn(x + 50, y - 1525, "ammo");
+                                powerUps.directSpawn(x + 1950, y - 1525, "ammo");
+                                powerUps.directSpawn(x + 1900, y - 1525, "ammo");
+                                spawn.hopMotherBoss(x + 800, y + -2200)
+                                for (let i = 0; i < 4; ++i) spawn.hopBullet(x + 150 + 750 * Math.random(), y + -1600)
+                                for (let i = 0; i < 4; ++i) spawn.hopBullet(x + 1100 + 750 * Math.random(), y + -1600)
+                                spawn.hopper(x + 1550, y + -775);
+                                spawn.hopper(x + 500, y + -775);
+                                spawn.hopper(x + 500, y + -2200);
+                                spawn.hopper(x + 1100, y + -2200);
+                                spawn.hopMother(x + 1400, y + -775);
+                                spawn.hopMother(x + 550, y + -775);
+                                spawn.hopMother(x + 525, y + -1475);
+                                spawn.hopMother(x + 1550, y + -1500);
+                            }
+                        }
+                    }
+                )
+            },
             // (x = offset.x, y = offset.y) => {
             //     // spawn.mapVertex(x + 5, y + -1318, "0 0  0 -250  125 -250"); //left ledges
             //     // spawn.mapVertex(x + 1995, y + -1318, "0 0  0 -250  -125 -250"); // right ledges
@@ -3823,7 +3998,12 @@ const level = {
             if (simulation.difficulty * Math.random() > 7 * i) spawn.randomGroup(5000 + 500 * (Math.random() - 0.5), -800 + 200 * (Math.random() - 0.5), Infinity);
         }
         powerUps.addResearchToLevel() //needs to run after mobs are spawned
-        spawn.secondaryBossChance(4125, -350)
+        if (simulation.mapSettings.prefinal == 'gauntlet') {
+            spawn.secondaryBossChance(4125, -350)
+        } else if (simulation.difficulty > 1) {
+            spawn.randomLevelBoss(5750, -600);
+            spawn.secondaryBossChance(4125, -350)
+        }
 
         if (simulation.isHorizontalFlipped) { //flip the map horizontally
             level.flipHorizontal(); //only flips map,body,mob,powerUp,cons,consBB, exit
@@ -6204,63 +6384,23 @@ const level = {
                     spawn.mapRect(x + -25, -2750, 350, 269);
                     spawn.mapRect(x + -950, -3125, 975, 75);
                     spawn.mapRect(x + 325, -3025, 900, 75);
+                    let rememberedBodyLength = body.length
                     spawn.bodyRect(x + -125, -1325, 225, 125, 0.3);
-                    if (body[body.length-1] !== m.holdingTarget && !body[body.length-1].isNoSetCollision) {
-                      body[body.length-1].collisionFilter.category = cat.body;
-                      body[body.length-1].collisionFilter.mask = cat.player | cat.map | cat.body | cat.bullet | cat.mob | cat.mobBullet
-                    }
-                    body[body.length-1].classType = "body";
-                    Composite.add(engine.world, body[body.length-1]); //add to world
                     spawn.bodyRect(x + -225, -2100, 300, 50, 0.3);
-                    if (body[body.length-1] !== m.holdingTarget && !body[body.length-1].isNoSetCollision) {
-                      body[body.length-1].collisionFilter.category = cat.body;
-                      body[body.length-1].collisionFilter.mask = cat.player | cat.map | cat.body | cat.bullet | cat.mob | cat.mobBullet
-                    }
-                    body[body.length-1].classType = "body";
-                    Composite.add(engine.world, body[body.length-1]); //add to world
                     spawn.bodyRect(x + -225, -2575, 100, 200, 0.3);
-                    if (body[body.length-1] !== m.holdingTarget && !body[body.length-1].isNoSetCollision) {
-                      body[body.length-1].collisionFilter.category = cat.body;
-                      body[body.length-1].collisionFilter.mask = cat.player | cat.map | cat.body | cat.bullet | cat.mob | cat.mobBullet
-                    }
-                    body[body.length-1].classType = "body";
-                    Composite.add(engine.world, body[body.length-1]); //add to world
                     spawn.bodyRect(x + 850, -2575, 150, 200, 0.3);
-                    if (body[body.length-1] !== m.holdingTarget && !body[body.length-1].isNoSetCollision) {
-                      body[body.length-1].collisionFilter.category = cat.body;
-                      body[body.length-1].collisionFilter.mask = cat.player | cat.map | cat.body | cat.bullet | cat.mob | cat.mobBullet
-                    }
-                    body[body.length-1].classType = "body";
-                    Composite.add(engine.world, body[body.length-1]); //add to world
                     spawn.bodyRect(x + 850, -1875, 75, 100, 0.3);
-                    if (body[body.length-1] !== m.holdingTarget && !body[body.length-1].isNoSetCollision) {
-                      body[body.length-1].collisionFilter.category = cat.body;
-                      body[body.length-1].collisionFilter.mask = cat.player | cat.map | cat.body | cat.bullet | cat.mob | cat.mobBullet
-                    }
-                    body[body.length-1].classType = "body";
-                    Composite.add(engine.world, body[body.length-1]); //add to world
                     spawn.bodyRect(x + 500, -725, 175, 150, 0.3);
-                    if (body[body.length-1] !== m.holdingTarget && !body[body.length-1].isNoSetCollision) {
-                      body[body.length-1].collisionFilter.category = cat.body;
-                      body[body.length-1].collisionFilter.mask = cat.player | cat.map | cat.body | cat.bullet | cat.mob | cat.mobBullet
-                    }
-                    body[body.length-1].classType = "body";
-                    Composite.add(engine.world, body[body.length-1]); //add to world
                     spawn.bodyRect(x + -925, -2250, 100, 150, 0.3);
-                    if (body[body.length-1] !== m.holdingTarget && !body[body.length-1].isNoSetCollision) {
-                      body[body.length-1].collisionFilter.category = cat.body;
-                      body[body.length-1].collisionFilter.mask = cat.player | cat.map | cat.body | cat.bullet | cat.mob | cat.mobBullet
-                    }
-                    body[body.length-1].classType = "body";
-                    Composite.add(engine.world, body[body.length-1]); //add to world
                     spawn.bodyRect(x + -1050, -950, 150, 125, 0.3);
-                    if (body[body.length-1] !== m.holdingTarget && !body[body.length-1].isNoSetCollision) {
-                      body[body.length-1].collisionFilter.category = cat.body;
-                      body[body.length-1].collisionFilter.mask = cat.player | cat.map | cat.body | cat.bullet | cat.mob | cat.mobBullet
+                    for (let i=0;i<body.length-rememberedBodyLength;i++) {
+                      if (body[body.length-(i+1)] !== m.holdingTarget && !body[body.length-1].isNoSetCollision) {
+                        body[body.length-(i+1)].collisionFilter.category = cat.body;
+                        body[body.length-(i+1)].collisionFilter.mask = cat.player | cat.map | cat.body | cat.bullet | cat.mob | cat.mobBullet
+                      }
+                      body[body.length-(i+1)].classType = "body";
+                      Composite.add(engine.world, body[body.length-1]); //add to world
                     }
-                    body[body.length-1].classType = "body";
-                    Composite.add(engine.world, body[body.length-1]); //add to world
-
                     const mobPlacement = [
                         () => { //1st floor
                             spawn.randomMob(x + -775, -725, 0);
@@ -27962,7 +28102,7 @@ const level = {
 	    array.splice(index, 1); // 2nd parameter means remove one item only
 	  }
 	}
-	let unacceptableBosses = ['pulsarBoss','shooterBoss','historyBoss','spiderBoss','cellBossCulture','growBossCulture','spawnerBossCulture','dragonFlyBoss','snakeSpitBoss','streamBoss','sneakBoss','springBoss','mantisBoss','launcherBoss']
+	let unacceptableBosses = ['pulsarBoss','shooterBoss','historyBoss','spiderBoss','cellBossCulture','growBossCulture','spawnerBossCulture','dragonFlyBoss','snakeSpitBoss','streamBoss','sneakBoss','springBoss','mantisBoss','launcherBoss','beetleBoss','snakeBoss']
 	for (let boss of unacceptableBosses) {removeFromArray(acceptableBosses, boss)}
 	spawn.randomLevelBoss(10000, -10000, acceptableBosses) // spawn boss out of bounds as it will be teleported into the arena later
 	spawn.secondaryBossChance(10000, -10500, acceptableBosses) // spawn boss out of bounds as it will be teleported into the arena later
@@ -28136,6 +28276,7 @@ const level = {
           ctx.beginPath();
           ctx.arc(balance.center.x, balance.center.y, 9, 0, 2 * Math.PI);
 	  ctx.fill()
+      if (isBossDead) bossRoomSlime.level(false, 3)
 	  bossRoomSlime.query();
 	};
     },
