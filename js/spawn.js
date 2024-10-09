@@ -1536,6 +1536,38 @@ const spawn = {
             }
         };
     },
+    hopMotherBoss(x, y, radius = 120) {
+        mobs.spawn(x, y, 5, radius, "rgb(0,200,180)");
+        let me = mob[mob.length - 1];
+        me.isBoss = true;
+        me.damageReduction = 0.12
+        me.accelMag = 0.05; //jump height
+        me.g = 0.003; //required if using this.gravity
+        me.frictionAir = 0.01;
+        me.friction = 1
+        me.frictionStatic = 1
+        me.restitution = 0;
+        me.delay = 130 + 40 * simulation.CDScale;
+        Matter.Body.rotate(me, Math.random() * Math.PI);
+        spawn.shield(me, x, y, 1);
+        me.onDeath = function () {
+            powerUps.spawnBossPowerUp(this.position.x, this.position.y)
+            // for (let i = 0, len = 3 + 0.1 * simulation.difficulty; i < len; ++i) spawn.hopBullet(this.position.x + 100 * (Math.random() - 0.5), this.position.y + 100 * (Math.random() - 0.5))
+        };
+        me.do = function () {
+            this.gravity();
+            this.seePlayerCheck();
+            this.checkStatus();
+            if (this.cd < simulation.cycle && (Matter.Query.collides(this, map).length || Matter.Query.collides(this, body).length)) {
+                this.cd = simulation.cycle + this.delay;
+                //spawn hopBullets after each jump
+                for (let i = 0, len = 1 + 0.05 * simulation.difficulty; i < len; ++i) spawn.hopBullet(this.position.x + 100 * (Math.random() - 0.5), this.position.y + 100 * (Math.random() - 0.5))
+
+                this.force.x += (0.02 + 0.06 * Math.random()) * this.mass * (player.position.x > this.position.x ? 1 : -1);
+                this.force.y -= (0.08 + 0.08 * Math.random()) * this.mass
+            }
+        };
+    },
     hopBoss(x, y, radius = 90) {
         mobs.spawn(x, y, 5, radius, "rgb(0,200,180)");
         let me = mob[mob.length - 1];
@@ -7758,25 +7790,29 @@ const spawn = {
         me.vertices[1].x -= radius * 0.3
         me.vertices[3].x += radius * 0.3
         me.seePlayerFreq = 3
-        me.imprecision = 1
         me.rainerState = 0
         me.rainTime = 0
         me.seeAtDistance2 = 1500000
         me.rainerType = (Math.random() > (level.levelsCleared % 2 ? 0.75 : 0.25) ? 1 : 0)
         me.targetYOffset = 0
         me.do = function() {
-            if (this.rainerState == 0) this.seePlayerCheckByDistance();
+            if (this.rainerState == 0 && Matter.Query.ray(map, this.position, player.position).length === 0) this.seePlayerCheckByDistance();
             this.checkStatus();
+            if (this.rainerState == 0 && Matter.Query.ray(map, this.position, {x:this.position.x, y:this.position.y+1}).length > 0) { // attempt to get unstuck while in collision
+                Matter.Body.setVelocity(this, { x: 0, y: player.position.y > this.position.y ? 4 : -4 });
+            }
             Matter.Body.setAngle(this, 0)
             Matter.Body.setAngularVelocity(this, 0)
             if (this.rainerState == 1) {
-                this.seePlayer.position.x = player.position.x
-                this.seePlayer.position.y = player.position.y - (250+this.targetYOffset);
+                if (Matter.Query.ray(map, player.position, {x:player.position.x,y:player.position.y-(this.targetYOffset+40)}).length === 0) {
+                  this.seePlayer.position.x = player.position.x
+                  this.seePlayer.position.y = player.position.y - this.targetYOffset;
+                }
                 this.attraction();
                 if (Math.abs(this.position.x - player.position.x) < 40) {
                     Matter.Body.setVelocity(this, { x: 0, y: 0 });
                     this.rainerState = 2
-                    this.rainTime = (this.rainerType == 1) ? 180 : 60
+                    this.rainTime = (this.rainerType == 1) ? (165 + (Math.random*30)) : (55 + (Math.random*10))
                 }
             }
             if (this.rainerState == 2) {
@@ -7803,11 +7839,19 @@ const spawn = {
             }
         };
         me.locatePlayer = function() {
-            this.seePlayer.recall = this.memory + Math.round(this.memory * Math.random()); //cycles before mob falls a sleep
-            this.seePlayer.position.x = player.position.x
-            this.targetYOffset = 400*Math.random()
-            this.seePlayer.position.y = player.position.y - (250+this.targetYOffset);
-            this.rainerState = 1
+            this.targetYOffset = 250+(400*Math.random())
+            let maxRandOffset = this.targetYOffset-250
+            for (let i=0;i<10;i++) {
+              if (Matter.Query.ray(map, player.position, {x:player.position.x,y:player.position.y-(this.targetYOffset+20)}).length === 0) {
+                this.seePlayer.recall = this.memory + Math.round(this.memory * Math.random()); //cycles before mob falls a sleep
+                this.seePlayer.position.x = player.position.x
+                this.seePlayer.position.y = player.position.y - this.targetYOffset;
+                this.rainerState = 1
+              } else {
+                this.targetYOffset = 250+(maxRandOffset*Math.random())
+                maxRandOffset = this.targetYOffset-250
+              }
+            }
         }
     },
     //complex constrained mob templates**********************************************************************

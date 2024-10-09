@@ -3942,10 +3942,10 @@ const b = {
     // **************************************************************************************************
     // **************************************************************************************************
     totalBots() {
-        return tech.dynamoBotCount + tech.foamBotCount + tech.nailBotCount + tech.laserBotCount + tech.boomBotCount + tech.orbitBotCount + tech.plasmaBotCount + tech.missileBotCount + tech.soundBotCount
+        return tech.dynamoBotCount + tech.foamBotCount + tech.nailBotCount + tech.laserBotCount + tech.boomBotCount + tech.orbitBotCount + tech.plasmaBotCount + tech.missileBotCount
     },
     hasBotUpgrade() {
-        return tech.isNailBotUpgrade + tech.isFoamBotUpgrade + tech.isBoomBotUpgrade + tech.isLaserBotUpgrade + tech.isOrbitBotUpgrade + tech.isDynamoBotUpgrade + tech.isSoundBotUpgrade
+        return tech.isNailBotUpgrade + tech.isFoamBotUpgrade + tech.isBoomBotUpgrade + tech.isLaserBotUpgrade + tech.isOrbitBotUpgrade + tech.isDynamoBotUpgrade
     },
     convertBotsTo(type) { //type can be a string like "dynamoBotCount"
         const totalPermanentBots = b.totalBots()
@@ -4063,13 +4063,13 @@ const b = {
             } else if (tech.isDynamoBotUpgrade) {
                 b.dynamoBot(where, isKeep)
                 if (isKeep) tech.dynamoBotCount++;
-            } else if (tech.isSoundBotUpgrade) {
+            } else if (tech.isSoundBotUpgrade && false) {
                 b.soundBot(where, isKeep)
                 if (isKeep) tech.soundBotCount++;
-            } else if (Math.random() < 0.142 && isLaser) { //random
+            } else if (Math.random() < /*0.142*/ 0.166 && isLaser) { //random
                 b.laserBot(where, isKeep)
                 if (isKeep) tech.laserBotCount++;
-            } else if (Math.random() < 0.166) { //random
+            } else if (Math.random() < 0.166 && false) { //random
                 b.soundBot(where, isKeep)
                 if (isKeep) tech.soundBotCount++;
             } else if (Math.random() < 0.2) {
@@ -4089,10 +4089,10 @@ const b = {
                 if (isKeep) tech.boomBotCount++;
             }
         } else { //else don't match scrap bot to upgrade
-            if (Math.random() < 0.142 && isLaser) { //random
+            if (Math.random() < /*0.142*/ 0.166 && isLaser) { //random
                 b.laserBot(where, isKeep)
                 if (isKeep) tech.laserBotCount++;
-            } else if (Math.random() < 0.166) {
+            } else if (Math.random() < 0.166 && false) {
                 b.soundBot(where, isKeep)
                 if (isKeep) tech.soundBotCount++;
             }  else if (Math.random() < 0.2) {

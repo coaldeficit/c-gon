@@ -1,3 +1,15 @@
+# porting N (2024/10/09)
+- ported open source and bot prototypes tech
+- ported extra labs boss rooms
+- - ported hopMotherBoss
+- fixed subway station blocks sometimes getting added to the world several times giving them sun gravity and weird semi-persistance into final
+- rainers now have a line of sight check and try to avoid going into ceilings at all costs
+- - the latter includes refusing to move if the ceiling above m has no room for them to go into
+- - even if they get stuck inside solid collision somehow, they will try to move out of it towards m after they're done spamming projectiles
+- gauntlet now always spawns a boss when its not the pre-final level
+- descent changes:
+- - snakeBoss and beetleBoss no longer spawn on it
+- - the slime drains after the bosses are defeates
 # porting M (2024/10/07)
 - ported gravityObservatory
 - - shows up as a modern main map
