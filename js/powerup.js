@@ -165,6 +165,16 @@ const powerUps = {
             powerUps.do = powerUps.doDefault
         }
     },
+    attractHeal() {
+        for (let i = 0; i < powerUp.length; i++) { //attract heal power ups to player
+            if (powerUp[i].name === "heal") {
+                let attract = Vector.mult(Vector.normalise(Vector.sub(m.pos, powerUp[i].position)), 0.015 * powerUp[i].mass)
+                powerUp[i].force.x += attract.x;
+                powerUp[i].force.y += attract.y - powerUp[i].mass * simulation.g; //negate gravity
+                Matter.Body.setVelocity(powerUp[i], Vector.mult(powerUp[i].velocity, 0.7));
+            }
+        }
+    },
     doDefault() {
         //draw power ups
         ctx.globalAlpha = 0.4 * Math.sin(m.cycle * 0.15) + 0.6;
@@ -365,7 +375,7 @@ const powerUps = {
             }
         }
         if (tech.isAnsatz && powerUps.research.count === 0) {
-            for (let i = 0; i < 2; i++) powerUps.spawn(m.pos.x + 40 * (Math.random() - 0.5), m.pos.y + 40 * (Math.random() - 0.5), "research", false);
+            for (let i = 0; i < 3; i++) powerUps.spawn(m.pos.x + 40 * (Math.random() - 0.5), m.pos.y + 40 * (Math.random() - 0.5), "research", false);
         }
         // document.getElementById("choose-grid").style.display = "none"
         document.getElementById("choose-grid").style.visibility = "hidden"
@@ -496,8 +506,8 @@ const powerUps = {
             //         }
             //     }
             // }
-            if (!tech.isEnergyHealth && m.alive && !tech.isNoHeals) {
-                const heal = powerUps.heal.calculateHeal(this.size)
+            if (!tech.isEnergyHealth && m.alive) {
+                const heal = powerUps.heal.calculateHeal(this.size) * (tech.isNoHeals ? 0.5 : 1) * (tech.isHealAttract ? 0.5 : 1)
                 if (heal > 0) {
                     const overHeal = m.health + heal * simulation.healScale - m.maxHealth //used with tech.isOverHeal
 
@@ -519,6 +529,47 @@ const powerUps = {
                         });
                         tech.extraMaxHealth += scaledOverHeal * simulation.healScale //increase max health
                         m.setMaxHealth();
+                    }
+                    if (tech.isHealBrake) { // induction brake
+                        const totalTime = 1020
+                        //check if you already have this effect
+                        let foundActiveEffect = false
+                        for (let i = 0; i < simulation.ephemera.length; i++) {
+                            if (simulation.ephemera[i].name === "healPush") {
+                                foundActiveEffect = true
+                                simulation.ephemera[i].count = 0.5 * simulation.ephemera[i].count + totalTime //add time
+                                simulation.ephemera[i].scale = 0.5 * (simulation.ephemera[i].scale + Math.min(Math.max(0.6, heal * 6), 2.3)) //take average of scale
+                            }
+                        }
+                        if (!foundActiveEffect) {
+                            simulation.ephemera.push({
+                                name: "healPush",
+                                count: totalTime, //cycles before it self removes
+                                range: 0,
+                                scale: Math.min(Math.max(0.7, heal * 4), 2.2), //typically heal is 0.35
+                                do() {
+                                    this.count--
+                                    if (this.count < 0) simulation.removeEphemera(this.name)
+                                    this.range = this.range * 0.99 + 0.01 * (300 * this.scale + 100 * Math.sin(m.cycle * 0.022))
+                                    if (this.count < 120) this.range -= 5 * this.scale
+                                    this.range = Math.max(this.range, 1) //don't go negative
+                                    // const range = 300 + 100 * Math.sin(m.cycle * 0.022)
+                                    for (let i = 0; i < mob.length; i++) {
+                                        const distance = Vector.magnitude(Vector.sub(m.pos, mob[i].position))
+                                        if (distance < this.range) {
+                                            const cap = mob[i].isShielded ? 3 : 1
+                                            if (mob[i].speed > cap && Vector.dot(mob[i].velocity, Vector.sub(m.pos, mob[i].position)) > 0) { // if velocity is directed towards player
+                                                Matter.Body.setVelocity(mob[i], Vector.mult(Vector.normalise(mob[i].velocity), cap)); //set velocity to cap, but keep the direction
+                                            }
+                                        }
+                                    }
+                                    ctx.beginPath();
+                                    ctx.arc(m.pos.x, m.pos.y, this.range, 0, 2 * Math.PI);
+                                    ctx.fillStyle = "hsla(200,50%,61%,0.18)";
+                                    ctx.fill();
+                                },
+                            })
+                        }
                     }
                 }
             }
@@ -1330,6 +1381,7 @@ const powerUps = {
                 powerUp[powerUp.length - 1].isDuplicated = true
                 // if (tech.isPowerUpsVanish) powerUp[powerUp.length - 1].endCycle = simulation.cycle + 300
                 if (tech.isDupEnergy) m.energy *= 2
+                if (tech.isDupEnergy && m.energy > m.maxEnergy) m.energy = m.maxEnergy
             }
         }
     },

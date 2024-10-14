@@ -1,3 +1,24 @@
+# porting O (2024/10/14)
+- added 2 new tech:
+- - flak: makes shotgun shoot faster in a narrower arc. suggested by desboot
+- - photodisintegration: increases max health by 150, but causes harm when not under low ceilings
+- renamed MACHO to dark matter
+- ported dark energy, MACHO, entropic gravity, dark star, fermion, abelian group, stability, instability, control theory, homeostasis, induction brake, accretion and accretion disk tech
+- renamed liquid cooling to refrigerant, refrigerant no longer requires clock gating
+- defragment junk tech is now 9x stackable
+- fixed rainer ai breaking after starting to shoot
+- anyon now instantly removes all excess energy
+- max health increase techs are now classified as heal techs internally
+- added 4 new junk tech:
+- - discord moderator: increases max health by 900 but instantly kills you when you're exposed to the sky
+- - Die: Die
+- - fork bomb: gives you itself twice
+- - complete fuck up: shuffles everything tech related, and i do mean everything
+- axion can no longer decrease your damage from harm increases
+- negative feedback is now more frequent
+- ansatz now spawns 3 research instead of 2
+- ergodicity now makes heals have half effectiveness instead of doing completely nothing
+- fixed gravityObservatory announcing mob types twice
 # porting N (2024/10/09)
 - ported open source and bot prototypes tech
 - ported extra labs boss rooms

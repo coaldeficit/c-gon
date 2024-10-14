@@ -164,22 +164,24 @@ const spawn = {
         }
         me.do = function() {
             const sine = Math.sin(simulation.cycle * 0.015)
-            this.radius = 370 * (1 + 0.1 * sine)
+            this.radius = 370 * (1 + 0.1 * sine) * (tech.isMobDamageMACHO ? 1.3 : 1)
             //chase player
             const sub = Vector.sub(player.position, this.position)
             const mag = Vector.magnitude(sub)
             // follow physics
-            // Matter.Body.setVelocity(this, { x: 0, y: 0 });
-            // const where = Vector.add(this.position, Vector.mult(Vector.normalise(sub), this.chaseSpeed))
-            // if (mag > 10) Matter.Body.setPosition(this, { x: where.x, y: where.y });
+            if (tech.isPullMACHO && m.crouch && input.down) {
+                Matter.Body.setVelocity(this, Vector.add(Vector.mult(this.velocity, 0.97), Vector.mult(player.velocity, 0.03)))
+                Matter.Body.setPosition(this, Vector.add(Vector.mult(this.position, 0.95), Vector.mult(player.position, 0.05)))
+            }
 
             //realistic physics
             const force = Vector.mult(Vector.normalise(sub), 0.000000003)
             this.force.x += force.x
             this.force.y += force.y
 
+            let condition = (tech.isInvertMACHO) ? mag > this.radius : mag < this.radius
 
-            if (mag < this.radius) { //buff to player when inside radius
+            if (condition) { //buff to player when inside radius
                 tech.isHarmMACHO = true;
 
                 //draw halo
@@ -193,6 +195,9 @@ const spawn = {
                 // ctx.arc(this.position.x, this.position.y, this.radius, 0, 2 * Math.PI);
                 // ctx.lineWidth = 30;
                 // ctx.stroke();
+                if (tech.isDarkEnergy && m.immuneCycle < m.cycle && !(m.cycle % 30)) {
+                    m.energy += 0.05 * (tech.isInvertMACHO ? 1.6 : 1) * (tech.isPullMACHO ? 1.2 : 1)
+                }
             } else {
                 tech.isHarmMACHO = false;
             }
@@ -202,6 +207,26 @@ const spawn = {
             ctx.strokeStyle = "#000"
             ctx.lineWidth = 1;
             ctx.stroke();
+            if (tech.isMobDamageMACHO && !m.isCloak) { //&& !m.isBodiesAsleep
+                ctx.fillStyle = "rgba(10,0,40,0.4)"
+                ctx.fill()
+                //damage mobs
+                for (let i = 0, len = mob.length; i < len; ++i) {
+                    if (mob[i].alive && !mob[i].isShielded) {
+                        if (Vector.magnitude(Vector.sub(this.position, mob[i].position)) - mob[i].radius < this.radius) {
+                            const dmg = 0.03 * m.dmgScale
+                            mob[i].damage(dmg);
+                            simulation.drawList.push({ //add dmg to draw queue
+                                x: mob[i].position.x,
+                                y: mob[i].position.y,
+                                radius: mob[i].radius + 8,
+                                color: `rgba(10,0,40,0.1)`,
+                                time: 4
+                            });
+                        }
+                    }
+                }
+            }
         }
     },
     WIMP(x = level.exit.x + tech.wimpCount * 200 * (Math.random() - 0.5), y = level.exit.y + tech.wimpCount * 200 * (Math.random() - 0.5)) { //immortal mob that follows player //if you have the tech it spawns at start of every level at the exit
@@ -7812,7 +7837,7 @@ const spawn = {
                 if (Math.abs(this.position.x - player.position.x) < 40) {
                     Matter.Body.setVelocity(this, { x: 0, y: 0 });
                     this.rainerState = 2
-                    this.rainTime = (this.rainerType == 1) ? (165 + (Math.random*30)) : (55 + (Math.random*10))
+                    this.rainTime = (this.rainerType == 1) ? Math.floor(165 + (Math.random()*30)) : Math.floor(55 + (Math.random()*10))
                 }
             }
             if (this.rainerState == 2) {
