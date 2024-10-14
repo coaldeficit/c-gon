@@ -1735,6 +1735,13 @@ const level = {
                         });
                     }
                 }
+                if (tech.isHealAttract) {  //send heals to next portal
+                    for (let i = 0; i < powerUp.length; i++) {
+                        if (powerUp[i].name === "heal" && Vector.magnitudeSquared(Vector.sub(powerUp[i].position, m.pos)) < 1000000) {
+                            Matter.Body.setPosition(powerUp[i], Vector.add(this.portalPair.portal.position, { x: 500 * (Math.random() - 0.5), y: 500 * (Math.random() - 0.5) }));
+                        }
+                    }
+                }
             }
             // if (body.length) {
             for (let i = 0, len = body.length; i < len; i++) {
@@ -6394,12 +6401,12 @@ const level = {
                     spawn.bodyRect(x + -925, -2250, 100, 150, 0.3);
                     spawn.bodyRect(x + -1050, -950, 150, 125, 0.3);
                     for (let i=0;i<body.length-rememberedBodyLength;i++) {
-                      if (body[body.length-(i+1)] !== m.holdingTarget && !body[body.length-1].isNoSetCollision) {
+                      if (body[body.length-(i+1)] !== m.holdingTarget && !body[body.length-(i+1)].isNoSetCollision) {
                         body[body.length-(i+1)].collisionFilter.category = cat.body;
                         body[body.length-(i+1)].collisionFilter.mask = cat.player | cat.map | cat.body | cat.bullet | cat.mob | cat.mobBullet
                       }
                       body[body.length-(i+1)].classType = "body";
-                      Composite.add(engine.world, body[body.length-1]); //add to world
+                      Composite.add(engine.world, body[body.length-(i+1)]); //add to world
                     }
                     const mobPlacement = [
                         () => { //1st floor
@@ -6596,41 +6603,20 @@ const level = {
                     spawn.mapRect(x + -225, -525, 800, 210);
                     spawn.mapRect(x + -100, -1600, 300, 193);
                     spawn.mapRect(x + 925, -1250, 75, 75);
+                    let rememberedBodyLength = body.length
                     spawn.bodyRect(x + 200, -1475, 75, 175, 0.3);
-                    if (body[body.length-1] !== m.holdingTarget && !body[body.length-1].isNoSetCollision) {
-                      body[body.length-1].collisionFilter.category = cat.body;
-                      body[body.length-1].collisionFilter.mask = cat.player | cat.map | cat.body | cat.bullet | cat.mob | cat.mobBullet
-                    }
-                    body[body.length-1].classType = "body";
-                    Composite.add(engine.world, body[body.length-1]); //add to world
                     spawn.bodyRect(x + -25, -625, 225, 100, 0.3);
-                    if (body[body.length-1] !== m.holdingTarget && !body[body.length-1].isNoSetCollision) {
-                      body[body.length-1].collisionFilter.category = cat.body;
-                      body[body.length-1].collisionFilter.mask = cat.player | cat.map | cat.body | cat.bullet | cat.mob | cat.mobBullet
-                    }
-                    body[body.length-1].classType = "body";
-                    Composite.add(engine.world, body[body.length-1]); //add to world
                     spawn.bodyRect(x + -1000, -750, 125, 175, 0.3);
-                    if (body[body.length-1] !== m.holdingTarget && !body[body.length-1].isNoSetCollision) {
-                      body[body.length-1].collisionFilter.category = cat.body;
-                      body[body.length-1].collisionFilter.mask = cat.player | cat.map | cat.body | cat.bullet | cat.mob | cat.mobBullet
-                    }
-                    body[body.length-1].classType = "body";
-                    Composite.add(engine.world, body[body.length-1]); //add to world
                     spawn.bodyRect(x + -625, -1450, 75, 150, 0.3);
-                    if (body[body.length-1] !== m.holdingTarget && !body[body.length-1].isNoSetCollision) {
-                      body[body.length-1].collisionFilter.category = cat.body;
-                      body[body.length-1].collisionFilter.mask = cat.player | cat.map | cat.body | cat.bullet | cat.mob | cat.mobBullet
-                    }
-                    body[body.length-1].classType = "body";
-                    Composite.add(engine.world, body[body.length-1]); //add to world
                     spawn.bodyRect(x + -650, -300, 300, 75, 0.3);
-                    if (body[body.length-1] !== m.holdingTarget && !body[body.length-1].isNoSetCollision) {
-                      body[body.length-1].collisionFilter.category = cat.body;
-                      body[body.length-1].collisionFilter.mask = cat.player | cat.map | cat.body | cat.bullet | cat.mob | cat.mobBullet
+                    for (let i=0;i<body.length-rememberedBodyLength;i++) {
+                      if (body[body.length-(i+1)] !== m.holdingTarget && !body[body.length-(i+1)].isNoSetCollision) {
+                        body[body.length-(i+1)].collisionFilter.category = cat.body;
+                        body[body.length-(i+1)].collisionFilter.mask = cat.player | cat.map | cat.body | cat.bullet | cat.mob | cat.mobBullet
+                      }
+                      body[body.length-(i+1)].classType = "body";
+                      Composite.add(engine.world, body[body.length-(i+1)]); //add to world
                     }
-                    body[body.length-1].classType = "body";
-                    Composite.add(engine.world, body[body.length-1]); //add to world
                     if (!isExitOpen) {
                         spawn.randomMob(x + -750, -1425, 0);
                         spawn.randomMob(x + -1050, -1100, 0);
@@ -7516,7 +7502,6 @@ const level = {
     gravityObservatory() {
         level.isVerticalFLipLevel = true
         simulation.fallHeight = 4000
-        level.announceMobTypes()
         level.setPosToSpawn(-2375, 950);
         level.exit.x = 3750
         level.exit.y = 165

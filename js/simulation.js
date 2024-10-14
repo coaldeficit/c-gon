@@ -17,6 +17,7 @@ const simulation = {
         simulation.camera();
         level.custom();
         powerUps.do();
+        if (tech.isHealAttract) powerUps.attractHeal()
         mobs.draw();
         simulation.draw.cons();
         simulation.draw.body();
@@ -993,6 +994,24 @@ const simulation = {
         m.hole.isOn = false;
         level.zones = [];
         simulation.drawList = [];
+        
+        if (tech.isHealAttract && m.alive) { //send health power ups to the next level
+            let healCount = 0
+            for (let i = 0, len = powerUp.length; i < len; i++) {
+                if (powerUp[i].name === "heal" && Vector.magnitudeSquared(Vector.sub(powerUp[i].position, m.pos)) < 1000000) healCount++
+            }
+            //respawn health in animation frame
+            let respawnHeal = () => {
+                if (healCount > 0) {
+                    requestAnimationFrame(respawnHeal);
+                    if (!simulation.paused && !simulation.isChoosing) {
+                        healCount--
+                        powerUps.directSpawn(level.enter.x + 50 + 100 * (Math.random() - 0.5), level.enter.y - 60 + 100 * (Math.random() - 0.5), "heal");
+                    }
+                }
+            }
+            requestAnimationFrame(respawnHeal);
+        }
 
         if (tech.isDronesTravel && m.alive) {
             // console.log('hi')
@@ -1130,6 +1149,21 @@ const simulation = {
     //   }
     // },
     checks() {
+        if (tech.isDupEnergy && m.energy > m.maxEnergy) m.energy = m.maxEnergy
+	    if (!(m.cycle % 5)) {
+	      if (tech.isCarBomb) {
+            m.setMovement()
+	      }
+	    }
+        if (tech.isDiscordModJunk) {
+	      if (tech.isDiscordModJunk &&
+            (Matter.Query.ray(map, player.position, {x:player.position.x,y:player.position.y-150000}).length +
+            Matter.Query.ray(body, player.position, {x:player.position.x,y:player.position.y-150000}).length +
+            Matter.Query.ray(composite, player.position, {x:player.position.x,y:player.position.y-150000}).length === 0)
+          ) {
+            m.death()
+	      }
+        }
         if (!(m.cycle % 60)) { //once a second
             //energy overfill 
             if (m.energy > m.maxEnergy) m.energy = m.maxEnergy + (m.energy - m.maxEnergy) * tech.overfillDrain //every second energy above max energy loses 25%
@@ -1211,6 +1245,15 @@ const simulation = {
             simulation.loop()
 	      }
 	    }
+	    if (!(m.cycle % 180)) {
+	      if (tech.isPhotodisintegration &&
+            (Matter.Query.ray(map, player.position, {x:player.position.x,y:player.position.y-1500}).length +
+            Matter.Query.ray(body, player.position, {x:player.position.x,y:player.position.y-1500}).length +
+            Matter.Query.ray(composite, player.position, {x:player.position.x,y:player.position.y-1500}).length === 0)
+          ) {
+            m.damage(0.1)
+	      }
+	    }
 	    if (!(m.cycle % 120)) {
 	      if (tech.isEastinKnill && !tech.isFlipFlopOn) {
             const have = [] //find which tech you have
@@ -1256,13 +1299,8 @@ const simulation = {
             }
 	      }
 	    }
-	    if (!(m.cycle % 5)) {
-	      if (tech.isCarBomb) {
-            m.setMovement()
-	      }
-	    }
         if (tech.isArmoredConfig) {
-          tech.armoredConfigDamageReduct = Math.max(tech.armoredConfigDamageReduct-0.025,0)
+          tech.armoredConfigDamageReduct = Math.max(tech.armoredConfigDamageReduct-0.05,0)
         }
             if (!(m.cycle % 420)) { //once every 7 seconds
                 if (tech.isZeno) {

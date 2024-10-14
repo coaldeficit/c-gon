@@ -667,6 +667,16 @@ summary {
     }
 }
 
+.color-invulnerable {
+    color: #fff;
+    text-shadow: 0px 0px 7px #000;
+}
+
+.color-dark-matter {
+    color: #246;
+    text-shadow: 0px 0px 7px #246;
+}
+
 .color-bot {
     font-variant: small-caps;
     background-color: rgba(75, 125, 150, 0.06);

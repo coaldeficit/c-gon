@@ -531,7 +531,7 @@ const m = {
     },
     baseHealth: 1,
     setMaxHealth() {
-        m.maxHealth = m.baseHealth + tech.extraMaxHealth + tech.isFallingDamage + 2 * tech.isFlipFlop * tech.isFlipFlopOn * tech.isFlipFlopHealth
+        m.maxHealth = m.baseHealth + tech.extraMaxHealth + tech.isFallingDamage + (2 * tech.isFlipFlop * tech.isFlipFlopOn * tech.isFlipFlopHealth) + (tech.isPhotodisintegration*1.5)
         document.getElementById("health-bg").style.width = `${Math.floor(300 * m.maxHealth)}px`
         simulation.makeTextLog(`<span class='color-var'>m</span>.<span class='color-h'>maxHealth</span> <span class='color-symbol'>=</span> ${m.maxHealth.toFixed(2)}`)
         if (m.health > m.maxHealth) m.health = m.maxHealth;
@@ -548,7 +548,7 @@ const m = {
             if (tech.isBiggerField) dmg *= 1.2
             if (tech.isZeno) dmg *= 0.15
             if (tech.isFieldHarmReduction) dmg *= 0.5
-            if (tech.isHarmMACHO) dmg *= 0.33
+            if (tech.isHarmMACHO) dmg *= 0.33 / ((tech.isInvertMACHO ? 1.6 : 1) * (tech.isPullMACHO ? 1.2 : 1))
             if (tech.isImmortal) dmg *= 0.66
             if (tech.isHarmReduceNoKill && m.lastKillCycle + (300-tech.isRepolarization) < m.cycle) dmg *= 0.33
             if (tech.healthDrain) dmg *= 1 + 3.33 * tech.healthDrain //tech.healthDrain = 0.03 at one stack //cause more damage
@@ -571,6 +571,8 @@ const m = {
             if (tech.isWKB) dmg *= 0.995**tech.WKBmobCount
             if (tech.isCarBomb && b.guns[b.activeGun].name == 'blast' && m.cycle > m.fireCDcycle + 120) dmg *= 0.6
             if (tech.isPolariton && powerUps.boost.endCycle > simulation.cycle) dmg *= 0.4
+            if (tech.isStability && m.health == m.maxHealth) dmg *= 0.33
+            if (tech.isLowHealthDefense) dmg *= 0.2+((m.health/m.maxHealth)*0.8)
         } else {
             dmg = tech.armoredConfigDamageReduct
         }
