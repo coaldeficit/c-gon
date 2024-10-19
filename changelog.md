@@ -1,3 +1,10 @@
+# slimeFinalBoss (2024/10/20)
+- added slimeFinalBoss, an alternative final boss that has a 50% chance to show up on final instead of the usual one
+- - can be found at the end of seed 57153 if you want to mess around with it
+- - feedback is highly appreciated
+- reworded spin-statistics description
+- spin-statistics now counts for abelian group requirement
+- fixed boosts persisting between runs
 # porting O (2024/10/14)
 - added 2 new tech:
 - - flak: makes shotgun shoot faster in a narrower arc. suggested by desboot

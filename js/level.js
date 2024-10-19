@@ -20,6 +20,7 @@ const level = {
     // soft: soft-bodies dont despawn properly on level exit, causing buildup and lag
     trainingLevels: ["walk", "crouch", "jump", "hold", "throw", "throwAt", "deflect", "heal", "fire", "nailGun", "shotGun", "superBall", "matterWave", "missile", "stack", "mine", "grenades", "harpoon"],
     levels: [],
+    finalChoice: 0, // final boss choice, seed dependent
     announceMobTypes() {
         simulation.makeTextLog(`spawn<span class='color-symbol'>.</span>${spawn.pickList[0]}<span class='color-symbol'>(</span>x<span class='color-symbol'>,</span>y<span class='color-symbol'>)</span>`)
         simulation.makeTextLog(`spawn<span class='color-symbol'>.</span>${spawn.pickList[1]}<span class='color-symbol'>(</span>x<span class='color-symbol'>,</span>y<span class='color-symbol'>)</span>`)
@@ -295,13 +296,14 @@ const level = {
                 if (!bannedLevels.includes('factory')) intermissionLevelsA.push('factory')
                 if (!bannedLevels.includes('gravityInterferometer') && simulation.mapSettings.gimmick) intermissionLevelsA.push('gravityInterferometer')
             }
-            if (intermissionLevelsA.length != 0) level.levels.splice(Math.floor(Math.seededRandom((level.levels.length) * 0.6, level.levels.length)), 0, intermissionLevelsA[Math.floor(Math.random()*intermissionLevelsA.length)]);level.levels.splice(0, 1);//add level to the back half of the randomized levels list
+            if (intermissionLevelsA.length != 0) level.levels.splice(Math.floor(Math.seededRandom((level.levels.length) * 0.6, level.levels.length)), 0, intermissionLevelsA[Math.floor(Math.seededRandom(0, intermissionLevelsA.length))]);level.levels.splice(0, 1);//add level to the back half of the randomized levels list
             if (simulation.mapSettings.intermission != 'none' && simulation.mapSettings.intermission != 'modernonly' && !bannedLevels.includes('reactor')) {level.levels.splice(Math.floor(Math.seededRandom((level.levels.length) * 0.6, level.levels.length)), 0, "reactor");level.levels.splice(0, 1);} //add level to the back half of the randomized levels list
             
             if (!build.isExperimentSelection || (build.hasExperimentalMode && !simulation.isCheating)) { //experimental mode is endless, unless you only have an experiment Tech
                 level.levels.unshift("intro"); //add level to the start of the randomized levels list
                 if (simulation.mapSettings.prefinal != 'random') level.levels.push(simulation.mapSettings.prefinal); //add level to the end of the randomized levels list
                 level.levels.push("final"); //add level to the end of the randomized levels list
+                level.finalChoice = Math.floor(Math.seededRandom(0, 2))
             }
         }
         //set seeded random lists of mobs and bosses
@@ -3927,8 +3929,17 @@ const level = {
         spawn.mapRect(-250, -200, 1000, 300); // shelf
         spawn.mapRect(-250, -1700, 1000, 1250); // shelf roof
         spawn.blockDoor(710, -210);
+        
+        let choices = [
+            ()=>{
+                spawn.finalBoss(3000, -750)
+            },
+            ()=>{
+                spawn.slimeFinalBoss(3000, -750)
+            },
+        ]
 
-        spawn.finalBoss(3000, -750)
+        choices[level.finalChoice]()
 
         spawn.mapRect(5400, -1700, 400, 1150); //right wall
         spawn.mapRect(5400, -300, 400, 400); //right wall
