@@ -2083,7 +2083,7 @@ const tech = {
             count: 0,
             frequency: 3,
             frequencyDefault: 3,
-            allowed() { return tech.collisionImmuneCycles > 30 || tech.cyclicImmunity > 0 || tech.isFermion },
+            allowed() { return tech.collisionImmuneCycles > 30 || tech.cyclicImmunity > 0 || tech.isFermion || tech.isShotgunImmune },
             requires: "any invulnerability tech",
             effect() {
                 tech.isAbelian = true;
@@ -5156,7 +5156,7 @@ const tech = {
         {
             name: "spin-statistics",
             link: `<a target="_blank" href='https://en.wikipedia.org/wiki/Spin%E2%80%93statistics_theorem' class="link">spin-statistics</a>`,
-            description: "<strong>immune</strong> to <strong class='color-harm'>harm</strong> while firing the <strong>shotgun</strong><br>shotgun has <strong>50%</strong> fewer shots",
+            description: "become <strong class='color-invulnerable'>invulnerable</strong> while firing the <strong>shotgun</strong><br>shotgun has <strong>50%</strong> fewer shots",
             isGunTech: true,
             maxCount: 1,
             count: 0,

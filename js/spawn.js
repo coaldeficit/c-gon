@@ -1,7 +1,7 @@
 //main object for spawning things in a level
 const spawn = {
     nonCollideBossList: ["cellBossCulture", "bomberBoss", "powerUpBoss", "orbitalBoss", "spawnerBossCulture", "growBossCulture"],
-    // other bosses: suckerBoss, laserBoss, tetherBoss, bounceBoss, sprayBoss    //these need a particular level to work so they are not included in the random pool
+    // other bosses: finalBoss, slimeFinalBoss, hopMotherBoss, suckerBoss, laserBoss, tetherBoss, bounceBoss, sprayBoss    //these need a particular level to work so they are not included in the random pool
     randomBossList: ["shieldingBoss", "orbitalBoss", "historyBoss", "shooterBoss", "cellBossCulture", "bomberBoss", "spiderBoss", "launcherBoss", "laserTargetingBoss",
         "powerUpBoss", "powerUpBossBaby", "dragonFlyBoss", "streamBoss", "pulsarBoss", "spawnerBossCulture", "grenadierBoss", "growBossCulture", "blinkBoss",
         "snakeSpitBoss", "laserBombingBoss", "blockBoss", "revolutionBoss", "slashBoss", "healBoss", "constraintBoss", "beetleBoss", "timeSkipBoss", "sneakBoss",
@@ -7748,7 +7748,7 @@ const spawn = {
         me.isDropPowerUp = false
         me.leaveBody = false;
         me.onDeath = function() {
-            me.springBossMaster.springCount--
+            this.springBossMaster.springCount--
             this.removeConsBB(); //remove constraint
         };
         
@@ -7878,6 +7878,659 @@ const spawn = {
               }
             }
         }
+    },
+    slimeFinalBoss(x, y, radius = 200) {
+        mobs.spawn(x, y, 3, radius, "hsla(160, 100%, 35%,1)");
+        let me = mob[mob.length - 1];
+        me.isBoss = true;
+
+        Matter.Body.setDensity(me, 0.3); //extra dense //normal is 0.001 //makes effective life much larger
+
+        me.stroke = "transparent"; //used for drawGhost
+        me.memory = Infinity;
+        me.frictionAir = 0;
+        me.collisionFilter.mask = cat.player | cat.bullet //| cat.body
+        me.hasRunDeathScript = false
+        me.locatePlayer();
+        me.intendedVelocity = {x:0,y:0}
+        
+        me.cycle = 0
+        me.attack = 0
+        me.attackSwitchCycle = -1
+        me.halfHealthStarted = false
+        me.halfHealthDone = false
+        me.phase2Started = false
+        me.phase2Done = false
+        
+        spawn.bodyRect(750, -200, 350, 200);
+        spawn.bodyRect(1450, -350, 400, 350);
+        spawn.bodyRect(2150, -250, 450, 250);
+        spawn.bodyRect(3350, -275, 300, 275);
+        spawn.bodyRect(2775, -200, 325, 200);
+        spawn.bodyRect(4075, -250, 200, 250);
+        spawn.bodyRect(4625, -225, 550, 225);
+        simulation.fallHeight = 5000
+        if (!simulation.isHorizontalFlipped) {
+            me.slime = level.hazard(750, -190, 4800, 190);
+        } else {
+            me.slime = level.hazard(-5400, -190, 4800, 190);
+        }
+        me.tail = []
+        setTimeout(()=>{
+            for (let i=0;i<9;i++) {
+                spawn.slimeFinalBossTail(me.position.x,me.position.y+((i+1)*200),radius)
+                me.tail.push(mob[mob.length-1])
+                me.tail[me.tail.length-1].headBody = me
+                Matter.Body.setAngle(me.tail[me.tail.length-1], -((i+1)*0.6))
+            }
+        }, 250)
+        me.getDistance2 = function(a, b) {
+            let dx = b.position.x - a.position.x
+            let dy = b.position.y - a.position.y
+            return dx * dx + dy * dy
+        }
+        me.getAngle = function(a, b) {
+            let unitVector = Vector.normalise(Vector.sub(b.position, a.position));
+            return Math.atan2(unitVector.y, unitVector.x);
+        }
+        
+        me.damageReduction = 0.25
+        me.do = function() {
+            this.checkStatus();
+            if (!this.seePlayer.yes) this.locatePlayer();
+            this.slime.query()
+            if (this.cycle >= 360 || this.attackSwitchCycle >= 0) {
+                let bodyCollide = Matter.Query.region(body, this.slime)
+                for (let i = 0; i < bodyCollide.length; i++) {
+                    for (let j=0;j<bodyCollide[i].vertices.length;j++) {
+                        if (bodyCollide[i].vertices[j].y>-160) {
+                            Matter.Body.applyForce(bodyCollide[i], {x:bodyCollide[i].vertices[j].x,y:bodyCollide[i].vertices[j].y}, {x:0,y:(-0.00075-((bodyCollide[i].vertices[j].y+160)/300000))*(bodyCollide[i].mass**0.95)})
+                        }
+                    }
+                }
+            }
+            
+            this.doAttack()
+            
+            if (this.health <= 0.25) {
+                if (!this.phase2Started) {
+                    this.phase2Started = true
+                    this.oldDamageReduction = this.damageReduction
+                    this.damageReduction = 0
+                    for (let i=0;i<this.tail.length;i++) {
+                        this.tail[i].oldDamageReduction = this.tail[i].damageReduction
+                        this.tail[i].damageReduction = 0
+                    }
+                    this.doAttack = this.doAttackDefault
+                }
+                if (this.phase2Started && !this.phase2Done) {
+                    ctx.beginPath();
+                    let vertices = this.vertices;
+                    ctx.moveTo(vertices[0].x, vertices[0].y);
+                    for (let j = 1; j < vertices.length; j++) ctx.lineTo(vertices[j].x, vertices[j].y);
+                    ctx.lineTo(vertices[0].x, vertices[0].y);
+                    for (let i = 0; i < this.tail.length; i++) {
+                        if (this.tail[i].alive) {
+                            let vertices = this.tail[i].vertices;
+                            ctx.moveTo(vertices[0].x, vertices[0].y);
+                            for (let j = 1; j < vertices.length; j++) ctx.lineTo(vertices[j].x, vertices[j].y);
+                            ctx.lineTo(vertices[0].x, vertices[0].y);
+                        }
+                    }
+                    ctx.lineWidth = 13 + 5 * Math.random();
+                    ctx.strokeStyle = `rgba(255,255,255,${0.5+0.2*Math.random()})`;
+                    ctx.stroke();
+                }
+            }
+            
+            if (this.position.y > 2500 && this.cycle > 1) {
+                this.cycle = 0
+                if (this.attackSwitchCycle == -1) this.doAttack = this.doAttackMob
+                this.attackSwitchCycle++
+                this.intendedVelocity = {x:(player.position.x-this.position.x)*0.0036*(this.attackSwitchCycle%2 ? 1 : 1.5),y:-37.6}
+                if ((this.halfHealthStarted && !this.halfHealthDone && this.attackSwitchCycle == 1) || this.phase2Started) {
+                    Matter.Body.setPosition(this, {x:500*(simulation.isHorizontalFlipped?1:-1),y:2500})
+                    this.intendedVelocity.x = player.position.x < 0 ? -19 : 19
+                }
+                if (this.attackSwitchCycle > 0) {
+                    this.attackSwitchCycle = 0
+                    this.attack++
+                    if (this.attack > 2) this.attack = 0
+                    if (this.halfHealthStarted && !this.halfHealthDone) {
+                        this.halfHealthDone = true
+                        this.halfHealthStarted = false
+                        this.damageReduction = this.oldDamageReduction
+                        for (let i=0;i<this.tail.length;i++) {
+                            this.tail[i].damageReduction = this.tail[i].oldDamageReduction
+                        }
+                        Matter.Body.setPosition(this, {x:this.position.x*0.5,y:2500})
+                        this.intendedVelocity = {x:(player.position.x-this.position.x)*0.0036*(this.attackSwitchCycle%2 ? 1 : 1.5),y:-37.6}
+                    }
+                    if (this.phase2Started && !this.phase2Done) {
+                        this.phase2Done = true
+                        this.damageReduction = this.oldDamageReduction
+                        for (let i=0;i<this.tail.length;i++) {
+                            this.tail[i].damageReduction = this.tail[i].oldDamageReduction
+                        }
+                    }
+                    if (!this.phase2Started) {
+                        switch (this.attack) {
+                            case 0:
+                                this.doAttack = this.doAttackMob
+                                break
+                            case 1:
+                                this.doAttack = this.doAttackProjectiles
+                                break
+                            case 2:
+                                if (!this.halfHealthStarted) {
+                                    Matter.Body.setPosition(this, {x:500*(simulation.isHorizontalFlipped?1:-1),y:2500})
+                                    this.intendedVelocity.x = player.position.x < 0 ? -19 : 19
+                                    this.halfHealthStarted = true
+                                    this.halfHealthDone = false
+                                    this.oldDamageReduction = this.damageReduction
+                                    this.damageReduction = 0
+                                    for (let i=0;i<this.tail.length;i++) {
+                                        this.tail[i].oldDamageReduction = this.tail[i].damageReduction
+                                        this.tail[i].damageReduction = 0
+                                    }
+                                    this.attackSwitchCycle++
+                                }
+                                this.doAttack = this.doAttackBeam
+                                break
+                            default:
+                                this.doAttack = this.doAttackDefault
+                                break
+                        }
+                    } else this.doAttack = this.doAttackCombined
+                }
+            }
+            
+            // positioning
+            Matter.Body.setAngularVelocity(this, (this.health > 0.5) ? 0.0333 : (this.health > 0.25 ? 0.05 : 0.1));
+            Matter.Body.setVelocity(this, this.intendedVelocity);
+            for (let i=0;i<this.tail.length;i++) {
+                let targetBody = this.tail[i]
+                let followBody = i==0 ? this : this.tail[i-1]
+                if (this.getDistance2(targetBody,followBody) > 40000) {
+                    let angle = this.getAngle(followBody,targetBody)
+                    targetBody.slimeFinalPos = {
+                        x:followBody.position.x+Math.cos(angle)*200,
+                        y:followBody.position.y+Math.sin(angle)*200
+                    }
+                }
+                Matter.Body.setAngle(targetBody, this.angle - ((i+1)*0.6))
+                Matter.Body.setPosition(targetBody, targetBody.slimeFinalPos)
+                Matter.Body.setVelocity(targetBody, {x:0,y:0})
+            }
+        };
+        
+        me.doAttack = function() {
+            this.cycle++
+            if (this.cycle == 360) this.intendedVelocity = {x:simulation.isHorizontalFlipped?-6:6,y:-16}
+            if (this.cycle > 360) {
+                this.intendedVelocity = {x:this.intendedVelocity.x,y:this.intendedVelocity.y+0.2}
+            }
+        }
+        me.doAttackDefault = function() {
+            this.cycle++
+            this.intendedVelocity = {x:this.intendedVelocity.x,y:this.intendedVelocity.y+0.2}
+        }
+        me.doAttackMob = function() {
+            this.cycle++
+            if (!this.pick) this.pick = spawn.fullPickList[Math.floor(Math.random() * spawn.fullPickList.length)]
+            if (this.position.y <= -400 && !(this.cycle % (20+(simulation.difficulty < 25 ? 20 : 0))) && mob.length < 50) {
+                spawn[this.pick](this.position.x, this.position.y)
+                mob[mob.length-1].locatePlayer()
+            }
+            if (this.position.y == -200 && this.velocity < 0 && mob.length < 50) {
+                const len = (simulation.difficulty / 2 - 30) / 15
+                for (let i = 0; i < len; i++) {
+                    spawn.randomLevelBoss(3000 * (simulation.isHorizontalFlipped ? -1 : 1) + 2000 * (Math.random() - 0.5), -1100 + 200 * (Math.random() - 0.5))
+                }
+            }
+            this.intendedVelocity = {x:this.intendedVelocity.x,y:this.intendedVelocity.y+0.2}
+            if (this.position.y > 500) this.pick = null
+        }
+        me.doAttackProjectiles = function() {
+            this.cycle++
+            if (this.position.y <= -500 && !(this.cycle % (60+(simulation.difficulty < 25 ? 60 : 0)))) {
+                let angles = [(Math.PI/4)+(Math.PI/8),(Math.PI/4)-(Math.PI/8),(Math.PI/2)+(Math.PI/4)+(Math.PI/8),((Math.PI/2)+(Math.PI/4))-(Math.PI/8)]
+                for (let i=0;i<angles.length;i++) {
+                    spawn.seeker(this.position.x+(Math.cos(angles[i])*100), this.position.y+(Math.sin(angles[i])*100), 20, 9); //give the bullet a rotational velocity as if they were attached to a vertex
+                    const who = mob[mob.length - 1]
+                    Matter.Body.setDensity(who, 0.00003); //normal is 0.001
+                    who.timeLeft = 840 //* (0.8 + 0.4 * Math.random());
+                    who.accelMag = 0.00035 * simulation.accelScale; //* (0.8 + 0.4 * Math.random())
+                    who.frictionAir = 0.01 //* (0.8 + 0.4 * Math.random());
+                    const velocity = Vector.mult(Vector.perp(Vector.normalise(Vector.sub(this.position, this.vertices[0]))), -6)
+                    Matter.Body.setVelocity(who, {
+                        x: this.velocity.x + Math.cos(angles[i])*16,
+                        y: this.velocity.y + Math.sin(angles[i])*16
+                    });
+                }
+            }
+            for (let i=0;i<this.tail.length;i++) {
+                if (this.tail[i].position.y <= -100 && !((this.cycle+((10+(simulation.difficulty < 25 ? 10 : 0))*(i+1))) % (60+(simulation.difficulty < 25 ? 60 : 0)))) {
+                    spawn.seeker(this.tail[i].position.x, this.tail[i].position.y, 7.5, 9); //give the bullet a rotational velocity as if they were attached to a vertex
+                    const who = mob[mob.length - 1]
+                    Matter.Body.setDensity(who, 0.00003); //normal is 0.001
+                    who.timeLeft = 840 //* (0.8 + 0.4 * Math.random());
+                    who.accelMag = 0.0002 * simulation.accelScale; //* (0.8 + 0.4 * Math.random())
+                    who.frictionAir = 0.01 //* (0.8 + 0.4 * Math.random());
+                    const velocity = Vector.mult(Vector.perp(Vector.normalise(Vector.sub(this.position, this.vertices[0]))), -6)
+                    Matter.Body.setVelocity(who, {
+                        x: 6*(Math.random()-0.5),
+                        y: -3
+                    });
+                }
+            }
+            this.intendedVelocity = {x:this.intendedVelocity.x,y:this.intendedVelocity.y+0.2}
+        }
+        me.doAttackBeam = function() { // formerly half health one time attack
+            this.cycle++
+            ctx.beginPath();
+            let vertices = this.vertices;
+            ctx.moveTo(vertices[0].x, vertices[0].y);
+            for (let j = 1; j < vertices.length; j++) ctx.lineTo(vertices[j].x, vertices[j].y);
+            ctx.lineTo(vertices[0].x, vertices[0].y);
+            for (let i = 0; i < this.tail.length; i++) {
+                if (this.tail[i].alive) {
+                    let vertices = this.tail[i].vertices;
+                    ctx.moveTo(vertices[0].x, vertices[0].y);
+                    for (let j = 1; j < vertices.length; j++) ctx.lineTo(vertices[j].x, vertices[j].y);
+                    ctx.lineTo(vertices[0].x, vertices[0].y);
+                }
+            }
+            ctx.lineWidth = 13 + 5 * Math.random();
+            ctx.strokeStyle = `rgba(255,255,255,${0.5+0.2*Math.random()})`;
+            ctx.stroke();
+            if (this.position.y > -1000 && this.velocity.y < 0) {
+                ctx.beginPath();
+                ctx.arc(this.position.x, this.position.y, 70, 0, Math.PI*2)
+                ctx.rect(this.position.x-70,this.position.y, 140, 1600)
+                ctx.fillStyle = "rgba(0,255,0,0.333)"
+                ctx.fill()
+                for (let i=2;i<this.tail.length;i+=3) {
+                    ctx.beginPath();
+                    ctx.arc(this.tail[i].position.x, this.tail[i].position.y, 70, 0, Math.PI*2)
+                    ctx.rect(this.tail[i].position.x-70,this.tail[i].position.y, 140, 1600)
+                    ctx.fillStyle = "rgba(0,255,0,0.333)"
+                    ctx.fill()
+                }
+            }
+            if (this.position.y <= -1000 && this.velocity.y < 0) {
+                ctx.beginPath();
+                ctx.arc(this.position.x, this.position.y, 70, 0, Math.PI*2)
+                ctx.rect(this.position.x-70,this.position.y, 140, 1600)
+                ctx.fillStyle = "rgba(0,255,0,0.667)"
+                ctx.fill()
+                for (let i=2;i<this.tail.length;i+=3) {
+                    ctx.beginPath();
+                    ctx.arc(this.tail[i].position.x, this.tail[i].position.y, 70, 0, Math.PI*2)
+                    ctx.rect(this.tail[i].position.x-70,this.tail[i].position.y, 140, 1600)
+                    ctx.fillStyle = "rgba(0,255,0,0.667)"
+                    ctx.fill()
+                }
+            }
+            if (this.velocity.y > 0 && !this.halfwaySlowdown) {
+                this.intendedVelocity.x /= 5
+                this.intendedVelocity.y /= 5
+                this.halfwaySlowdown = true
+            }
+            if (this.position.y <= -800 && this.halfwaySlowdown) {
+                ctx.beginPath();
+                ctx.arc(this.position.x, this.position.y, 70, 0, Math.PI*2)
+                ctx.rect(this.position.x-70,this.position.y, 140, 1600)
+                ctx.fillStyle = "rgb(0,255,0)"
+                ctx.fill()
+                ctx.beginPath();
+                ctx.arc(this.position.x, this.position.y, 45, 0, Math.PI*2)
+                ctx.rect(this.position.x-45,this.position.y, 90, 1600)
+                ctx.fillStyle = "rgb(255,255,255)"
+                ctx.fill()
+                if (m.immuneCycle < m.cycle && Math.abs(this.position.x-player.position.x)<70 && player.position.y > this.position.y) {
+                    m.damage(0.11 * simulation.dmgScale)
+                    m.immuneCycle = m.cycle + tech.collisionImmuneCycles + 60
+                }
+                for (let i=2;i<this.tail.length;i+=3) {
+                    ctx.beginPath();
+                    ctx.arc(this.tail[i].position.x, this.tail[i].position.y, 70, 0, Math.PI*2)
+                    ctx.rect(this.tail[i].position.x-70,this.tail[i].position.y, 140, 1600)
+                    ctx.fillStyle = "rgb(0,255,0)"
+                    ctx.fill()
+                    ctx.beginPath();
+                    ctx.arc(this.tail[i].position.x, this.tail[i].position.y, 45, 0, Math.PI*2)
+                    ctx.rect(this.tail[i].position.x-45,this.tail[i].position.y, 90, 1600)
+                    ctx.fillStyle = "rgb(255,255,255)"
+                    ctx.fill()
+                    if (m.immuneCycle < m.cycle && Math.abs(this.tail[i].position.x-player.position.x)<90 && player.position.y > this.tail[i].position.y) {
+                        m.damage(0.11 * simulation.dmgScale)
+                        m.immuneCycle = m.cycle + tech.collisionImmuneCycles + 60
+                    }
+                }
+                if ((!(this.cycle % 4))) {
+                    for (let i=0;i<2+Math.floor(Math.random()*6);i++) {
+                        spawn.sniperBullet(this.position.x, this.position.y, 8, 4);
+                        let who = mob[mob.length - 1]
+                        const speed = (6 + (Math.random()*36)) * simulation.accelScale * Math.sign(this.velocity.x);
+                        Matter.Body.setVelocity(who, {
+                            x: speed + this.velocity.x,
+                            y: 18
+                        });
+                    }
+                }
+            }
+            if (this.position.y > -800 && this.halfwaySlowdown) {
+                this.intendedVelocity.x *= 5
+                this.intendedVelocity.y *= 5
+                this.halfwaySlowdown = false
+            }
+            
+            this.intendedVelocity = {x:this.intendedVelocity.x,y:this.intendedVelocity.y+(this.halfwaySlowdown?0.008:0.2)}
+        }
+        me.doAttackCombined = function() { // phase 2 akin to finalBoss's
+            this.cycle++
+            if (!this.pick) this.pick = spawn.fullPickList[Math.floor(Math.random() * spawn.fullPickList.length)]
+            if (this.position.y <= -400 && !(this.cycle % (40+(simulation.difficulty < 25 ? 40 : 0))) && mob.length < 50) {
+                spawn[this.pick](this.position.x, this.position.y)
+                mob[mob.length-1].locatePlayer()
+            }
+            if (this.position.y == -200 && this.velocity < 0 && mob.length < 50) {
+                const len = (simulation.difficulty / 2 - 30) / 15
+                for (let i = 0; i < len; i++) {
+                    spawn.randomLevelBoss(3000 * (simulation.isHorizontalFlipped ? -1 : 1) + 2000 * (Math.random() - 0.5), -1100 + 200 * (Math.random() - 0.5))
+                }
+            }
+            if (!(this.cycle % 360)) this.pick = null
+            if (this.position.y <= -500 && !(this.cycle % (90+(simulation.difficulty < 25 ? 90 : 0)))) {
+                let angles = [(Math.PI/4)+(Math.PI/8),(Math.PI/4)-(Math.PI/8),(Math.PI/2)+(Math.PI/4)+(Math.PI/8),((Math.PI/2)+(Math.PI/4))-(Math.PI/8)]
+                for (let i=0;i<angles.length;i++) {
+                    spawn.seeker(this.position.x+(Math.cos(angles[i])*100), this.position.y+(Math.sin(angles[i])*100), 20, 9); //give the bullet a rotational velocity as if they were attached to a vertex
+                    const who = mob[mob.length - 1]
+                    Matter.Body.setDensity(who, 0.00003); //normal is 0.001
+                    who.timeLeft = 840 //* (0.8 + 0.4 * Math.random());
+                    who.accelMag = 0.00035 * simulation.accelScale; //* (0.8 + 0.4 * Math.random())
+                    who.frictionAir = 0.01 //* (0.8 + 0.4 * Math.random());
+                    const velocity = Vector.mult(Vector.perp(Vector.normalise(Vector.sub(this.position, this.vertices[0]))), -6)
+                    Matter.Body.setVelocity(who, {
+                        x: this.velocity.x + Math.cos(angles[i])*16,
+                        y: this.velocity.y + Math.sin(angles[i])*16
+                    });
+                }
+            }
+            for (let i=0;i<this.tail.length;i++) {
+                if (this.tail[i].position.y <= -100 && !((this.cycle+((15+(simulation.difficulty < 25 ? 15 : 0))*(i+1))) % (90+(simulation.difficulty < 25 ? 90 : 0)))) {
+                    spawn.seeker(this.tail[i].position.x, this.tail[i].position.y, 7.5, 9); //give the bullet a rotational velocity as if they were attached to a vertex
+                    const who = mob[mob.length - 1]
+                    Matter.Body.setDensity(who, 0.00003); //normal is 0.001
+                    who.timeLeft = 840 //* (0.8 + 0.4 * Math.random());
+                    who.accelMag = 0.0002 * simulation.accelScale; //* (0.8 + 0.4 * Math.random())
+                    who.frictionAir = 0.01 //* (0.8 + 0.4 * Math.random());
+                    const velocity = Vector.mult(Vector.perp(Vector.normalise(Vector.sub(this.position, this.vertices[0]))), -6)
+                    Matter.Body.setVelocity(who, {
+                        x: 6*(Math.random()-0.5),
+                        y: -3
+                    });
+                }
+            }
+            if (this.position.y > -1000 && this.velocity.y < 0) {
+                ctx.beginPath();
+                ctx.arc(this.position.x, this.position.y, 70, 0, Math.PI*2)
+                ctx.rect(this.position.x-70,this.position.y, 140, 1600)
+                ctx.fillStyle = "rgba(0,255,0,0.333)"
+                ctx.fill()
+                for (let i=2;i<this.tail.length;i+=3) {
+                    ctx.beginPath();
+                    ctx.arc(this.tail[i].position.x, this.tail[i].position.y, 70, 0, Math.PI*2)
+                    ctx.rect(this.tail[i].position.x-70,this.tail[i].position.y, 140, 1600)
+                    ctx.fillStyle = "rgba(0,255,0,0.333)"
+                    ctx.fill()
+                }
+            }
+            if (this.position.y <= -1000 && this.velocity.y < 0) {
+                ctx.beginPath();
+                ctx.arc(this.position.x, this.position.y, 70, 0, Math.PI*2)
+                ctx.rect(this.position.x-70,this.position.y, 140, 1600)
+                ctx.fillStyle = "rgba(0,255,0,0.667)"
+                ctx.fill()
+                for (let i=2;i<this.tail.length;i+=3) {
+                    ctx.beginPath();
+                    ctx.arc(this.tail[i].position.x, this.tail[i].position.y, 70, 0, Math.PI*2)
+                    ctx.rect(this.tail[i].position.x-70,this.tail[i].position.y, 140, 1600)
+                    ctx.fillStyle = "rgba(0,255,0,0.667)"
+                    ctx.fill()
+                }
+            }
+            if (this.velocity.y > 0 && !this.halfwaySlowdown) {
+                this.intendedVelocity.x /= 5
+                this.intendedVelocity.y /= 5
+                this.halfwaySlowdown = true
+            }
+            if (this.position.y <= -800 && this.halfwaySlowdown) {
+                ctx.beginPath();
+                ctx.arc(this.position.x, this.position.y, 70, 0, Math.PI*2)
+                ctx.rect(this.position.x-70,this.position.y, 140, 1600)
+                ctx.fillStyle = "rgb(0,255,0)"
+                ctx.fill()
+                ctx.beginPath();
+                ctx.arc(this.position.x, this.position.y, 45, 0, Math.PI*2)
+                ctx.rect(this.position.x-45,this.position.y, 90, 1600)
+                ctx.fillStyle = "rgb(255,255,255)"
+                ctx.fill()
+                if (m.immuneCycle < m.cycle && Math.abs(this.position.x-player.position.x)<70 && player.position.y > this.position.y) {
+                    m.damage(0.09 * simulation.dmgScale)
+                    m.immuneCycle = m.cycle + tech.collisionImmuneCycles + 60
+                }
+                for (let i=2;i<this.tail.length;i+=3) {
+                    ctx.beginPath();
+                    ctx.arc(this.tail[i].position.x, this.tail[i].position.y, 70, 0, Math.PI*2)
+                    ctx.rect(this.tail[i].position.x-70,this.tail[i].position.y, 140, 1600)
+                    ctx.fillStyle = "rgb(0,255,0)"
+                    ctx.fill()
+                    ctx.beginPath();
+                    ctx.arc(this.tail[i].position.x, this.tail[i].position.y, 45, 0, Math.PI*2)
+                    ctx.rect(this.tail[i].position.x-45,this.tail[i].position.y, 90, 1600)
+                    ctx.fillStyle = "rgb(255,255,255)"
+                    ctx.fill()
+                    if (m.immuneCycle < m.cycle && Math.abs(this.tail[i].position.x-player.position.x)<90 && player.position.y > this.tail[i].position.y) {
+                        m.damage(0.09 * simulation.dmgScale)
+                        m.immuneCycle = m.cycle + tech.collisionImmuneCycles + 60
+                    }
+                }
+            }
+            if (this.position.y > -800 && this.halfwaySlowdown) {
+                this.intendedVelocity.x *= 5
+                this.intendedVelocity.y *= 5
+                this.halfwaySlowdown = false
+            }
+            
+            this.intendedVelocity = {x:this.intendedVelocity.x,y:this.intendedVelocity.y+(this.halfwaySlowdown?0.008:0.2)}
+        }
+
+        me.onDeath = function() {
+            if (!this.hasRunDeathScript) {
+                this.hasRunDeathScript = true
+                this.isDropPowerUp = false
+                //make a block body to replace this one
+                //this body is too big to leave behind in the normal way mobs.replace()
+                const len = body.length;
+                const v = Matter.Vertices.hull(Matter.Vertices.clockwiseSort(this.vertices)) //might help with vertex collision issue, not sure
+                body[len] = Matter.Bodies.fromVertices(this.position.x, this.position.y, v);
+                Matter.Body.setVelocity(body[len], { x: 0, y: -3 });
+                Matter.Body.setAngularVelocity(body[len], this.angularVelocity);
+                body[len].collisionFilter.category = cat.body;
+                body[len].collisionFilter.mask = cat.player | cat.map | cat.body | cat.bullet | cat.mob | cat.mobBullet;
+                body[len].classType = "body";
+                Composite.add(engine.world, body[len]); //add to world
+                const expand = function(that, massLimit) {
+                    const scale = 1.05;
+                    Matter.Body.scale(that, scale, scale);
+                    if (that.mass < massLimit) setTimeout(expand, 20, that, massLimit);
+                };
+                expand(body[len], 40)
+
+                function unlockExit() {
+                    if (simulation.isHorizontalFlipped) {
+                        level.exit.x = -5500 - 100;
+                    } else {
+                        level.exit.x = 5500;
+                    }
+                    level.exit.y = -330;
+                    Matter.Composite.remove(engine.world, map[map.length - 1]);
+                    map.splice(map.length - 1, 1);
+                    simulation.draw.setPaths(); //redraw map draw path
+                }
+
+                //add lore level as next level if player took lore tech earlier in the game
+                if (lore.techCount > (lore.techGoal - 1) && !simulation.isCheating) {
+                    simulation.makeTextLog(`<span class="lore-text">undefined</span> <span class='color-symbol'>=</span> ${lore.techCount}/${lore.techGoal}`, 360);
+                    setTimeout(function() {
+                        simulation.makeTextLog(`level.levels.push("<span class='lore-text'>null</span>")`, 720);
+                        unlockExit()
+                        level.levels.push("null")
+                    }, 4000);
+                    //remove block map element so exit is clear
+                } else { //reset game
+                    let count = 0
+
+                    function loop() {
+                        if (!simulation.paused && !simulation.onTitlePage) {
+                            count++
+                            if (count < 660) {
+                                if (count === 1) simulation.makeTextLog(`<em>//enter testing mode to set level.levels.length to <strong>Infinite</strong></em>`);
+                                if (!(count % 60)) simulation.makeTextLog(`simulation.analysis <span class='color-symbol'>=</span> ${((count / 60 - Math.random()) * 0.1).toFixed(3)}`);
+                            } else if (count === 660) {
+                                simulation.makeTextLog(`simulation.analysis <span class='color-symbol'>=</span> 1 <em>//analysis complete</em>`);
+                            } else if (count === 780) {
+                                simulation.makeTextLog(`<span class="lore-text">undefined</span> <span class='color-symbol'>=</span> ${lore.techCount}/${lore.techGoal}`)
+                            } else if (count === 1020) {
+                                simulation.makeTextLog(`Engine.clear(engine) <em>//simulation successful</em>`);
+                            } else if (count === 1260) {
+                                // tech.isImmortal = false;
+                                // m.death()
+                                // m.alive = false;
+                                // simulation.paused = true;
+                                // m.health = 0;
+                                // m.displayHealth();
+                                document.getElementById("health").style.display = "none"
+                                document.getElementById("health-bg").style.display = "none"
+                                document.getElementById("text-log").style.opacity = 0; //fade out any active text logs
+                                document.getElementById("fade-out").style.opacity = 1; //slowly fades out
+                                // build.shareURL(false)
+                                setTimeout(function() {
+                                    if (!simulation.onTitlePage) {
+                                        simulation.paused = true;
+                                        // simulation.clearMap();
+                                        // Matter.Composite.clear(composite, keepStatic, [deep = false])
+                                        // Composite.clear(engine.composite);
+                                        engine.world.bodies.forEach((body) => { Matter.Composite.remove(engine.world, body) })
+                                        Engine.clear(engine);
+                                        simulation.splashReturn();
+                                    }
+                                }, 6000);
+                                return
+                            }
+                        }
+                        if (simulation.testing) {
+                            unlockExit()
+                            setTimeout(function() {
+                                simulation.makeTextLog(`level.levels.length <span class='color-symbol'>=</span> <strong>Infinite</strong>`);
+                            }, 1500);
+                        } else {
+                            if (!simulation.onTitlePage) requestAnimationFrame(loop);
+                        }
+                    }
+                    requestAnimationFrame(loop);
+                }
+                // for (let i = 0; i < 3; i++)
+                level.difficultyIncrease(simulation.difficultyMode) //ramp up damage
+                //remove power Ups,  to avoid spamming console
+                function removeAll(array) {
+                    for (let i = 0; i < array.length; ++i) Matter.Composite.remove(engine.world, array[i]);
+                }
+                removeAll(powerUp);
+                powerUp = [];
+
+                //pull in particles
+                for (let i = 0, len = body.length; i < len; ++i) {
+                    const velocity = Vector.mult(Vector.normalise(Vector.sub(this.position, body[i].position)), 65)
+                    const pushUp = Vector.add(velocity, { x: 0, y: -0.5 })
+                    Matter.Body.setVelocity(body[i], Vector.add(body[i].velocity, pushUp));
+                }
+                //damage all mobs
+                for (let j = 0; j < 8; j++) { //in case some mobs leave things after they die
+                    for (let i = 0, len = mob.length; i < len; ++i) {
+                        if (mob[i] !== this) {
+                            if (mob[i].isInvulnerable) { //disable invulnerability
+                                mob[i].isInvulnerable = false
+                                mob[i].damageReduction = 1
+                            }
+                            mob[i].damage(Infinity, true);
+                        }
+                    }
+                }
+
+                //draw stuff
+                for (let i = 0, len = 22; i < len; i++) {
+                    simulation.drawList.push({ //add dmg to draw queue
+                        x: this.position.x,
+                        y: this.position.y,
+                        radius: (i + 1) * 150,
+                        color: `rgba(255,255,255,0.17)`,
+                        time: 5 * (len - i + 1)
+                    });
+                }
+            }
+        };
+    },
+    slimeFinalBossTail(x, y, radius = 200) {
+        mobs.spawn(x, y, 3, radius, "hsla(160, 100%, 35%,0.667)");
+        let me = mob[mob.length - 1];
+        me.isBoss = true;
+
+        Matter.Body.setDensity(me, 0.3); //extra dense //normal is 0.001 //makes effective life much larger
+
+        me.stroke = "transparent"; //used for drawGhost
+        me.memory = Infinity;
+        me.frictionAir = 0;
+        me.collisionFilter.mask = cat.player | cat.bullet //| cat.body
+        me.hasRunDeathScript = false
+        me.slimeFinalPos = {x:x,y:y}
+        me.showHealthBar = false;
+
+        me.onDeath = function() {
+            if (!this.hasRunDeathScript) {
+                this.hasRunDeathScript = true
+                this.isDropPowerUp = false
+                mob[0].death() // kill the head aswell
+                //make a block body to replace this one
+                //this body is too big to leave behind in the normal way mobs.replace()
+                const len = body.length;
+                const v = Matter.Vertices.hull(Matter.Vertices.clockwiseSort(this.vertices)) //might help with vertex collision issue, not sure
+                body[len] = Matter.Bodies.fromVertices(this.position.x, this.position.y, v);
+                Matter.Body.setVelocity(body[len], { x: 0, y: -3 });
+                Matter.Body.setAngularVelocity(body[len], this.angularVelocity);
+                body[len].collisionFilter.category = cat.body;
+                body[len].collisionFilter.mask = cat.player | cat.map | cat.body | cat.bullet | cat.mob | cat.mobBullet;
+                body[len].classType = "body";
+                Composite.add(engine.world, body[len]); //add to world
+                const expand = function(that, massLimit) {
+                    const scale = 1.05;
+                    Matter.Body.scale(that, scale, scale);
+                    if (that.mass < massLimit) setTimeout(expand, 20, that, massLimit);
+                };
+                expand(body[len], 40)
+            }
+        };
+        me.damageReduction = 0.125
+        me.do = function() {
+            this.checkStatus();
+            if (this.health < this.headBody.health) {
+                this.headBody.health -= this.headBody.health - this.health
+                this.headBody.damage(0,true)
+            }
+            this.health = this.headBody.health
+        };
     },
     //complex constrained mob templates**********************************************************************
     //*******************************************************************************************************

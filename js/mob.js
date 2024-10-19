@@ -124,15 +124,19 @@ const mobs = {
                     // && !who.isBoss
                     if (who.velocity.y < 2) who.force.y += who.mass * 0.0004 //extra gravity
 
-                    //draw health bar
-                    const h = who.radius * 0.3;
-                    const w = who.radius * 2;
-                    const x = who.position.x - w / 2;
-                    const y = who.position.y - w * 0.7;
-                    ctx.fillStyle = "rgba(100, 100, 100, 0.3)";
-                    ctx.fillRect(x, y, w, h);
-                    ctx.fillStyle = `rgba(${Math.floor(255 * Math.random())},${Math.floor(255 * Math.random())},${Math.floor(255 * Math.random())},0.5)`
-                    ctx.fillRect(x, y, w * who.health, h);
+                    if (who.showHealthBar) {
+                        //draw health bar
+                        const h = who.radius * 0.3;
+                        const w = who.radius * 2;
+                        const x = who.position.x - w / 2;
+                        const y = who.position.y - w * 0.7;
+                        ctx.fillStyle = "rgba(100, 100, 100, 0.3)";
+                        ctx.fillRect(x, y, w, h);
+                        ctx.fillStyle = `rgba(${Math.floor(255 * Math.random())},${Math.floor(255 * Math.random())},${Math.floor(255 * Math.random())},0.5)`
+                        ctx.fillRect(x, y, w * who.health, h);
+                    } else {
+                        ctx.fillStyle = `rgba(${Math.floor(255 * Math.random())},${Math.floor(255 * Math.random())},${Math.floor(255 * Math.random())},0.5)`
+                    }
 
                     //draw fill inside mob
                     ctx.beginPath();
