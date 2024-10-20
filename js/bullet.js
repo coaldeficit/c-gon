@@ -288,6 +288,7 @@ const b = {
         if (tech.isFireRateForGuns) b.fireCDscale *= Math.pow(0.8, b.inventory.length)
         if (tech.isFireMoveLock) b.fireCDscale *= 0.5
         if (tech.isNitinol) b.fireCDscale *= 1.55
+        if (tech.isShotgunHeat) b.fireCDscale *= 1-(tech.isShotgunHeat-1)
     },
     fireAttributes(dir, rotate = true) {
         if (rotate) {
@@ -3509,7 +3510,7 @@ const b = {
             inertia: Infinity,
             frictionAir: 0.003,
             dmg: 0, //damage on impact
-            damage: (tech.isFastFoam ? 0.0275 : 0.011) * (tech.isBulletTeleport ? 1.43 : 1), //damage done over time
+            damage: (tech.isFastFoam ? 0.0275 : 0.011) * (tech.isBulletTeleport ? 1.43 : 1) * (tech.isFoamImpact ? 0.5 : 1) * (tech.isFoamChargeBuff ? tech.isFoamChargeBuff : 1), //damage done over time
             scale: 1 - 0.006 / tech.isBulletsLastLonger * (tech.isFastFoam ? 1.65 : 1),
             classType: "bullet",
             collisionFilter: {
@@ -3528,6 +3529,9 @@ const b = {
             beforeDmg(who) {
                 if (!this.target && who.alive) {
                     this.target = who;
+                    if (tech.isFoamImpact) {
+                        this.target.damage(m.dmgScale * this.damage*30, true)
+                    }
                     if (who.radius < 20) {
                         this.targetRelativePosition = {
                             x: 0,
@@ -3650,6 +3654,15 @@ const b = {
                                 break
                             }
                         }
+                    }
+                    if (tech.isFoamCloneWhileTravel && (!(m.cycle % 15)) && Math.random() < 0.166 && this.radius > 24 && !this.isSLES) {
+                        b.foam(this.position, Vector.add(Vector.rotate({
+                            x: 2 + 3 * Math.random(),
+                            y: 0
+                        }, 2 * Math.PI * Math.random()), this.velocity), this.radius-8)
+                        bullet[bullet.length - 1].count = 20
+                        bullet[bullet.length - 1].isSLES = true
+                        this.isSLES = Math.random() < 0.2
                     }
                 }
                 if (this.nextPortCycle < simulation.cycle) { //teleport around if you have tech.isBulletTeleport
@@ -5374,7 +5387,9 @@ const b = {
             ammoPack: 3.8,
             defaultAmmoPack: 3.8,
             have: false,
-            do() {},
+            do() {
+                if (tech.isShotgunHeat && tech.isShotgunHeat <= 1.85 && m.fireCDcycle < m.cycle && !input.fire) tech.isShotgunHeat += 0.005
+            },
             fire() {
                 let knock, spread
                 if (input.down) {
@@ -5568,9 +5583,35 @@ const b = {
                         if (tech.isShotgunReversed) Matter.Body.setDensity(bullet[me], 0.0016)
                         // bullet[me].restitution = 0.4
                         bullet[me].frictionAir = 0.034;
+                        bullet[me].startMass = bullet[me].mass
                         bullet[me].do = function() {
                             const scale = 1 - 0.034 / tech.isBulletsLastLonger
                             Matter.Body.scale(this, scale, scale);
+                        };
+                        bullet[me].beforeDmg = function(who) {
+                            if (tech.isShotgunBounce) {
+                                let target = [null,Infinity]
+                                for (let i=0;i<mob.length;i++) {
+                                    if (
+                                        !mob[i].isBadTarget &&
+                                        Vector.magnitude(Vector.sub(this.position, mob[i].position)) < target[1] &&
+                                        Matter.Query.ray(map, this.position, mob[i].position).length === 0 &&
+                                        Matter.Query.ray(mob, this.position, mob[i].position).length === 1 &&
+                                        Matter.Query.ray(body, this.position, mob[i].position).length === 0 &&
+                                        mob[i] != who
+                                    ) {
+                                        target = [mob[i], Vector.magnitude(Vector.sub(this.position, mob[i].position))]
+                                    }
+                                }
+                                if (target[0] != null) {
+                                    let angle = Vector.normalise(Vector.sub(Vector.add(target[0].position, Vector.mult(target[0].velocity, target[1] / 60)), this.position))
+                                    Matter.Body.setVelocity(this, Vector.mult(angle, 42))
+                                    Matter.Body.setPosition(this, {x:this.position.x+(this.velocity.x*3),y:this.position.y+(this.velocity.y*3)})
+                                    if (this.mass < this.startMass) Matter.Body.scale(this, 2, 2)
+                                    this.isSensor = true
+                                    this.endCycle = simulation.cycle + 40
+                                }
+                            }
                         };
                     }
                 }
@@ -6383,6 +6424,7 @@ const b = {
                             y: m.pos.y + 30 * Math.sin(m.angle)
                         }
                         if (tech.foamFutureFire) {
+                            let chargeBuff = tech.isFoamChargeBuff
                             simulation.drawList.push({ //add dmg to draw queue
                                 x: position.x,
                                 y: position.y,
@@ -6394,7 +6436,7 @@ const b = {
                                 if (!simulation.paused) {
                                     b.foam(position, Vector.rotate(velocity, spread), radius)
                                     // (tech.isFastFoam ? 0.044 : 0.011) * (tech.isBulletTeleport ? 1.60 : 1)
-                                    bullet[bullet.length - 1].damage *= (1 + 0.7 * tech.foamFutureFire)
+                                    bullet[bullet.length - 1].damage *= (1 + 0.7 * tech.foamFutureFire * (tech.isFoamChargeBuff ? chargeBuff : 1))
                                 }
                             }, 250 * tech.foamFutureFire);
                         } else {
@@ -6407,6 +6449,7 @@ const b = {
                 } else {
                     if (this.isDischarge) {
                         m.fireCDcycle = m.cycle + Math.floor(25 * b.fireCDscale);
+                        tech.isFoamChargeBuff = 1
                     }
                     this.isDischarge = false
                 }
@@ -6419,6 +6462,7 @@ const b = {
                     simulation.updateGunHUD();
                 }
                 this.charge++
+                if (tech.isFoamChargeBuff) tech.isFoamChargeBuff += 0.07
                 m.fireCDcycle = m.cycle + Math.floor(1 + 0.3 * this.charge);
             },
             fire() {},
