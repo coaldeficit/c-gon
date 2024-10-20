@@ -1150,6 +1150,12 @@ const simulation = {
     //   }
     // },
     checks() {
+        if (tech.isShotgunHeat && tech.isShotgunHeat > 1) {
+            if (m.fireCDcycle >= m.cycle || b.guns[b.activeGun].name != 'shotgun' || input.fire) tech.isShotgunHeat -= 0.00667
+            if (tech.isShotgunHeat < 1) tech.isShotgunHeat = 1
+            if (tech.isShotgunHeat > 1.85) tech.isShotgunHeat = 1.85
+            b.setFireCD()
+        }
         if (tech.isDupEnergy && m.energy > m.maxEnergy) m.energy = m.maxEnergy
 	    if (!(m.cycle % 5)) {
 	      if (tech.isCarBomb) {

@@ -1,3 +1,11 @@
+# shotfoamgun (2024/10/20)
+- added 5 new tech:
+- - syntactic foam: makes foam do impact damage
+- - Plateau's laws: makes foam do more damage the longer you keep it charged up before firing
+- - sodium laureth sulfate: makes foam self-replicate as it travels unattached to mobs
+- - ricochet: shotgun projectiles bounce off towards other mobs upon hitting a mob
+- - heat pipe: having shotgun equipped and not firing with it slowly increases your fire rate, while not doing that slowly decreases it
+- spin-statistics now reduces shotgun ammo by 40% instead of 50%
 # slimeFinalBoss (2024/10/20)
 - added slimeFinalBoss, an alternative final boss that has a 50% chance to show up on final instead of the usual one
 - - can be found at the end of seed 57153 if you want to mess around with it

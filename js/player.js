@@ -1025,6 +1025,79 @@ const m = {
                 powerUps.boost.draw()
             }
         },
+        heatPipe() {
+            m.isAltSkin = true
+            m.color = {
+                hue: 30,
+                sat: 0,
+                light: 100,
+            }
+            m.yOffWhen = {
+                crouch: 22,
+                stand: 49,
+                jump: 70
+            }
+            m.velocitySmooth = {
+                x: 0,
+                y: 0
+            }
+            m.setFillColors()
+	        m.draw = function() {
+                m.color = {
+                   hue: 30,
+                   sat: 100*((tech.isShotgunHeat-1)/0.9),
+                   light: 100,
+                }
+                m.setFillColors()
+                ctx.fillStyle = m.fillColor;
+                m.walk_cycle += m.flipLegs * m.Vx;
+                ctx.save();
+                ctx.globalAlpha = (m.immuneCycle < m.cycle) ? 1 : 0.5
+                ctx.translate(m.pos.x, m.pos.y);
+                m.calcLeg(Math.PI, -3);
+                m.drawLeg(`rgb(${74+181*((tech.isShotgunHeat-1)/0.9)},${74+76*((tech.isShotgunHeat-1)/0.9)},${74*(1-((tech.isShotgunHeat-1)/0.9))})`);
+                m.calcLeg(0, 0);
+                m.drawLeg(`rgb(${51+204*((tech.isShotgunHeat-1)/0.9)},${51+76*((tech.isShotgunHeat-1)/0.9)},${51*(1-((tech.isShotgunHeat-1)/0.9))})`);
+                ctx.rotate(m.angle);
+                ctx.beginPath();
+                ctx.fillStyle = `rgb(${255*Math.min(((tech.isShotgunHeat-1)/0.9)*2.5, 1)},${255*(tech.isShotgunHeat-1)/0.9},0)`
+                ctx.strokeStyle = `rgb(${51+204*((tech.isShotgunHeat-1)/0.9)},${51+76*((tech.isShotgunHeat-1)/0.9)},${51*(1-((tech.isShotgunHeat-1)/0.9))})`;
+                ctx.fillRect(Math.max(Math.min(m.cycle-m.fireCDcycle,0),-30)-35,-25,50,20)
+                ctx.fillRect(Math.max(Math.min(m.cycle-m.fireCDcycle,0),-30)-35,5,50,20)
+                ctx.strokeRect(Math.max(Math.min(m.cycle-m.fireCDcycle,0),-30)-35,-25,50,20)
+                ctx.strokeRect(Math.max(Math.min(m.cycle-m.fireCDcycle,0),-30)-35,5,50,20)
+                ctx.beginPath();
+                ctx.arc(0, 0, 30, 0, 2 * Math.PI);
+                ctx.fillStyle = this.bodyGradient
+                ctx.fill();
+                ctx.arc(15, 0, 4, 0, 2 * Math.PI);
+                ctx.strokeStyle = `rgb(${51+204*((tech.isShotgunHeat-1)/0.9)},${51+76*((tech.isShotgunHeat-1)/0.9)},${51*(1-((tech.isShotgunHeat-1)/0.9))})`;
+                ctx.lineWidth = 2;
+                ctx.stroke();
+                ctx.restore();
+                m.yOff = m.yOff * 0.85 + m.yOffGoal * 0.15; //smoothly move leg height towards height goal
+                if (powerUps.boost.endCycle > simulation.cycle) {
+                    //gel that acts as if the wind is blowing it when player moves
+                    ctx.save();
+                    ctx.translate(m.pos.x, m.pos.y);
+                    m.velocitySmooth = Vector.add(Vector.mult(m.velocitySmooth, 0.8), Vector.mult(player.velocity, 0.2))
+                    ctx.rotate(Math.atan2(m.velocitySmooth.y, m.velocitySmooth.x))
+                    ctx.beginPath();
+                    const radius = 40
+                    const mag = 8 * Vector.magnitude(m.velocitySmooth) + radius
+                    ctx.arc(0, 0, radius, -Math.PI / 2, Math.PI / 2);
+                    ctx.bezierCurveTo(-radius, radius, -radius, 0, -mag, 0); // bezierCurveTo(cp1x, cp1y, cp2x, cp2y, x, y)
+                    ctx.bezierCurveTo(-radius, 0, -radius, -radius, 0, -radius);
+                    const time = Math.min(0.5, (powerUps.boost.endCycle - simulation.cycle) / powerUps.boost.duration)
+                    ctx.fillStyle = `rgba(255,127,0,${time})`
+                    ctx.fill()
+                    ctx.strokeStyle = "#f60"
+                    ctx.lineWidth = 0.3 + 4 * time
+                    ctx.stroke();
+                    ctx.restore();
+                }
+            }
+        },
         egg() {
             m.isAltSkin = true
             m.yOffWhen.stand = 52
