@@ -1062,6 +1062,7 @@ const m = {
                 ctx.beginPath();
                 ctx.fillStyle = `rgb(${255*Math.min(((tech.isShotgunHeat-1)/0.9)*2.5, 1)},${255*(tech.isShotgunHeat-1)/0.9},0)`
                 ctx.strokeStyle = `rgb(${51+204*((tech.isShotgunHeat-1)/0.9)},${51+76*((tech.isShotgunHeat-1)/0.9)},${51*(1-((tech.isShotgunHeat-1)/0.9))})`;
+                ctx.lineWidth = 2;
                 ctx.fillRect(Math.max(Math.min(m.cycle-m.fireCDcycle,0),-30)-35,-25,50,20)
                 ctx.fillRect(Math.max(Math.min(m.cycle-m.fireCDcycle,0),-30)-35,5,50,20)
                 ctx.strokeRect(Math.max(Math.min(m.cycle-m.fireCDcycle,0),-30)-35,-25,50,20)
