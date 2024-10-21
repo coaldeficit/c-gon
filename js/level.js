@@ -17976,7 +17976,7 @@ const level = {
                     });
                 }
                 this.curl()
-                this.repelBullets()
+                //this.repelBullets()
                 this.seePlayerCheckByDistance()
                 this.checkStatus();
                 const eventHorizon = this.eventHorizon * (0.93 + 0.17 * Math.sin(simulation.cycle * 0.011))

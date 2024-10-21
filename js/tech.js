@@ -11160,6 +11160,7 @@ const tech = {
     bulletSize: null,
     energySiphon: null,
     healthDrain: null,
+    isShotgunFireEverythingCycle: 0,
     isShotgunFireEverything: null,
     isShotgunHeat: null,
     isShotgunBounce: null,
