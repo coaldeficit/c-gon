@@ -162,25 +162,30 @@
                     <label for="gimmick-maps" title="maps significantly deviating from normal gameplay">gimmick maps:</label>
                     <input type="checkbox" id="gimmick-maps" name="gimmick-maps" style="width:17px; height:17px;">
                     <br>
-                    <label for="intermission-maps" title="maps always present at some point in all runs"> intermission maps:</label>
-                    <select name="intermission-maps" id="intermission-maps">
-                        <option value="none">none</option>
-                        <option value="classic">classic (reservoir, reactor)</option>
-                        <option value="modernonly">modern only (factory)</option>
-                        <option value="modern" selected>modern (reservoir, factory, reactor)</option>
-                    </select>
-                    <br>
+				    <details>
+					    <summary style='font-size: 1em;' title="maps always present at some point in all runs">intermission maps</summary>
+					    <div id="map-settings-intermission" style="line-height: 100%;">
+                            <label for="main-intermission-maps" title="vanilla intermission maps present in j-gon" style='font-size: 0.8em;'>classic:</label>
+                            <input type="checkbox" id="main-intermission-maps" name="main-intermission-maps" style="width:16px; height:16px; line-height:50%;">
+						    <br>
+                            <label for="new-intermission-maps" title="vanilla intermission maps not present in j-gon" style='font-size: 0.8em;'>modern:</label>
+                            <input type="checkbox" id="new-intermission-maps" name="new-intermission-maps" style="width:16px; height:16px; line-height:50%;">
+						    <br>
+                            <label for="gimmick-intermission-maps" title="intermission maps significantly deviating from normal gameplay" style='font-size: 0.8em;'>gimmick:</label>
+                            <input type="checkbox" id="gimmick-intermission-maps" name="gimmick-intermission-maps" style="width:16px; height:16px; line-height:50%;">
+				        </div>
+					</details>
                     <label for="prefinal-map" title="map right before final"> pre-final map:</label>
                     <select name="prefinal-map" id="prefinal-map">
-                        <option value="gauntlet" selected>gauntlet</option>
-                        <option value="subway">subway</option>
+                        <option value="gauntlet">gauntlet</option>
+                        <option value="subway" selected>subway</option>
                         <option value="random">random normal map</option>
                     </select>
 					<br>
-                    <label for="extra-level-count" title="increase level count from 12 to 15">extended levels:</label>
-                    <input type="checkbox" id="extra-level-count" name="extra-level-count" style="width:17px; height:17px;">
+                    <label for="level-count" title="number of levels (including final) in runs">level count:</label>
+                    <input type="number" id="level-count" name="level-count" style="width:45px; height:24px;" min="1" max="999">
                     <br>
-                    <label for="banned" title="type banned levels with a comma between them.  Example:  underpass,stereoMadness,temple">level blacklist:</label>
+                    <label for="banned" title="type banned levels with a comma between them.  Example:  underpass,stereoMadness,temple,reactor">level blacklist:</label>
                     <input type="text" id="banned" name="banned" placeholder="list levels by name" autocomplete="off" spellcheck="false" style="width: 182px;"/>
                 </div>
             </details>
@@ -260,11 +265,22 @@
                 <summary>about</summary>
                 <div class="details-div">
                     A fork of <a href="https://github.com/TheRealIvyX/j-gon">j-gon</a> which is itself a fork of <a href="https://github.com/landgreen/n-gon">n-gon</a>.
-                    <!-- <br>
-				<br>
-				vanilla n-gon can be found <a href="https://landgreen.github.io/sidescroller/">here</a>.
-				<br>
-				<br> -->
+                </div>
+            </details>
+        </div>
+        <div>
+            <details>
+                <summary>credits</summary>
+                <div class="details-div" style="font-size: 70%;height: 400px;overflow: scroll;max-width: 450px;">
+					<strong>Thanks to:</strong><br>
+                    <strong>Ross Landgreen</strong>, for making n-gon to begin with.<br>
+                    <strong><em>&lt;anonymized by request&gt;</em></strong>, for making j-gon, which<br>c-gon was based on.<br>
+                    <strong>CD</strong>, for making c-gon.<br>
+					<br>
+                    <strong class='color-m'>garfunkel</strong>, for suggesting <strong class='color-g'>counter</strong><strong class='color-m'>blast</strong>.<br>
+                    <strong class='color-m'>Pcat</strong>, for suggesting <strong class='color-g'>BLE</strong><strong class='color-m'>VE</strong>.<br>
+                    <strong class='color-m'>Desboot</strong>, for suggesting <strong class='color-g'>fl</strong><strong class='color-m'>ak</strong>.<br>
+                    <strong class='color-m'>Masbirb</strong>, for suggesting <strong class='color-g'>alternating</strong> <strong class='color-m'>munitions</strong>.<br>
                 </div>
             </details>
         </div>

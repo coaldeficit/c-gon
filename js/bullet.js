@@ -5423,7 +5423,7 @@ const b = {
 
                 b.muzzleFlash(35);
 
-                if (tech.isRivets) {
+                if (tech.isRivets || (tech.isShotgunFireEverything && tech.isShotgunFireEverythingCycle == 7)) {
                     const me = bullet.length;
                     // const dir = m.angle + 0.02 * (Math.random() - 0.5)
                     bullet[me] = Bodies.rectangle(m.pos.x + 35 * Math.cos(m.angle), m.pos.y + 35 * Math.sin(m.angle), 60 * tech.bulletSize, 27 * tech.bulletSize, b.fireAttributes(m.angle));
@@ -5469,7 +5469,7 @@ const b = {
                             }
                         }
                     }
-                } else if (tech.isIncendiary) {
+                } else if (tech.isIncendiary || (tech.isShotgunFireEverything && tech.isShotgunFireEverythingCycle == 6)) {
                     spread *= 0.15
                     const END = Math.floor(input.down ? 10 : 7);
                     const totalBullets = 10 * (tech.isShotgunFlak ? 0.5 : 1)
@@ -5496,7 +5496,7 @@ const b = {
                         bullet[me].do = function() {}
                         Composite.add(engine.world, bullet[me]); //add bullet to world
                     }
-                } else if (tech.isNailShot) {
+                } else if (tech.isNailShot || (tech.isShotgunFireEverything && tech.isShotgunFireEverythingCycle == 5)) {
                     spread *= 0.65
                     const dmg = 2 * (tech.isShotgunReversed ? 1.6 : 1)
                     if (input.down) {
@@ -5526,7 +5526,7 @@ const b = {
                             }, dmg)
                         }
                     }
-                } else if (tech.isSporeWorm) {
+                } else if (tech.isSporeWorm || (tech.isShotgunFireEverything && tech.isShotgunFireEverythingCycle == 4)) {
                     const where = { x: m.pos.x + 35 * Math.cos(m.angle), y: m.pos.y + 35 * Math.sin(m.angle) }
                     const spread = (input.down ? 0.02 : 0.07)
                     const number = 3 * (tech.isShotgunReversed ? 1.6 : 1) * (tech.isShotgunFlak ? 0.333 : 1) + Math.random()
@@ -5540,13 +5540,13 @@ const b = {
                         });
                         angle += spread
                     }
-                } else if (tech.isIceShot) {
+                } else if (tech.isIceShot || (tech.isShotgunFireEverything && tech.isShotgunFireEverythingCycle == 3)) {
                     const spread = (input.down ? 0.7 : 1.2)
                     for (let i = 0, len = 16 * (tech.isShotgunReversed ? 1.6 : 1) * (tech.isShotgunFlak ? 0.5 : 1); i < len; i++) {
                         //     iceIX(speed = 0, dir = m.angle + Math.PI * 2 * Math.random(), where = { x: m.pos.x + 30 * Math.cos(m.angle), y: m.pos.y + 30 * Math.sin(m.angle) }) {
                         b.iceIX(25 + 20 * Math.random(), m.angle + spread * (Math.random() - 0.5))
                     }
-                } else if (tech.isFoamShot) {
+                } else if (tech.isFoamShot || (tech.isShotgunFireEverything && tech.isShotgunFireEverythingCycle == 2)) {
                     const spread = (input.down ? 0.35 : 0.7)
                     const where = {
                         x: m.pos.x + 25 * Math.cos(m.angle),
@@ -5558,7 +5558,7 @@ const b = {
                         const angle = m.angle + spread * (Math.random() - 0.5)
                         b.foam(where, { x: SPEED * Math.cos(angle), y: SPEED * Math.sin(angle) }, 5 + 8 * Math.random())
                     }
-                } else if (tech.isNeedles) {
+                } else if (tech.isNeedles || (tech.isShotgunFireEverything && tech.isShotgunFireEverythingCycle == 1)) {
                     const number = Math.ceil(9 * (tech.isShotgunReversed ? 1.6 : 1) * (tech.isShotgunFlak ? 0.5 : 1))
                     const spread = (input.down ? 0.03 : 0.05)
                     let angle = m.angle - (number - 1) * spread * 0.5
@@ -5615,6 +5615,7 @@ const b = {
                         };
                     }
                 }
+                if (tech.isShotgunFireEverything) tech.isShotgunFireEverythingCycle = (tech.isShotgunFireEverythingCycle + 1) % 8
             }
         }, {
             name: "super balls",

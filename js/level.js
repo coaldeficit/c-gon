@@ -9,15 +9,35 @@ const level = {
     levelsCleared: 0,
     //see level.populateLevels:   (intro, ... , reservoir, reactor, ... , gauntlet, final)    added later
     playableLevels: ["labs", "rooftops", "skyscrapers", "warehouse", "highrise", "office", "aerie", "satellite", "sewers", "testChamber", "pavilion"],
-    modernPlayableLevels: ["lock", "towers", "flocculation", "gravityObservatory"],
+    modernPlayableLevels: ["lock", "towers", "flocculation", "gravitron"],
     cgonLevels: ["descent", "split"],
     communityLevels: ["stronghold", "basement", "crossfire", "vats", "n-gon", "house", "perplex", "coliseum", "tunnel", "islands"],
     modernCommunityLevels: ["dripp", "fortress", "commandeer", "clock", "buttonbutton", "downpour", "LaunchSite", "shipwreck"],
     gimmickLevels: ["run", "temple", "biohazard", "stereoMadness", "yingYang", "staircase", "superNgonBros", "underpass", "cantilever", "tlinat", "ruins",
     "dojo", "flappyGon", "rings", "trial"],
-    // ace is bugged, crimsonTowers is laggy and infringes copyright
+    // ace is bugged, crimsonTowers is laggy and possibly infringes copyright
     // unchartedCave is laggy, arena uses non-existent matter functions
     // soft: soft-bodies dont despawn properly on level exit, causing buildup and lag
+    get totalMapCount() { // no purpose, just for fun
+        return this.playableLevels.length +
+        this.modernPlayableLevels.length +
+        this.cgonLevels.length +
+        this.communityLevels.length +
+        this.modernCommunityLevels.length +
+        this.gimmickLevels.length +
+        7 // reservoir, factory, interferometer, reactor, gauntlet, subway, final
+    },
+    get selectionAvailableMapCount() { // used for map settings level count cap shenanigans
+        return (simulation.mapSettings.main?this.playableLevels.length:0) +
+        (simulation.mapSettings.modern?this.modernPlayableLevels.length:0) +
+        (simulation.mapSettings.cgon?this.cgonLevels.length:0) +
+        (simulation.mapSettings.community?this.communityLevels.length:0) +
+        (simulation.mapSettings.modernCommunity?this.modernCommunityLevels.length:0) +
+        (simulation.mapSettings.gimmick?this.gimmickLevels.length:0) +
+        (simulation.mapSettings.modernCommunity&&simulation.mapSettings.prefinal!='gauntlet'?1:0) +
+        (simulation.mapSettings.prefinal!='random'?1:0) +
+        1 // final
+    },
     trainingLevels: ["walk", "crouch", "jump", "hold", "throw", "throwAt", "deflect", "heal", "fire", "nailGun", "shotGun", "superBall", "matterWave", "missile", "stack", "mine", "grenades", "harpoon"],
     levels: [],
     finalChoice: 0, // final boss choice, seed dependent
@@ -276,6 +296,7 @@ const level = {
             simulation.isHorizontalFlipped = (Math.seededRandom() < 0.5) ? true : false //if true, some maps are flipped horizontally
             level.levels = []
             let bannedLevels = simulation.mapSettings.blacklist.split(',')
+            if (typeof simulation.mapSettings.levelCount != 'number') simulation.mapSettings.levelCount = 15
             if (simulation.mapSettings.main) level.levels = level.levels.concat(level.playableLevels)
             if (simulation.mapSettings.modern) level.levels = level.levels.concat(level.modernPlayableLevels)
             if (simulation.mapSettings.cgon) level.levels = level.levels.concat(level.cgonLevels)
@@ -286,25 +307,29 @@ const level = {
             level.levels = level.levels.filter((targetlevel)=>!(bannedLevels.includes(targetlevel)))
             if (level.levels.length == 0) level.levels = level.playableLevels.slice(0);
             level.levels = shuffle(level.levels); //shuffles order of maps
-            level.levels.splice(0, level.levels.length-(10+(simulation.mapSettings.extendedLevels?3:0)+(simulation.mapSettings.prefinal=='random'?1:0)))
+            level.levels.splice(0, (level.levels.length-(simulation.mapSettings.levelCount-2))+(simulation.mapSettings.prefinal=='random'?1:0))
             // level.levels.splice(Math.floor(level.levels.length * (0.4 + 0.6 * Math.random())), 0, "reservoir"); //add level to the back half of the randomized levels list
             let intermissionLevelsA = [] // reservoir replacements
-            if (simulation.mapSettings.intermission == 'classic' || simulation.mapSettings.intermission == 'modern') {
+            let intermissionLevelsB = [] // reactor replacements
+            if (simulation.mapSettings.intermission.main) {
                 if (!bannedLevels.includes('reservoir')) intermissionLevelsA.push('reservoir')
+                if (!bannedLevels.includes('reactor')) intermissionLevelsB.push('reactor')
             }
-            if (simulation.mapSettings.intermission == 'modernonly' || simulation.mapSettings.intermission == 'modern') {
+            if (simulation.mapSettings.intermission.modern) {
                 if (!bannedLevels.includes('factory')) intermissionLevelsA.push('factory')
-                if (!bannedLevels.includes('gravityInterferometer') && simulation.mapSettings.gimmick) intermissionLevelsA.push('gravityInterferometer')
             }
-            if (intermissionLevelsA.length != 0) level.levels.splice(Math.floor(Math.seededRandom((level.levels.length) * 0.6, level.levels.length)), 0, intermissionLevelsA[Math.floor(Math.seededRandom(0, intermissionLevelsA.length))]);level.levels.splice(0, 1);//add level to the back half of the randomized levels list
-            if (simulation.mapSettings.intermission != 'none' && simulation.mapSettings.intermission != 'modernonly' && !bannedLevels.includes('reactor')) {level.levels.splice(Math.floor(Math.seededRandom((level.levels.length) * 0.6, level.levels.length)), 0, "reactor");level.levels.splice(0, 1);} //add level to the back half of the randomized levels list
+            if (simulation.mapSettings.intermission.gimmick) {
+                if (!bannedLevels.includes('interferometer')) intermissionLevelsA.push('interferometer')
+            }
+            if (intermissionLevelsA.length != 0) {level.levels.splice(Math.floor(Math.seededRandom((level.levels.length) * 0.6, level.levels.length)), 0, intermissionLevelsA[Math.floor(Math.seededRandom(0, intermissionLevelsA.length))]);level.levels.splice(0, 1);}//add level to the back half of the randomized levels list
+            if (intermissionLevelsB.length != 0) {level.levels.splice(Math.floor(Math.seededRandom((level.levels.length) * 0.6, level.levels.length)), 0, intermissionLevelsB[Math.floor(Math.seededRandom(0, intermissionLevelsB.length))]);level.levels.splice(0, 1);} //add level to the back half of the randomized levels list
             
             if (!build.isExperimentSelection || (build.hasExperimentalMode && !simulation.isCheating)) { //experimental mode is endless, unless you only have an experiment Tech
                 level.levels.unshift("intro"); //add level to the start of the randomized levels list
-                if (simulation.mapSettings.prefinal != 'random') level.levels.push(simulation.mapSettings.prefinal); //add level to the end of the randomized levels list
+                if (simulation.mapSettings.prefinal != 'random' && simulation.mapSettings.levelCount > 1) level.levels.push(simulation.mapSettings.prefinal); //add level to the end of the randomized levels list
                 level.levels.push("final"); //add level to the end of the randomized levels list
-                level.finalChoice = Math.floor(Math.seededRandom(0, 2))
             }
+            level.finalChoice = Math.floor(Math.seededRandom(0, 2))
         }
         //set seeded random lists of mobs and bosses
         spawn.mobTypeSpawnOrder = []
@@ -6989,7 +7014,7 @@ const level = {
         simulation.draw.lineOfSightPrecalculation() //required precalculation for line of sight
         simulation.draw.drawMapPath = simulation.draw.drawMapSight
     },
-    gravityInterferometer() {
+    interferometer() {
         simulation.fallHeight = 4000
         level.setPosToSpawn(-1825, 1950); //lower start
         level.exit.x = -1875
@@ -7510,7 +7535,7 @@ const level = {
         spawn.randomLevelBoss(-875, -200);
         powerUps.addResearchToLevel() //needs to run after mobs are spawned
     },
-    gravityObservatory() {
+    gravitron() {
         level.isVerticalFLipLevel = true
         simulation.fallHeight = 4000
         level.setPosToSpawn(-2375, 950);
@@ -27939,7 +27964,7 @@ const level = {
     // ********************************************************************************************************
     // ********************************************************************************************************
     descent() {
-        simulation.makeTextLog(`<strong>descent</strong> by <span class='color-var'>IvyX</span>. made for j-gon`);
+        simulation.makeTextLog(`<strong>descent</strong> by <em>&lt;anonymized by request&gt;</em>. made for j-gon`);
         level.setPosToSpawn(0, -50); //normal spawn
         level.exit.x = 10000;
         level.exit.y = 10000;
