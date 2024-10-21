@@ -1284,6 +1284,15 @@ function localstorageCheck() {
     }
 
 }
+function setMaxLevelCountSetting() {
+    document.getElementById("level-count").setAttribute("max",level.selectionAvailableMapCount.toString())
+    if (simulation.mapSettings.levelCount > parseInt(document.getElementById("level-count").max)) {
+        document.getElementById("level-count").value = parseInt(document.getElementById("level-count").max)
+        simulation.mapSettings.levelCount = document.getElementById("level-count").value
+        localSettings.mapSettings.levelCount = simulation.mapSettings.levelCount
+        if (localSettings.isAllowed) localStorage.setItem("localSettings", JSON.stringify(localSettings)); //update local storage
+    }
+}
 if (localstorageCheck()) {
     localSettings = JSON.parse(localStorage.getItem("localSettings"))
     if (localSettings) {
@@ -1301,7 +1310,6 @@ if (localstorageCheck()) {
     console.log("localStorage is disabled")
     localSettings = { isAllowed: false }
 }
-
 
 if (localSettings.isAllowed && !localSettings.isEmpty) {
     console.log('restoring previous settings')
@@ -1324,10 +1332,51 @@ if (localSettings.isAllowed && !localSettings.isEmpty) {
       community: false,
       modernCommunity: false,
       gimmick: false,
-      intermission: "modern",
+      intermission: {
+        main: true,
+        modern: true,
+        gimmick: false,
+      },
       prefinal: "subway",
-      extendedLevels: true,
+      levelCount: 15,
       blacklist: "",
+    }
+    if (Object.hasOwn(localSettings.mapSettings, 'extendedLevels')) {
+        localSettings.mapSettings.levelCount = (localSettings.mapSettings.extendedLevels ? 15 : 12)
+        delete localSettings.mapSettings.extendedLevels
+    }
+    if (typeof localSettings.mapSettings.intermission == 'string') {
+        switch (localSettings.mapSettings.intermission) {
+            case "none":
+                localSettings.mapSettings.intermission = {
+                    main: false,
+                    modern: false,
+                    gimmick: false,
+                }
+                break
+            case "classic":
+                localSettings.mapSettings.intermission = {
+                    main: true,
+                    modern: false,
+                    gimmick: false,
+                }
+                break
+            case "modernonly":
+                localSettings.mapSettings.intermission = {
+                    main: false,
+                    modern: true,
+                    gimmick: localSettings.mapSettings.gimmick,
+                }
+                break
+            case "modern":
+            default:
+                localSettings.mapSettings.intermission = {
+                    main: true,
+                    modern: true,
+                    gimmick: localSettings.mapSettings.gimmick,
+                }
+                break
+        }
     }
     simulation.mapSettings = localSettings.mapSettings
     document.getElementById("main-maps").checked = localSettings.mapSettings.main
@@ -1336,9 +1385,13 @@ if (localSettings.isAllowed && !localSettings.isEmpty) {
     document.getElementById("community-maps").checked = localSettings.mapSettings.community
     document.getElementById("new-community-maps").checked = localSettings.mapSettings.modernCommunity
     document.getElementById("gimmick-maps").checked = localSettings.mapSettings.gimmick
-    document.getElementById("intermission-maps").value = localSettings.mapSettings.intermission
+    
+    document.getElementById("main-intermission-maps").checked = localSettings.mapSettings.intermission.main
+    document.getElementById("new-intermission-maps").checked = localSettings.mapSettings.intermission.modern
+    document.getElementById("gimmick-intermission-maps").checked = localSettings.mapSettings.intermission.gimmick
+    
     document.getElementById("prefinal-map").value = localSettings.mapSettings.prefinal
-    document.getElementById("extra-level-count").checked = localSettings.mapSettings.extendedLevels
+    document.getElementById("level-count").value = localSettings.mapSettings.levelCount
     document.getElementById("banned").value = localSettings.mapSettings.blacklist
 
     if (localSettings.difficultyMode === undefined) localSettings.difficultyMode = "2"
@@ -1361,7 +1414,6 @@ if (localSettings.isAllowed && !localSettings.isEmpty) {
         isAllowed: isAllowed,
         personalSeeds: [],
         isJunkExperiment: false,
-        isCommunityMaps: false,
         difficultyMode: '2',
         fpsCapDefault: 'max',
         runCount: 0,
@@ -1376,17 +1428,19 @@ if (localSettings.isAllowed && !localSettings.isEmpty) {
           community: false,
           moderncommunity: false,
           gimmick: false,
-          intermission: "modern",
+          intermission: {
+              main: true,
+              modern: true,
+              gimmick: false,
+          },
           prefinal: "subway",
-          extendedLevels: true,
+          levelCount: 15,
           blacklist: "",
         },
         key: undefined
     };
     input.setDefault()
     if (localSettings.isAllowed) localStorage.setItem("localSettings", JSON.stringify(localSettings)); //update local storage
-    document.getElementById("community-maps").checked = localSettings.isCommunityMaps
-    simulation.isCommunityMaps = localSettings.isCommunityMaps
     document.getElementById("difficulty-select").value = localSettings.difficultyMode
     document.getElementById("fps-select").value = localSettings.fpsCapDefault
     
@@ -1396,11 +1450,16 @@ if (localSettings.isAllowed && !localSettings.isEmpty) {
     document.getElementById("community-maps").checked = localSettings.mapSettings.community
     document.getElementById("new-community-maps").checked = localSettings.mapSettings.modernCommunity
     document.getElementById("gimmick-maps").checked = localSettings.mapSettings.gimmick
-    document.getElementById("intermission-maps").value = localSettings.mapSettings.intermission
+    
+    document.getElementById("main-intermission-maps").checked = localSettings.mapSettings.intermission.main
+    document.getElementById("new-intermission-maps").checked = localSettings.mapSettings.intermission.modern
+    document.getElementById("gimmick-intermission-maps").checked = localSettings.mapSettings.intermission.gimmick
+    
     document.getElementById("prefinal-map").value = localSettings.mapSettings.prefinal
-    document.getElementById("extra-level-count").checked = localSettings.mapSettings.extendedLevels
+    document.getElementById("level-count").value = localSettings.mapSettings.levelCount
     document.getElementById("banned").value = localSettings.mapSettings.blacklist
 }
+setMaxLevelCountSetting()
 document.getElementById("control-testing").style.visibility = (localSettings.loreCount === 0) ? "hidden" : "visible"
 // document.getElementById("experiment-button").style.visibility = (localSettings.loreCount === 0) ? "hidden" : "visible"
 
@@ -1424,46 +1483,66 @@ document.getElementById("main-maps").addEventListener("input", () => {
     simulation.mapSettings.main = document.getElementById("main-maps").checked
     localSettings.mapSettings.main = simulation.mapSettings.main
     if (localSettings.isAllowed) localStorage.setItem("localSettings", JSON.stringify(localSettings)); //update local storage
+    setMaxLevelCountSetting()
 });
 document.getElementById("new-main-maps").addEventListener("input", () => {
     simulation.mapSettings.modern = document.getElementById("new-main-maps").checked
     localSettings.mapSettings.modern = simulation.mapSettings.modern
     if (localSettings.isAllowed) localStorage.setItem("localSettings", JSON.stringify(localSettings)); //update local storage
+    setMaxLevelCountSetting()
 });
 document.getElementById("cgon-maps").addEventListener("input", () => {
     simulation.mapSettings.cgon = document.getElementById("cgon-maps").checked
     localSettings.mapSettings.cgon = simulation.mapSettings.cgon
     if (localSettings.isAllowed) localStorage.setItem("localSettings", JSON.stringify(localSettings)); //update local storage
+    setMaxLevelCountSetting()
 });
 document.getElementById("community-maps").addEventListener("input", () => {
     simulation.mapSettings.community = document.getElementById("community-maps").checked
     localSettings.mapSettings.community = simulation.mapSettings.community
     if (localSettings.isAllowed) localStorage.setItem("localSettings", JSON.stringify(localSettings)); //update local storage
+    setMaxLevelCountSetting()
 });
 document.getElementById("new-community-maps").addEventListener("input", () => {
     simulation.mapSettings.modernCommunity = document.getElementById("new-community-maps").checked
     localSettings.mapSettings.modernCommunity = simulation.mapSettings.modernCommunity
     if (localSettings.isAllowed) localStorage.setItem("localSettings", JSON.stringify(localSettings)); //update local storage
+    setMaxLevelCountSetting()
 });
 document.getElementById("gimmick-maps").addEventListener("input", () => {
     simulation.mapSettings.gimmick = document.getElementById("gimmick-maps").checked
     localSettings.mapSettings.gimmick = simulation.mapSettings.gimmick
     if (localSettings.isAllowed) localStorage.setItem("localSettings", JSON.stringify(localSettings)); //update local storage
+    setMaxLevelCountSetting()
 });
-document.getElementById("intermission-maps").addEventListener("input", () => {
-    simulation.mapSettings.intermission = document.getElementById("intermission-maps").value
-    localSettings.mapSettings.intermission = simulation.mapSettings.intermission
+
+document.getElementById("main-intermission-maps").addEventListener("input", () => {
+    simulation.mapSettings.intermission.main = document.getElementById("main-intermission-maps").checked
+    localSettings.mapSettings.intermission.main = simulation.mapSettings.intermission.main
     if (localSettings.isAllowed) localStorage.setItem("localSettings", JSON.stringify(localSettings)); //update local storage
 });
+document.getElementById("new-intermission-maps").addEventListener("input", () => {
+    simulation.mapSettings.intermission.modern = document.getElementById("new-intermission-maps").checked
+    localSettings.mapSettings.intermission.modern = simulation.mapSettings.intermission.modern
+    if (localSettings.isAllowed) localStorage.setItem("localSettings", JSON.stringify(localSettings)); //update local storage
+});
+document.getElementById("gimmick-intermission-maps").addEventListener("input", () => {
+    simulation.mapSettings.intermission.gimmick = document.getElementById("gimmick-intermission-maps").checked
+    localSettings.mapSettings.intermission.gimmick = simulation.mapSettings.intermission.gimmick
+    if (localSettings.isAllowed) localStorage.setItem("localSettings", JSON.stringify(localSettings)); //update local storage
+});
+
 document.getElementById("prefinal-map").addEventListener("input", () => {
     simulation.mapSettings.prefinal = document.getElementById("prefinal-map").value
     localSettings.mapSettings.prefinal = simulation.mapSettings.prefinal
     if (localSettings.isAllowed) localStorage.setItem("localSettings", JSON.stringify(localSettings)); //update local storage
+    setMaxLevelCountSetting()
 });
-document.getElementById("extra-level-count").addEventListener("input", () => {
-    simulation.mapSettings.extendedLevels = document.getElementById("extra-level-count").checked
-    localSettings.mapSettings.extendedLevels = simulation.mapSettings.extendedLevels
+document.getElementById("level-count").addEventListener("input", () => {
+    simulation.mapSettings.levelCount = document.getElementById("level-count").value
+    localSettings.mapSettings.levelCount = simulation.mapSettings.levelCount
     if (localSettings.isAllowed) localStorage.setItem("localSettings", JSON.stringify(localSettings)); //update local storage
+    setMaxLevelCountSetting()
 });
 document.getElementById("banned").addEventListener("input", () => {
     simulation.mapSettings.blacklist = document.getElementById("banned").value

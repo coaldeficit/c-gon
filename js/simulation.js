@@ -144,9 +144,13 @@ const simulation = {
       community: false,
       moderncommunity: false,
       gimmick: false,
-      intermission: "modern",
+      intermission: {
+          main: true,
+          modern: true,
+          gimmick: false
+      },
       prefinal: "subway",
-      extendedLevels: true,
+      levelCount: 15,
       blacklist: "",
     },
     cyclePaused: 0,

@@ -1,3 +1,12 @@
+# 53 level special difficulty marathon challenge run when (2024/10/21)
+- map settings changes:
+- - intermission maps are now their own category with 3 checkboxes for setting what intermission maps you want to play
+- - extended levels option has been replaced by a direct level count
+- added a section to the menu to credit those who have in some form contributed to c-gon
+- buffed integrated armament's damage increase from 25% to 50%
+- added 1 new tech:
+- - alternating munitions: shotgun cycles between all possible things it can shoot. suggested by Masbirb
+- renamed gravityObservatory and gravityInterferometer to gravitron and interferometer respectively
 # shotfoamgun (2024/10/20)
 - added 5 new tech:
 - - syntactic foam: makes foam do impact damage
