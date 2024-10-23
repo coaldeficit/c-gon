@@ -1,4 +1,4 @@
-# long metal rod (2024/10/22)
+# long metal rod (2024/10/24)
 - added a new gun: rebar: fires a large, piercing projectile that becomes an immobile block on contact with walls. suggested by Cornbread 2100 and Masbird
 - added 11 new tech:
 - - electron magnetic moment: rebars attract nearby mobs. suggested by garfunkel
