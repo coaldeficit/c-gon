@@ -667,6 +667,34 @@ summary {
     }
 }
 
+.color-stun {
+    animation: stun 0.2s linear infinite normal;
+}
+
+@keyframes stun {
+    0% {
+        color: #5b1fb5;
+    }
+
+    33% {
+        color: #c7bf30;
+    }
+
+    67% {
+        color: #35c730;
+    }
+
+    100% {
+        color: #c730b5;
+    }
+}
+
+.color-hydrogen {
+    color: #ccd7d9;
+    text-shadow: 0px 0px 10px rgba(204, 215, 217, 1);
+    letter-spacing: -0.8px;
+}
+
 .color-invulnerable {
     color: #fff;
     text-shadow: 0px 0px 7px #000;

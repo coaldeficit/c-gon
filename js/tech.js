@@ -1079,7 +1079,7 @@ const tech = {
         },
         {
             name: "fracture analysis",
-            description: "bullet impacts do <strong>400%</strong> <strong class='color-d'>damage</strong><br>to <strong>stunned</strong> mobs",
+            description: "bullet impacts do <strong>400%</strong> <strong class='color-d'>damage</strong><br>to <strong class='color-stun'>stunned</strong> mobs",
             maxCount: 1,
             count: 0,
             frequency: 2,
@@ -1501,7 +1501,7 @@ const tech = {
         {
             name: "orbital-bot",
             link: `<a target="_blank" href='https://en.wikipedia.org/wiki/Robot' class="link">orbital-bot</a>`,
-            description: "a <strong class='color-bot'>bot</strong> is locked in <strong>orbit</strong> around you<br><strong>stuns</strong> and <strong class='color-d'>damages</strong> mobs on <strong>contact</strong>",
+            description: "a <strong class='color-bot'>bot</strong> is locked in <strong>orbit</strong> around you<br><strong class='color-stun'>stuns</strong> and <strong class='color-d'>damages</strong> mobs on <strong>contact</strong>",
             maxCount: 9,
             count: 0,
             frequency: 1,
@@ -2361,7 +2361,7 @@ const tech = {
         },
         // {
         //     name: "osmoprotectant",
-        //     description: `collisions with <strong>stunned</strong> or <strong class='color-s'>frozen</strong> mobs<br>cause you <strong>no</strong> <strong class='color-harm'>harm</strong>`,
+        //     description: `collisions with <strong class='color-stun'>stunned</strong> or <strong class='color-s'>frozen</strong> mobs<br>cause you <strong>no</strong> <strong class='color-harm'>harm</strong>`,
         //     maxCount: 1,
         //     count: 0,
         //     frequency: 2,
@@ -4630,7 +4630,7 @@ const tech = {
             count: 0,
             frequency: 3,
             frequencyDefault: 3,
-            allowed() { return tech.isBoostPowerUps || tech.isQuantumJump },
+            allowed() { return tech.isBoostPowerUps || tech.isQuantumJump || tech.isRebarStunBoost },
             requires: "boost drop rate increase tech",
             effect() {
                 powerUps.boost.duration -= 60
@@ -4648,7 +4648,7 @@ const tech = {
             count: 0,
             frequency: 3,
             frequencyDefault: 3,
-            allowed() { return tech.isBoostPowerUps || tech.isQuantumJump },
+            allowed() { return tech.isBoostPowerUps || tech.isQuantumJump || tech.isRebarStunBoost},
             requires: "boost drop rate increase tech",
             effect() {
                 tech.isPolariton = true
@@ -4831,9 +4831,9 @@ const tech = {
             frequency: 2,
             frequencyDefault: 2,
             allowed() {
-                return ((tech.haveGunCheck("nail gun") && !tech.nailInstantFireRate && !tech.nailRecoil) || (tech.haveGunCheck("shotgun") && !tech.isNailShot && !tech.isFoamShot && !tech.isSporeWorm)) && !tech.isRivets && !tech.isIncendiary && !tech.isIceCrystals && !tech.isIceShot && !tech.isShotgunBounce && !tech.isShotgunFireEverything
+                return ((tech.haveGunCheck("nail gun") && !tech.nailInstantFireRate && !tech.nailRecoil) || (tech.haveGunCheck("shotgun") && !tech.isNailShot && !tech.isFoamShot && !tech.isSporeWorm)) && !tech.isRivets && !tech.isIncendiary && !tech.isIceCrystals && !tech.isIceShot && !tech.isShotgunBounce && !tech.isShotgunFireEverything && !tech.isBlastHydrogen
             },
-            requires: "nail gun, shotgun, not ice crystal, rivets, rotary cannon, pneumatic, incendiary, nail-shot, rivets, foam-shot, worm-shot, ice-shot, ricochet, alternating munitions",
+            requires: "nail gun, shotgun, not ice crystal, rivets, rotary cannon, pneumatic, incendiary, nail-shot, rivets, foam-shot, worm-shot, ice-shot, ricochet, alternating munitions, compressed gas",
             effect() {
                 tech.isNeedles = true
                 for (i = 0, len = b.guns.length; i < len; i++) { //find which gun 
@@ -4870,9 +4870,9 @@ const tech = {
             frequency: 2,
             frequencyDefault: 2,
             allowed() {
-                return ((tech.haveGunCheck("nail gun") && !tech.nailInstantFireRate) || (tech.haveGunCheck("shotgun") && !tech.isNailShot && !tech.isFoamShot && !tech.isSporeWorm && !tech.isShotgunBounce)) && !tech.isNeedles && !tech.isIceCrystals && !tech.isIceShot && !tech.isShotgunFireEverything
+                return ((tech.haveGunCheck("nail gun") && !tech.nailInstantFireRate) || (tech.haveGunCheck("shotgun") && !tech.isNailShot && !tech.isFoamShot && !tech.isSporeWorm && !tech.isShotgunBounce)) && !tech.isNeedles && !tech.isIceCrystals && !tech.isIceShot && !tech.isShotgunFireEverything && !tech.isBlastHydrogen
             },
-            requires: "nail gun, shotgun, not ice crystal, needles, pneumatic actuator, ricochet, alternating munitions",
+            requires: "nail gun, shotgun, not ice crystal, needles, pneumatic actuator, ricochet, alternating munitions, compressed gas",
             effect() {
                 tech.isRivets = true
                 for (i = 0, len = b.guns.length; i < len; i++) { //find which gun 
@@ -4973,7 +4973,7 @@ const tech = {
             frequency: 2,
             frequencyDefault: 2,
             allowed() {
-                return tech.isMineDrop + tech.nailBotCount + tech.fragments + tech.nailsDeathMob + (tech.haveGunCheck("super balls") + (tech.haveGunCheck("mine") && !tech.isLaserMine) + (tech.haveGunCheck("nail gun")) + tech.isNeedles + tech.isNailShot + tech.isRivets + tech.isShotgunFireEverything) * 2 > 1
+                return tech.isMineDrop + tech.nailBotCount + tech.fragments + tech.nailsDeathMob + (tech.haveGunCheck("super balls") + (tech.haveGunCheck("mine") && !tech.isLaserMine) + (tech.haveGunCheck("nail gun")) + tech.isNeedles + tech.isNailShot + tech.isRivets + tech.isShotgunFireEverything + (tech.haveGunCheck("rebar") && tech.isRebarBlockNails)) * 2 > 1
             },
             requires: "nails, nail gun, rivets, shotgun",
             effect() {
@@ -5106,7 +5106,7 @@ const tech = {
             frequencyDefault: 2,
             allowed() {
                 // return tech.isMineDrop + tech.nailBotCount + tech.fragments + tech.nailsDeathMob / 2 + ((tech.haveGunCheck("mine") && !tech.isLaserMine) + (tech.haveGunCheck("nail gun") && !tech.isShieldPierce) + tech.isNeedles + tech.isNailShot) * 2 > 1
-                return tech.isMineDrop || tech.nailBotCount || tech.fragments || tech.nailsDeathMob || (tech.haveGunCheck("mine") && !tech.isLaserMine) || (tech.haveGunCheck("nail gun") && !tech.isShieldPierce) || (tech.haveGunCheck("shotgun") && (tech.isNeedles || tech.isNailShot || tech.isShotgunFireEverything))
+                return tech.isMineDrop || tech.nailBotCount || tech.fragments || tech.nailsDeathMob || (tech.haveGunCheck("mine") && !tech.isLaserMine) || (tech.haveGunCheck("nail gun") && !tech.isShieldPierce) || (tech.haveGunCheck("shotgun") && (tech.isNeedles || tech.isNailShot || tech.isShotgunFireEverything)) || (tech.haveGunCheck("rebar") && tech.isRebarBlockNails)
             },
             requires: "nail gun, nails, rivets, mine, not ceramic needles",
             effect() {
@@ -5316,6 +5316,25 @@ const tech = {
             }
         },
         {
+            name: "compressed gas",
+            description: "<strong>shotgun</strong> and <strong class='color-blast'>blast</strong> guns release<br><strong class='color-hydrogen'>hydrogen gas</strong> while firing",
+            isGunTech: true,
+            maxCount: 1,
+            count: 0,
+            frequency: 2,
+            frequencyDefault: 2,
+            allowed() {
+                return (tech.haveGunCheck("shotgun") || tech.haveGunCheck("blast")) && !tech.hasShotgunBulletReplacementCheck() && !tech.isHeavyShell
+            },
+            requires: "shotgun, blast gun, no shotgun bullet replacement tech, not heavy shell",
+            effect() {
+                tech.isBlastHydrogen = true;
+            },
+            remove() {
+                tech.isBlastHydrogen = false;
+            }
+        },
+        {
             name: "nail-shot",
             link: `<a target="_blank" href='https://en.wikipedia.org/wiki/Nail_(fastener)' class="link">nail-shot</a>`,
             description: "<strong>shotgun</strong> fires <strong>17</strong> <strong>nails</strong>",
@@ -5325,9 +5344,9 @@ const tech = {
             frequency: 2,
             frequencyDefault: 2,
             allowed() {
-                return tech.haveGunCheck("shotgun") && !tech.isIncendiary && !tech.isRivets && !tech.isIceShot && !tech.isFoamShot && !tech.isSporeWorm && !tech.isNeedles && !tech.isShotgunBounce && !tech.isShotgunFireEverything
+                return tech.haveGunCheck("shotgun") && !tech.isIncendiary && !tech.isRivets && !tech.isIceShot && !tech.isFoamShot && !tech.isSporeWorm && !tech.isNeedles && !tech.isShotgunBounce && !tech.isShotgunFireEverything && !tech.isBlastHydrogen
             },
-            requires: "shotgun, not incendiary, rivets, foam-shot, worm-shot, ice-shot, needles, ricochet, alternating munitions",
+            requires: "shotgun, not incendiary, rivets, foam-shot, worm-shot, ice-shot, needles, ricochet, alternating munitions, compressed gas",
             effect() {
                 tech.isNailShot = true;
             },
@@ -5345,9 +5364,9 @@ const tech = {
             frequency: 2,
             frequencyDefault: 2,
             allowed() {
-                return tech.haveGunCheck("shotgun") && !tech.isNailShot && !tech.isIncendiary && !tech.isRivets && !tech.isIceShot && !tech.isSporeWorm && !tech.isNeedles && !tech.isShotgunBounce && !tech.isShotgunFireEverything
+                return tech.haveGunCheck("shotgun") && !tech.isNailShot && !tech.isIncendiary && !tech.isRivets && !tech.isIceShot && !tech.isSporeWorm && !tech.isNeedles && !tech.isShotgunBounce && !tech.isShotgunFireEverything && !tech.isBlastHydrogen
             },
-            requires: "shotgun, not incendiary, nail-shot, rivet, worm-shot, ice-shot, needle, ricochet, alternating munitions",
+            requires: "shotgun, not incendiary, nail-shot, rivet, worm-shot, ice-shot, needle, ricochet, alternating munitions, compressed gas",
             effect() {
                 tech.isFoamShot = true;
             },
@@ -5365,9 +5384,9 @@ const tech = {
             frequency: 2,
             frequencyDefault: 2,
             allowed() {
-                return tech.haveGunCheck("shotgun") && !tech.isNailShot && !tech.isIncendiary && !tech.isRivets && !tech.isFoamShot && !tech.isSporeWorm && !tech.isNeedles && !tech.isShotgunBounce && !tech.isShotgunFireEverything
+                return tech.haveGunCheck("shotgun") && !tech.isNailShot && !tech.isIncendiary && !tech.isRivets && !tech.isFoamShot && !tech.isSporeWorm && !tech.isNeedles && !tech.isShotgunBounce && !tech.isShotgunFireEverything && !tech.isBlastHydrogen
             },
-            requires: "shotgun, not incendiary, nail-shot, rivet, foam-shot, worm-shot, ricochet, alternating munitions",
+            requires: "shotgun, not incendiary, nail-shot, rivet, foam-shot, worm-shot, ricochet, alternating munitions, compressed gas",
             effect() {
                 tech.isIceShot = true;
             },
@@ -5384,9 +5403,9 @@ const tech = {
             frequency: 1,
             frequencyDefault: 1,
             allowed() {
-                return (tech.haveGunCheck("shotgun") && !tech.isNailShot && !tech.isIceShot && !tech.isRivets && !tech.isFoamShot && !tech.isSporeWorm && !tech.isNeedles && !tech.isShotgunBounce && !tech.isShotgunFireEverything) || tech.haveGunCheck("super balls") || (tech.isRivets && !tech.isNailCrit) || (m.fieldUpgrades[m.fieldMode].name === "molecular assembler" && !(tech.isDroneTeleport || tech.isDroneRadioactive || tech.isSporeField || tech.isMissileField || tech.isIceField)) || (tech.haveGunCheck("drones") && !tech.isForeverDrones && !tech.isDroneRadioactive && !tech.isDroneTeleport)
+                return (tech.haveGunCheck("shotgun") && !tech.isNailShot && !tech.isIceShot && !tech.isRivets && !tech.isFoamShot && !tech.isSporeWorm && !tech.isNeedles && !tech.isShotgunBounce && !tech.isShotgunFireEverything && !tech.isBlastHydrogen) || tech.haveGunCheck("super balls") || (tech.isRivets && !tech.isNailCrit) || (m.fieldUpgrades[m.fieldMode].name === "molecular assembler" && !(tech.isDroneTeleport || tech.isDroneRadioactive || tech.isSporeField || tech.isMissileField || tech.isIceField)) || (tech.haveGunCheck("drones") && !tech.isForeverDrones && !tech.isDroneRadioactive && !tech.isDroneTeleport)
             },
-            requires: "shotgun, super balls, rivets, drones, not irradiated drones, burst drones, ricochet, alternating munitions",
+            requires: "shotgun, super balls, rivets, drones, not irradiated drones, burst drones, ricochet, alternating munitions, compressed gas",
             effect() {
                 tech.isIncendiary = true
             },
@@ -5443,7 +5462,7 @@ const tech = {
         },
         {
             name: "super ball",
-            description: "fire just <strong>1 large</strong> super <strong>ball</strong><br>that <strong>stuns</strong> mobs for <strong>3</strong> second",
+            description: "fire just <strong>1 large</strong> super <strong>ball</strong><br>that <strong class='color-stun'>stuns</strong> mobs for <strong>3</strong> second",
             isGunTech: true,
             maxCount: 1,
             count: 0,
@@ -5824,7 +5843,7 @@ const tech = {
         },
         {
             name: "shock wave",
-            description: "<strong>mines</strong> and <strong class='color-e'>explosions</strong> <strong>stun</strong> for <strong>1-2</strong> seconds<br>decrease <strong class='color-e'>explosive</strong> <strong class='color-d'>damage</strong> by <strong>30%</strong>",
+            description: "<strong>mines</strong> and <strong class='color-e'>explosions</strong> <strong class='color-stun'>stun</strong> for <strong>1-2</strong> seconds<br>decrease <strong class='color-e'>explosive</strong> <strong class='color-d'>damage</strong> by <strong>30%</strong>",
             isGunTech: true,
             maxCount: 1,
             count: 0,
@@ -5844,7 +5863,7 @@ const tech = {
         // {
         //     name: "blast mines",
         //     link: `<a target="_blank" href='https://en.wikipedia.org/wiki/Anti-personnel_mine' class="link">blast mines</a>`,
-        //     description: "when a <strong>mine</strong> <strong>activates</strong><br>it <strong>stuns</strong> nearby mobs for <strong>2-4</strong> seconds",
+        //     description: "when a <strong>mine</strong> <strong>activates</strong><br>it <strong class='color-stun'>stuns</strong> nearby mobs for <strong>2-4</strong> seconds",
         //     isGunTech: true,
         //     maxCount: 1,
         //     count: 0,
@@ -5913,9 +5932,9 @@ const tech = {
             frequency: 2,
             frequencyDefault: 2,
             allowed() {
-                return tech.haveGunCheck("missiles") || tech.missileBotCount || tech.haveGunCheck("grenades")
+                return (tech.haveGunCheck("missiles") || tech.missileBotCount || tech.haveGunCheck("grenades")) && !tech.isHydrogenTrail
             },
-            requires: "missiles, grenades",
+            requires: "missiles, grenades, not contrail",
             effect() {
                 tech.missileCount++;
             },
@@ -6046,16 +6065,16 @@ const tech = {
         {
             name: "water shielding",
             link: `<a target="_blank" href='https://en.wikipedia.org/wiki/Radiation_protection#Radiation_shielding' class="link">water shielding</a>`,
-            description: "<strong class='color-p'>radioactive</strong> effects on you are reduced by 75%<br><em>neutron bomb, drones, explosions, slime</em>",
+            description: "<strong class='color-p'>radioactive</strong> effects on you are reduced by 75%<br><em>neutron bomb, drones, explosions, slime, control rods</em>",
             isGunTech: true,
             maxCount: 1,
             count: 0,
             frequency: 2,
             frequencyDefault: 2,
             allowed() {
-                return tech.isNeutronBomb || tech.isDroneRadioactive || tech.isExplodeRadio
+                return tech.isNeutronBomb || tech.isDroneRadioactive || tech.isExplodeRadio || tech.isRebarControlRod
             },
-            requires: "neutron bomb or irradiated drones or iridium-192",
+            requires: "neutron bomb or irradiated drones or iridium-192 or control rod ejection",
             effect() {
                 tech.isRadioactiveResistance = true
             },
@@ -6255,9 +6274,9 @@ const tech = {
             frequency: 3,
             frequencyDefault: 3,
             allowed() {
-                return tech.haveGunCheck("spores") || tech.sporesOnDeath > 0 || tech.isSporeField || (tech.haveGunCheck("shotgun") && !tech.isIncendiary && !tech.isRivets && !tech.isIceShot && !tech.isFoamShot && !tech.isNeedles && !tech.isNailShot && !tech.isShotgunBounce && !tech.isShotgunFireEverything)
+                return tech.haveGunCheck("spores") || tech.sporesOnDeath > 0 || tech.isSporeField || (tech.haveGunCheck("shotgun") && !tech.isIncendiary && !tech.isRivets && !tech.isIceShot && !tech.isFoamShot && !tech.isNeedles && !tech.isNailShot && !tech.isShotgunBounce && !tech.isShotgunFireEverything && !tech.isBlastHydrogen)
             },
-            requires: "spores, shotgun, not incendiary, nail-shot, rivets, foam-shot, ice-shot, needles, ricochet, alternating munitions",
+            requires: "spores, shotgun, not incendiary, nail-shot, rivets, foam-shot, ice-shot, needles, ricochet, alternating munitions, compressed gas",
             effect() {
                 tech.isSporeWorm = true
             },
@@ -7354,7 +7373,7 @@ const tech = {
         },
         {
             name: "quake",
-            description: "after not using <strong class='color-blast'>blast</strong> for <strong>2</strong> seconds<br>your next <strong class='color-blast'>detonation</strong> has <strong>100%</strong> increased<br><strong>radius</strong> and guaranteed <strong>stun</strong>",
+            description: "after not using <strong class='color-blast'>blast</strong> for <strong>2</strong> seconds<br>your next <strong class='color-blast'>detonation</strong> has <strong>100%</strong> increased<br><strong>radius</strong> and guaranteed <strong class='color-stun'>stun</strong>",
             isGunTech: true,
             maxCount: 1,
             count: 0,
@@ -7430,7 +7449,7 @@ const tech = {
         },
         {
             name: "white phosphorus",
-            description: "mobs <strong>stunned</strong> by <strong class='color-blast'>detonations</strong> <strong class='color-e'>explode</strong>",
+            description: "mobs <strong class='color-stun'>stunned</strong> by <strong class='color-blast'>detonations</strong> <strong class='color-e'>explode</strong>",
             isGunTech: true,
             maxCount: 1,
             count: 0,
@@ -7507,7 +7526,7 @@ const tech = {
         },
         {
             name: "blast wave",
-            description: "increase <strong class='color-blast'>detonation</strong> <strong>stun chance</strong> by <strong>7%</strong><br>increase <strong class='color-blast'>detonation</strong> <strong>stun duration</strong> by <strong>0.3</strong> seconds",
+            description: "increase <strong class='color-blast'>detonation</strong> <strong class='color-stun'>stun chance</strong> by <strong>7%</strong><br>increase <strong class='color-blast'>detonation</strong> <strong class='color-stun'>stun duration</strong> by <strong>0.3</strong> seconds",
             isGunTech: true,
             maxCount: 9,
             count: 0,
@@ -7527,21 +7546,230 @@ const tech = {
         {
             name: "heavy shell",
             link: `<a target="_blank" href='https://en.wikipedia.org/wiki/Shell_(projectile)' class="link">heavy shell</a>`,
-            description: "increase <strong class='color-blast'>blast</strong> <strong><em>delay</em></strong> after firing<br><strong class='color-d'>damage</strong> and <strong>stun chance</strong> by <strong>22%</strong>",
+            description: "increase <strong class='color-blast'>blast</strong> <strong><em>delay</em></strong> after firing<br><strong class='color-d'>damage</strong> and <strong class='color-stun'>stun chance</strong> by <strong>22%</strong>",
             isGunTech: true,
             maxCount: 1,
             count: 0,
             frequency: 2,
             frequencyDefault: 2,
             allowed() {
-                return tech.haveGunCheck("blast")
+                return tech.haveGunCheck("blast") && !tech.isBlastHydrogen
             },
-            requires: "blast gun",
+            requires: "blast gun, not compressed gas",
             effect() {
                 tech.isHeavyShell = true;
             },
             remove() {
                 tech.isHeavyShell = false;
+            }
+        },
+        {
+            name: "electron magnetic moment",
+            description: "<strong>rebars</strong> attract nearby mobs<br>while in <strong>flight</strong>",
+            isGunTech: true,
+            maxCount: 1,
+            count: 0,
+            frequency: 2,
+            frequencyDefault: 2,
+            allowed() {
+                return tech.haveGunCheck("rebar") && !tech.isRebarControlRod && !tech.isRebarStun
+            },
+            requires: "rebar, not control rod ejection, pinning points",
+            effect() {
+                tech.isRebarAttract = true;
+            },
+            remove() {
+                tech.isRebarAttract = false;
+            }
+        },
+        {
+            name: "Bohr magneton",
+            description: "mobs <strong>attracted</strong> by rebars take <strong class='color-d'>damage</strong><br>but also cause <strong class='color-harm'>harm</strong>",
+            isGunTech: true,
+            maxCount: 1,
+            count: 0,
+            frequency: 2,
+            frequencyDefault: 2,
+            allowed() {
+                return tech.haveGunCheck("rebar") && tech.isRebarAttract
+            },
+            requires: "rebar, electron magnetic moment",
+            effect() {
+                tech.isRebarAttractDamage = true;
+            },
+            remove() {
+                tech.isRebarAttractDamage = false;
+            }
+        },
+        {
+            name: "Coulomb's law",
+            description: "your <strong>rebar</strong> <strong class='color-g'>gun</strong> uses <strong class='color-f'>energy</strong> to fire<br>and has <strong>60%</strong> shorter <strong><em>delay</em></strong> after firing",
+            isGunTech: true,
+            maxCount: 1,
+            count: 0,
+            frequency: 2,
+            frequencyDefault: 2,
+            allowed() {
+                return tech.haveGunCheck("rebar") && !tech.isRebarControlRod
+            },
+            requires: "rebar gun, not control rod ejection",
+            effect() {
+                tech.isRebarEnergy = true;
+                for (i = 0, len = b.guns.length; i < len; i++) { //find which gun 
+                    if (b.guns[i].name === "rebar") {
+                        b.guns[i].ammoPack = Infinity
+                        b.guns[i].recordedAmmo = b.guns[i].ammo
+                        b.guns[i].ammo = Infinity
+                        simulation.updateGunHUD();
+                        break;
+                    }
+                }
+            },
+            remove() {
+                if (tech.isRebarEnergy) {
+                    for (i = 0, len = b.guns.length; i < len; i++) { //find which gun 
+                        if (b.guns[i].name === "rebar") {
+                            b.guns[i].ammoPack = b.guns[i].defaultAmmoPack;
+                            if (b.guns[i].recordedAmmo) b.guns[i].ammo = b.guns[i].recordedAmmo
+                            simulation.updateGunHUD();
+                            break;
+                        }
+                    }
+                }
+                tech.isRebarEnergy = false;
+            }
+        },
+        {
+            name: "control rod ejection",
+            description: "your <strong>rebar</strong> <strong class='color-g'>gun</strong> shoots <strong class='color-p'>radioactive</strong><br><strong>control rods</strong> alongside rebars",
+            isGunTech: true,
+            maxCount: 1,
+            count: 0,
+            frequency: 2,
+            frequencyDefault: 2,
+            allowed() {
+                return tech.haveGunCheck("rebar") && !tech.isRebarAttract && !tech.isRebarEnergy && !tech.isHydrogenTrail
+            },
+            requires: "rebar gun, not electron magnetic momentum, Coulomb's law, contrail",
+            effect() {
+                tech.isRebarControlRod = true;
+            },
+            remove() {
+                tech.isRebarControlRod = false;
+            }
+        },
+        {
+            name: "oxide jacking",
+            description: "<strong>rebars</strong> convert <strong class='color-block'>blocks</strong> into <strong>nails</strong><br>that are <strong>launched</strong> at nearby mobs",
+            isGunTech: true,
+            maxCount: 1,
+            count: 0,
+            frequency: 2,
+            frequencyDefault: 2,
+            allowed() {
+                return tech.haveGunCheck("rebar") && !tech.isHydrogenTrail
+            },
+            requires: "rebar, not contrail",
+            effect() {
+                tech.isRebarBlockNails = true;
+            },
+            remove() {
+                tech.isRebarBlockNails = false;
+            }
+        },
+        {
+            name: "pinning points", // i had to mess with mob death code just for this to not be useless
+            description: "rebars <strong class='color-stun'>stun</strong> and <strong>grab</strong> mobs<br>for <strong>1</strong> second and kill them on wall <strong>impact</strong>",
+            isGunTech: true,
+            maxCount: 1,
+            count: 0,
+            frequency: 2,
+            frequencyDefault: 2,
+            allowed() {
+                return tech.haveGunCheck("rebar") && !tech.isRebarAttract
+            },
+            requires: "rebar, not electron magnetic moment",
+            effect() {
+                tech.isRebarStun = true;
+            },
+            remove() {
+                tech.isRebarStun = false;
+            }
+        },
+        {
+            name: "exciton-polariton",
+            description: `rebars <strong>transform</strong> grabbed mobs<br>into ${powerUps.orb.boost(1)} or ${powerUps.orb.ammo(1)} on wall <strong>impact</strong>`,
+            isGunTech: true,
+            maxCount: 1,
+            count: 0,
+            frequency: 2,
+            frequencyDefault: 2,
+            allowed() {
+                return tech.haveGunCheck("rebar") && tech.isRebarStun
+            },
+            requires: "rebar, pinning points",
+            effect() {
+                tech.isRebarStunBoost = true;
+            },
+            remove() {
+                tech.isRebarStunBoost = false;
+            }
+        },
+        {
+            name: "contrail",
+            description: "<strong>rebars</strong> and <strong>missiles</strong> release <strong class='color-hydrogen'>hydrogen gas</strong><br>that <strong class='color-s'>slows</strong> mobs and can <strong class='color-e'>ignite</strong>",
+            isGunTech: true,
+            maxCount: 1,
+            count: 0,
+            frequency: 2,
+            frequencyDefault: 2,
+            allowed() {
+                return (tech.haveGunCheck("rebar") || tech.haveGunCheck("missiles") || tech.missileBotCount) && !tech.isRebarBlockNails && !tech.isRebarControlRod && tech.missileCount == 1
+            },
+            requires: "rebar, missiles, not oxide jacking, control rod ejection, MIRV",
+            effect() {
+                tech.isHydrogenTrail = true;
+            },
+            remove() {
+                tech.isHydrogenTrail = false;
+            }
+        },
+        {
+            name: "hydrogen embrittlement",
+            description: "<strong class='color-hydrogen'>hydrogen gas</strong> increases <strong>vulnerability</strong> to<br><strong class='color-d'>damage</strong> by <strong>5%</strong> per second for mobs",
+            isGunTech: true,
+            maxCount: 1,
+            count: 0,
+            frequency: 2,
+            frequencyDefault: 2,
+            allowed() {
+                return (tech.haveGunCheck("rebar") || tech.haveGunCheck("missiles")) && (tech.isHydrogenTrail || tech.isBlastHydrogen) && !tech.isHydrogenRadioactive
+            },
+            requires: "hydrogen, not tritium",
+            effect() {
+                tech.isHydrogenRegression = true;
+            },
+            remove() {
+                tech.isHydrogenRegression = false;
+            }
+        },
+        {
+            name: "tritium",
+            description: "<strong class='color-hydrogen'>hydrogen gas</strong> is <strong class='color-p'>radioactive</strong><br>and does <strong class='color-d'>damage</strong> to <strong>mobs</strong>",
+            isGunTech: true,
+            maxCount: 1,
+            count: 0,
+            frequency: 2,
+            frequencyDefault: 2,
+            allowed() {
+                return (tech.haveGunCheck("rebar") || tech.haveGunCheck("missiles")) && (tech.isHydrogenTrail || tech.isBlastHydrogen) && !tech.isHydrogenRegression
+            },
+            requires: "hydrogen, not hydrogen embrittlement",
+            effect() {
+                tech.isHydrogenRadioactive = true;
+            },
+            remove() {
+                tech.isHydrogenRadioactive = false;
             }
         },
         //************************************************** 
@@ -7622,7 +7850,7 @@ const tech = {
         },
         {
             name: "bremsstrahlung",
-            description: "<strong>deflecting</strong> does <strong class='color-d'>damage</strong> to mobs",
+            description: "<strong>deflecting</strong> does <strong class='color-d'>damage</strong> to mobs<br>at the cost of <strong class='color-f'>energy</strong>",
             isFieldTech: true,
             maxCount: 9,
             count: 0,
@@ -7631,7 +7859,7 @@ const tech = {
             allowed() {
                 return (m.fieldUpgrades[m.fieldMode].name === "standing wave" || m.fieldUpgrades[m.fieldMode].name === "perfect diamagnetism") && !tech.isBiggerField
             },
-            requires: "standing wave, perfect diamagnetism",
+            requires: "standing wave, perfect diamagnetism, not pyrolytic carbon",
             effect() {
                 tech.blockDmg += 2 //if you change this value also update the for loop in the electricity graphics in m.pushMass
             },
@@ -7650,7 +7878,7 @@ const tech = {
             allowed() {
                 return (m.fieldUpgrades[m.fieldMode].name === "standing wave" || m.fieldUpgrades[m.fieldMode].name === "perfect diamagnetism") && !tech.isBiggerField
             },
-            requires: "standing wave, perfect diamagnetism",
+            requires: "standing wave, perfect diamagnetism, not pyrolytic carbon",
             effect() {
                 tech.blockingIce++
             },
@@ -7660,7 +7888,7 @@ const tech = {
         },
         {
             name: "flux pinning",
-            description: "<strong>deflecting</strong> mobs with your <strong>field</strong><br><strong>stuns</strong> them for <strong>4</strong> seconds",
+            description: "<strong>deflecting</strong> mobs with your <strong>field</strong><br><strong class='color-stun'>stuns</strong> them for <strong>4</strong> seconds",
             isFieldTech: true,
             maxCount: 9,
             count: 0,
@@ -7669,7 +7897,7 @@ const tech = {
             allowed() {
                 return (m.fieldUpgrades[m.fieldMode].name === "perfect diamagnetism" || m.fieldUpgrades[m.fieldMode].name === "standing wave" || m.fieldUpgrades[m.fieldMode].name === "molecular assembler") && !tech.isBiggerField
             },
-            requires: "a field that can block",
+            requires: "a field that can block, not pyrolytic carbon",
             effect() {
                 tech.isStunField += 240;
             },
@@ -8464,7 +8692,7 @@ const tech = {
         },
         {
             name: "dazzler",
-            description: "<strong class='color-cloaked'>decloaking</strong> <strong>stuns</strong> nearby mobs<br>and drains 10 <strong class='color-f'>energy</strong>",
+            description: "<strong class='color-cloaked'>decloaking</strong> <strong class='color-stun'>stuns</strong> nearby mobs<br>and drains 10 <strong class='color-f'>energy</strong>",
             isFieldTech: true,
             maxCount: 1,
             count: 0,
@@ -8718,7 +8946,7 @@ const tech = {
         },
         {
             name: "cosmic string",
-            description: "<strong>stun</strong> and do <strong class='color-p'>radioactive</strong> <strong class='color-d'>damage</strong> to <strong>mobs</strong><br>if you tunnel through them with a <strong class='color-worm'>wormhole</strong>",
+            description: "<strong class='color-stun'>stun</strong> and do <strong class='color-p'>radioactive</strong> <strong class='color-d'>damage</strong> to <strong>mobs</strong><br>if you tunnel through them with a <strong class='color-worm'>wormhole</strong>",
             isFieldTech: true,
             maxCount: 1,
             count: 0,
@@ -10876,7 +11104,7 @@ const tech = {
         },
         {
             name: "stun",
-            description: "<strong>stun</strong> all mobs for up to <strong>8</strong> seconds",
+            description: "<strong class='color-stun'>stun</strong> all mobs for up to <strong>8</strong> seconds",
             maxCount: 9,
             count: 0,
             frequency: 0,
@@ -11160,6 +11388,17 @@ const tech = {
     bulletSize: null,
     energySiphon: null,
     healthDrain: null,
+    isBlastHydrogen: null,
+    isHydrogenRadioactive: null,
+    isHydrogenRegression: null,
+    isHydrogenTrail: null,
+    isRebarStunBoost: null,
+    isRebarStun: null,
+    isRebarBlockNails: null,
+    isRebarControlRod: null,
+    isRebarEnergy: null,
+    isRebarAttractDamage: null,
+    isRebarAttract: null,
     isShotgunFireEverythingCycle: 0,
     isShotgunFireEverything: null,
     isShotgunHeat: null,

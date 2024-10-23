@@ -1,3 +1,23 @@
+# long metal rod (2024/10/22)
+- added a new gun: rebar: fires a large, piercing projectile that becomes an immobile block on contact with walls. suggested by Cornbread 2100 and Masbird
+- added 11 new tech:
+- - electron magnetic moment: rebars attract nearby mobs. suggested by garfunkel
+- - Bohr magneton: mobs attracted by rebars take damage but cause you harm in return
+- - Coulomb's law: rebar shoots faster but uses energy to shoot instead of ammo. suggested by Masbirb
+- - control rod ejection: rebar shoots radioactive control rods alongside rebars
+- - oxide jacking: rebars convert blocks to nails that are aimed at nearby mobs
+- - pinning points: rebars stun and grab mobs for abit. suggested by garfunkel
+- - exciton-polariton: rebars convert grabbed mobs into boosts or ammo upon hitting a wall
+- - contrail: rebars and missiles leave behind a trail of explosive hydrogen gas that slows mobs and explodes on contact with explosions
+- - hydrogen embrittlement: hydrogen gas decreases damage resistance of mobs caught inside it by 5% per second
+- - tritium: hydrogen gas is radioactive
+- - compressed gas: shotgun and blast guns release hydrogen gas while firing
+- bremsstrahlung now uses energy
+- - energy usage increases logarithmically with stacks, not linearly
+- names in the credits are now larger to make them stand out from the various suggestions ive received
+- stun now has a special css text style
+- - let me know if the flashing is too fast
+- healBoss no longer heals stunned mobs
 # 53 level special difficulty marathon challenge run when (2024/10/21)
 - map settings changes:
 - - intermission maps are now their own category with 3 checkboxes for setting what intermission maps you want to play

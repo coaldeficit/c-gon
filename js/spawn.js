@@ -36,7 +36,7 @@ const spawn = {
     ],
     mobTypeSpawnOrder: [], //preset list of mob names calculated at the start of a run by the randomSeed
     mobTypeSpawnIndex: 0, //increases as the mob type cycles
-    allowedGroupList: ["spinner", "striker", "springer", "laser", "focuser", "beamer", "exploder", "spawner", "shooter", "launcher", "launcherOne", "stabber", "sniper", "pulsar", "grenadier", "slasher", "slasher2", "slasher3", "flutter", "stinger", "laserLayer"],
+    allowedGroupList: ["spinner", "striker", "springer", "laser", "focuser", "beamer", "exploder", "spawner", "shooter", "launcher", "launcherOne", "stabber", "sniper", "pulsar", "grenadier", "slasher", "slasher2", "slasher3", "flutter", "stinger", "laserLayer", "drifter"],
     setSpawnList() { //this is run at the start of each new level to determine the possible mobs for the level
         spawn.pickList.splice(0, 1);
         const push = spawn.mobTypeSpawnOrder[spawn.mobTypeSpawnIndex++ % spawn.mobTypeSpawnOrder.length]
@@ -115,7 +115,7 @@ const spawn = {
                 //     spawn.blockGroup(x, y) //hidden grouping blocks
                 } else {
                     pick = (Math.random() < 0.5) ? "randomList" : "random";
-                    if (Math.random() < 0.55) {
+                    if ((Math.random() < 0.55 || forced == 'node') && forced != 'line') {
                         spawn.nodeGroup(x, y, pick);
                     } else {
                         spawn.lineGroup(x, y, pick);
@@ -7491,7 +7491,7 @@ const spawn = {
             this.harmZone();
             if (!this.isStunned) {
 	    for (let jej of mob) {
-	      jej.health += 0.01 * (jej.isBoss ? 0.333 : 1)
+	      if (!jej.isStunned) jej.health += 0.01 * (jej.isBoss ? 0.333 : 1)
 	      if (jej.health > tech.mobSpawnWithHealth) jej.health = tech.mobSpawnWithHealth
 	    }
             }
@@ -7517,8 +7517,6 @@ const spawn = {
             this.attraction();
             this.checkStatus();
 	    if (me.randombsgo == 0) {
-	      const sub = Vector.sub(player.position, this.position)
-	      const mag = Vector.magnitude(sub)
           ctx.beginPath();
           let vertices = this.vertices;
           ctx.moveTo(vertices[0].x, vertices[0].y);
@@ -7527,7 +7525,7 @@ const spawn = {
           ctx.lineWidth = 13 + 5 * Math.random();
           ctx.strokeStyle = `rgba(255,255,255,${0.5+0.2*Math.random()})`;
           ctx.stroke();
-	      if (mag <= 666 &&
+	      if (Vector.magnitude(Vector.sub(player.position, this.position)) <= 666 &&
             Matter.Query.ray(map, this.position, player.position).length === 0
           ) { // attach constraint to player if too close and in sight
             me.damageReduction = 0.17 / (tech.isScaleMobsWithDuplication ? 1 + tech.duplicationChance() : 1)
