@@ -28457,6 +28457,297 @@ const level = {
       };
       powerUps.addResearchToLevel() //needs to run after mobs are spawned
 	},
+    boundary() {
+        level.setPosToSpawn(0, -50); //normal spawn
+        level.exit.x = 1500;
+        level.exit.y = -1875;
+        spawn.mapRect(level.enter.x, level.enter.y + 20, 100, 20);
+        level.defaultZoom = 1800
+        simulation.zoomTransition(level.defaultZoom)
+        document.body.style.backgroundColor = "#fff";
+        color.map = "#a37acc"
+        // powerUps.spawnStartingPowerUps(1475, -1175);
+        // spawn.debris(750, -2200, 3700, 16); //16 debris per level
+        let curSection = 0 // start
+        let colorFlips = 0
+        let activeButtons = []
+        let sections = [()=>{
+            spawn.mapRect(-350, 0, 1850, 100);
+            spawn.mapRect(-350, -800, 100, 900);
+            spawn.mapRect(-350, -800, 1250, 100);
+            spawn.mapRect(800, -1200, 100, 975);
+            spawn.mapRect(1400, -350, 100, 450);
+            spawn.mapRect(1400, -200, 675, 100);
+            spawn.mapRect(800, -1200, 1025, 100);
+            spawn.mapRect(1725, -1200, 100, 525);
+            spawn.mapRect(800, -625, 425, 100);
+            spawn.mapRect(1725, -775, 1050, 100);
+            spawn.mapRect(1975, -775, 100, 350);
+            spawn.randomMob(1075, -900, Infinity);
+            spawn.randomMob(1500, -575, Infinity);
+            activeButtons = [level.button(1062.5-63, -625)]
+        }, ()=>{
+            simulation.makeTextLog(`level<span class='color-symbol'>.</span>boundary<span class='color-symbol'>.</span>allowHealing<span class='color-symbol'>(</span>false<span class='color-symbol'>)</span>`)
+            spawn.mapRect(2425, -200, 825, 100);
+            spawn.mapRect(3150, -2475, 100, 2375);
+            spawn.mapRect(2675, -775, 100, 350);
+            spawn.mapRect(2425, -200, 100, 475);
+            spawn.mapRect(1875, 175, 650, 100);
+            spawn.mapRect(2675, -525, 325, 100);
+            spawn.mapRect(2075, -1200, 825, 100);
+            spawn.mapRect(1725, -875, 200, 200);
+            spawn.mapRect(2800, -1525, 100, 425);
+            spawn.mapRect(1725, -2475, 1525, 100);
+            spawn.mapRect(1725, -2475, 100, 1375);
+            spawn.mapRect(2075, -1675, 450, 100);
+            spawn.mapRect(2750, -2025, 300, 100);
+            spawn.mapRect(2750, -2125, 100, 200);
+            spawn.mapRect(2275, -2125, 575, 100);
+            spawn.mapRect(1725, -1925, 350, 100);
+            spawn.randomMob(2400, -425, Infinity);
+            spawn.randomMob(2525, -925, Infinity);
+            spawn.randomMob(2375, -1350, Infinity);
+            spawn.randomMob(3025, -1725, Infinity);
+            spawn.randomMob(2275, -1850, Infinity);
+            spawn.randomMob(2525, -2250, Infinity);
+            activeButtons = [level.button(2950-63, -2025)]
+        }, ()=>{
+            spawn.mapRect(2800, -1525, 450, 100);
+            spawn.mapRect(1400, 0, 100, 650);
+            spawn.mapRect(1400, 550, 300, 100);
+            spawn.mapRect(1875, 175, 100, 825);
+            spawn.mapRect(2275, -2475, 100, 450);
+            spawn.randomMob(2400, -1375, Infinity);
+            spawn.randomMob(2300, -1875, Infinity);
+            spawn.randomMob(3025, -1300, Infinity);
+            spawn.randomMob(2050, -950, Infinity);
+            spawn.randomMob(2775, -925, Infinity);
+            spawn.randomMob(2350, -450, Infinity);
+            spawn.randomMob(1675, 50, Infinity);
+            spawn.randomMob(2000, -1400, Infinity);
+            spawn.randomMob(2775, -1725, Infinity);
+            spawn.randomMob(2425, -925, Infinity);
+            spawn.randomMob(2975, -725, Infinity);
+            spawn.randomMob(2200, -575, Infinity);
+            spawn.randomMob(1600, 200, Infinity);
+            activeButtons = [level.button(1600-63, 550)]
+        }, ()=>{
+            spawn.mapRect(1875, 900, 100, 500);
+            spawn.mapRect(225, 1300, 1750, 100);
+            spawn.mapRect(225, 700, 100, 700);
+            spawn.mapRect(225, 950, 300, 100);
+            spawn.mapRect(-500, 750, 400, 100);
+            spawn.mapRect(-375, 750, 100, 575);
+            spawn.mapRect(-375, 1000, 175, 100);
+            spawn.mapRect(-400, 1175, 25, 100);
+            spawn.mapRect(-1400, 525, 600, 100);
+            spawn.mapRect(-1250, 525, 100, 600);
+            spawn.mapRect(-1250, 750, 350, 100);
+            spawn.mapRect(-1075, 700, 100, 850);
+            spawn.mapRect(-1225, 1300, 250, 100);
+            spawn.mapRect(-1675, -175, 1425, 100);
+            spawn.mapRect(1875, -200, 100, 475);
+            spawn.randomGroup(900, 700, Infinity, 'node');
+            spawn.randomGroup(-325, 400, Infinity, 'node');
+            spawn.randomMob(825, 275, Infinity);
+            spawn.randomMob(1225, 400, Infinity);
+            spawn.randomMob(500, 725, Infinity);
+            spawn.randomMob(900, 1150, Infinity);
+            spawn.randomMob(-1250, 375, Infinity);
+            spawn.randomMob(-1250, 75, Infinity);
+            spawn.randomMob(-950, 100, Infinity);
+            spawn.randomMob(-950, 325, Infinity);
+            activeButtons = [level.button(-1100-63, 525)]
+        }, ()=>{
+            spawn.mapRect(-2200, 625, 500, 100);
+            spawn.mapRect(-2750, 150, 100, 1275);
+            spawn.mapRect(-2750, 150, 650, 100);
+            spawn.mapRect(-3300, 1750, 1200, 100);
+            spawn.mapRect(-3300, 625, 100, 1225);
+            spawn.mapRect(-2200, -175, 100, 425);
+            spawn.mapRect(-2200, -175, 625, 100);
+            spawn.mapRect(-2425, 850, 325, 100);
+            spawn.mapRect(-2975, 1150, 550, 100);
+            spawn.mapRect(-2425, 1450, 325, 100);
+            spawn.mapRect(-3300, 1450, 325, 100);
+            spawn.mapRect(-2200, 150, 100, 375);
+            spawn.mapRect(-3300, 850, 325, 100);
+            spawn.mapRect(-2275, 425, 175, 100);
+            spawn.mapRect(-2200, 625, 100, 925);
+            spawn.mapRect(-3300, 1750, 1350, 100);
+            spawn.mapRect(-1825, 1500, 400, 100);
+            spawn.mapRect(-1675, 1150, 100, 450);
+            spawn.mapRect(-2100, 1300, 175, 100);
+            spawn.mapRect(-1075, 1450, 350, 100);
+            spawn.mapRect(-900, -175, 100, 800);
+            spawn.mapRect(-1800, 525, 550, 100);
+            spawn.mapRect(-350, 0, 100, 850);
+            spawn.mapRect(-750, 1100, 475, 100);
+            spawn.mapRect(-1225, 1775, 725, 100);
+            spawn.mapRect(-275, 1000, 600, 100);
+            spawn.mapRect(-1525, 1500, 100, 900);
+            spawn.mapRect(-625, 750, 250, 100);
+            spawn.mapRect(-175, 1825, 475, 100);
+            spawn.mapRect(-125, 1825, 100, 450);
+            spawn.mapRect(-125, 2025, 325, 100);
+            spawn.mapRect(50, 2025, 100, 375);
+            spawn.mapRect(650, 1300, 100, 975);
+            spawn.mapRect(50, 2175, 375, 100);
+            spawn.mapRect(250, 2525, 600, 100);
+            spawn.mapRect(600, 2525, 100, 725);
+            spawn.mapRect(375, 2525, 100, 400);
+            spawn.mapRect(325, 2825, 250, 100);
+            spawn.mapRect(425, 3075, 375, 100);
+            spawn.mapRect(425, 2975, 100, 200);
+            spawn.mapRect(600, 2800, 500, 100);
+            spawn.randomMob(-2275, 350, Infinity);
+            spawn.randomMob(-2500, 700, Infinity);
+            spawn.randomMob(-2525, 1025, Infinity);
+            spawn.randomMob(-2300, 1225, Infinity);
+            spawn.randomMob(-2575, 1525, Infinity);
+            spawn.randomMob(-2325, 1625, Infinity);
+            spawn.randomMob(-3075, 1650, Infinity);
+            spawn.randomMob(-3100, 1050, Infinity);
+            spawn.randomGroup(-3100, -300, Infinity, "node");
+            spawn.randomMob(-2000, 1150, Infinity);
+            spawn.randomMob(-2000, 900, Infinity);
+            spawn.randomMob(-1425, 1300, Infinity);
+            spawn.randomMob(-1275, 1550, Infinity);
+            spawn.randomMob(50, 1650, Infinity);
+            spawn.randomMob(0, 1300, Infinity);
+            spawn.randomMob(-550, 975, Infinity);
+            spawn.randomMob(-850, 975, Infinity);
+            spawn.randomMob(-675, 450, Infinity);
+            spawn.randomMob(525, 2075, Infinity);
+            spawn.randomMob(350, 2400, Infinity);
+            spawn.randomGroup(1450, 2175, Infinity);
+            spawn.randomGroup(1525, 2700, Infinity);
+            activeButtons = [level.button(-3087.5-63, 850), level.button(-450-63, 750), level.button(800-63, 2800)]
+        }, ()=>{
+            simulation.makeTextLog(`level<span class='color-symbol'>.</span>boundary<span class='color-symbol'>.</span>allowHealing<span class='color-symbol'>(</span>true<span class='color-symbol'>)</span>`)
+            simulation.makeTextLog(`for (let i <span class='color-symbol'>=</span> 0; i <span class='color-symbol'><</span> Math.max(1, 6 - simulation.difficultyMode) <span class='color-symbol'>/</span> 3; i<span class='color-symbol'>++</span>)`);
+            simulation.makeTextLog(`{ powerUps.spawn(m.pos.x, m.pos.y, "heal") <em>//preparation</em>}`);
+            for (let i=0;i<Math.max(1,6-simulation.difficultyMode);i++) { // mercy heal before the boss
+                powerUps.spawn(m.pos.x+Math.random(),m.pos.y+Math.random(),"heal")
+            }
+            document.body.style.backgroundColor = "#fff"
+            color.map = "#000"
+            spawn.mapRect(-3050, 375, 400, 100);
+            spawn.mapRect(-2200, -625, 100, 550);
+            spawn.mapRect(-2750, -550, 100, 425);
+            spawn.mapRect(-2750, -225, 375, 100);
+            spawn.mapRect(-2200, -650, 100, 50);
+            spawn.mapRect(-1950, -425, 100, 350);
+            spawn.mapRect(-1800, -825, 225, 100);
+            spawn.mapRect(-1225, -700, 350, 100);
+            spawn.mapRect(-550, -800, 300, 100);
+            spawn.mapRect(-550, -950, 100, 250);
+            spawn.mapRect(225, -1050, 100, 350);
+            spawn.mapRect(800, -1275, 100, 175);
+            spawn.mapRect(625, -1275, 275, 100);
+            spawn.mapRect(1875, 375, 1375, 100);
+            spawn.mapRect(2425, 175, 825, 100);
+            spawn.mapRect(2800, -1200, 100, 525);
+            spawn.mapRect(2675, -775, 225, 100);
+            spawn.mapRect(750, -225, 750, 100);
+            spawn.mapRect(1125, -625, 100, 500);
+            spawn.mapRect(950, -225, 100, 250);
+            spawn.mapRect(1125, -525, 250, 100);
+            spawn.mapRect(3150, -200, 100, 475);
+            spawn.mapRect(3150, 375, 100, 575);
+            spawn.mapRect(3150, 850, 2000, 100);
+            spawn.mapRect(3150, -1300, 2000, 100);
+            spawn.mapRect(5050, -1300, 100, 2250);
+            activeButtons = [level.button(4850-63, 850)]
+        }, ()=>{ // todo: boss
+            document.body.style.backgroundColor = "#fff"
+            spawn.mapRect(4375, 850, 775, 100);
+            spawn.mapRect(3150, 850, 775, 100);
+            spawn.mapRect(3150, -1300, 775, 100);
+            spawn.mapRect(4375, -1300, 775, 100);
+            spawn.mapRect(3150, -1300, 100, 2250);
+            spawn.mapRect(5050, -1300, 100, 2250);
+        }]
+        function loadNextSection() {
+            let oldMapLength = map.length
+            if (curSection < 5 && curSection) {
+                spawn.setSpawnList()
+                if (spawn.pickList[1] == 'ghoster') spawn.pickList[1] = 'grower' // goes through walls + literally invisible half the time
+                if (spawn.pickList[1] == 'sucker') spawn.pickList[1] = 'rainer' // goes through walls
+                if (['hopper','hopMother','striker'].includes(spawn.pickList[1])) spawn.pickList[1] = 'focuser' // gravity affected
+                level.announceMobTypes()
+            }
+            sections[curSection]()
+            if (curSection) {
+                for (let i=0;i<map.length-oldMapLength;i++) {
+                    map[oldMapLength+i].collisionFilter.category = cat.map;
+                    map[oldMapLength+i].collisionFilter.mask = cat.player | cat.map | cat.body | cat.bullet | cat.powerUp | cat.mob | cat.mobBullet;
+                    Matter.Body.setStatic(map[oldMapLength+i], true); //make static
+                    Composite.add(engine.world, map[oldMapLength+i]);
+                }
+                if (curSection == 5) { // remove parts of previous sections for the 6th one
+                    Matter.Composite.remove(engine.world, map[7]);
+                    map.splice(7, 1)
+                    Matter.Composite.remove(engine.world, map[16]);
+                    map.splice(16, 1)
+                }
+                if (curSection == 6) {
+                    for (let i=0;i<oldMapLength;i++) {
+                        Matter.Composite.remove(engine.world, map[i]);
+                    }
+                    map.splice(0, oldMapLength)
+                }
+                simulation.draw.setPaths()
+            }
+            curSection++
+        }
+        loadNextSection()
+        let curColor = [270+((Math.random()-0.5)*120), 45, 64]
+        let targetColor = curColor
+        let mHealthCap = m.health // do not permit healing even with tech that directly increase health
+        level.custom = () => {
+            level.exit.drawAndCheck();
+            for (let i=0;i<activeButtons.length;i++) {
+                activeButtons[i].draw()
+                activeButtons[i].queryPlayer()
+                if (!activeButtons[i].isUp) {
+                    activeButtons.splice(i, 1)
+                    colorFlips++
+                    // invert colors
+                    let col = [color.map, document.body.style.backgroundColor]
+                    document.body.style.backgroundColor = col[0]
+                    color.map = col[1]
+                }
+            }
+            if (activeButtons.length == 0 && curSection < sections.length) loadNextSection()
+            if (curSection != 6 && curSection != 8) {
+                if (!(m.cycle % (60/(1+(curSection==7))))) targetColor = [270+((Math.random()-0.5)*120), 45, 64] // smoothly change colors
+                for (let i=0;i<curColor.length;i++) {
+                    curColor[i] += (targetColor[i]-curColor[i])/(15/(1+(curSection==7)))
+                }
+                if (colorFlips % 2) {
+                    document.body.style.backgroundColor = `hsl(${curColor[0]} ${curColor[1]}% ${curColor[2]}%)`
+                } else {
+                    color.map = `hsl(${curColor[0]} ${curColor[1]}% ${curColor[2]}%)`
+                }
+                if (curSection < 6 && curSection > 1) {
+                    if (m.health > mHealthCap) {
+                        m.health = mHealthCap
+                        m.displayHealth();
+                    }
+                    if (m.health < mHealthCap) mHealthCap = m.health
+                    for (let i = 0; i < powerUp.length; i++) { // remove all heals before the boss
+                        if (powerUp[i].name === "heal") {
+                            Matter.Composite.remove(engine.world, powerUp[i]);
+                            powerUp.splice(i, 1)
+                        }
+                    }
+                }
+            }
+            level.enter.draw();
+        };
+        level.customTopLayer = () => {};
+    },
     // ********************************************************************************************************
     // ********************************************************************************************************
     // ***************************************** training levels **********************************************

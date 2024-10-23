@@ -244,12 +244,14 @@ const b = {
     bulletDraw() {
         ctx.beginPath();
         for (let i = 0, len = bullet.length; i < len; i++) {
-            let vertices = bullet[i].vertices;
-            ctx.moveTo(vertices[0].x, vertices[0].y);
-            for (let j = 1; j < vertices.length; j += 1) {
-                ctx.lineTo(vertices[j].x, vertices[j].y);
+            if (!bullet[i].dontRender) {
+                let vertices = bullet[i].vertices;
+                ctx.moveTo(vertices[0].x, vertices[0].y);
+                for (let j = 1; j < vertices.length; j += 1) {
+                    ctx.lineTo(vertices[j].x, vertices[j].y);
+                }
+                ctx.lineTo(vertices[0].x, vertices[0].y);
             }
-            ctx.lineTo(vertices[0].x, vertices[0].y);
         }
         ctx.fillStyle = color.bullet;
         ctx.fill();
@@ -524,6 +526,18 @@ const b = {
                         mob[i].force.y += knock.y;
                         if (tech.isExplosionStun) mobs.statusStun(mob[i], 60)
                     }
+                }
+            }
+        }
+        
+        // ignite hydrogen
+        for (let i=0;i<bullet.length;i++) {
+            if (bullet[i].isHydrogenGas && bullet[i].endCycle != -1) {
+                sub = Vector.sub(where, bullet[i].position);
+                dist = Vector.magnitude(sub) - bullet[i].radius
+                if (dist < 100 + radius * 2) {
+                    bullet[i].endCycle = -1
+                    b.explosion(bullet[i].position, bullet[i].radius*1.8)
                 }
             }
         }
@@ -1925,6 +1939,7 @@ const b = {
             lookFrequency: Math.floor(10 + Math.random() * 3),
             explodeRad: (tech.isMissileBig ? 230 : 180) + 60 * Math.random(),
             density: 0.02, //0.001 is normal
+            startCycle: m.cycle,
             beforeDmg() {
                 Matter.Body.setDensity(this, 0.0001); //reduce density to normal
                 this.tryToLockOn();
@@ -1985,6 +2000,10 @@ const b = {
                 const dir = this.angle;
                 this.force.x += thrust * Math.cos(dir);
                 this.force.y += thrust * Math.sin(dir);
+                
+                if (tech.isHydrogenTrail && !(m.cycle % 7) && m.cycle > this.startCycle + 30) {
+                    b.hydrogen(this.position, {x:0,y:0}, 27)
+                }
 
                 ctx.beginPath(); //draw rocket
                 ctx.arc(this.position.x - Math.cos(this.angle) * (25 * size - 3) + (Math.random() - 0.5) * 4,
@@ -3817,6 +3836,277 @@ const b = {
         dist = Vector.magnitude(sub);
         if (dist < range && tech.isBLEVE) m.damage(0.1 * simulation.dmgScale)
     },
+    rebar(angle = m.angle) {
+        const me = bullet.length;
+        bullet[me] = Bodies.rectangle(m.pos.x, m.pos.y, 225, 20, b.fireAttributes(angle));
+        Matter.Body.setDensity(bullet[me], 0.0001); //0.001 is normal
+        bullet[me].immuneList = []
+        bullet[me].dmg = 26
+        bullet[me].endCycle = simulation.cycle + 300;
+        bullet[me].collisionFilter.mask = tech.isRebarBlockNails ? 0 : cat.body
+        bullet[me].do = function() {
+            const whom = Matter.Query.collides(this, mob)
+            const block = Matter.Query.collides(this, body)
+            let globalImmune = false
+            if (whom.length) { //if touching a mob 
+                for (let i = 0, len = whom.length; i < len; i++) {
+                    who = whom[i].bodyA
+                    if (who && who.mob) {
+                        let immune = false
+                        for (let i = 0; i < this.immuneList.length; i++) { //check if this needle has hit this mob already
+                            if (this.immuneList[i] === who.id) {
+                                this.immuneList[i]
+                                immune = true
+                                if (this.grabTarget != who) globalImmune = true
+                                break
+                            }
+                        }
+                        if (!immune && who != this.grabTarget) {
+                            this.immuneList.push(who.id) //remember that this needle has hit this mob once already
+                            let dmg = this.dmg * m.dmgScale
+                            if (tech.isRebarStun) who.rebarStunProtected = true
+                            who.damage(dmg, true);
+                            this.dmg /= 2
+                            if (who.alive) who.foundPlayer();
+                            if (tech.isRebarStun) {
+                                mobs.statusStun(who, 60)
+                                who.rebarStunProtected = false
+                                if (!who.isBoss && this.grabTarget == null) { // dont grab bosses since that'd be stupid
+                                    if (who.health < 0.05) who.health = 0.05
+                                    this.grabTarget = who
+                                    Matter.Body.setPosition(who, this.position)
+                                    Matter.Body.setVelocity(who, this.velocity)
+                                } else {
+                                    if (who.health < 0.05) {
+                                        who.death()
+                                    }
+                                }
+                            }
+                            if (who.damageReduction) {
+                                simulation.drawList.push({ //add dmg to draw queue
+                                    x: this.position.x,
+                                    y: this.position.y,
+                                    radius: Math.log(dmg + 1.1) * 40 * who.damageReduction + 3,
+                                    color: simulation.playerDmgColor,
+                                    time: simulation.drawTime
+                                });
+                            }
+                        }
+                    }
+                }
+            }
+            if (
+                (
+                    Matter.Query.collides(this, map).length ||
+                    (
+                        block.length &&
+                        block[0].bodyA.isStatic
+                    )
+                ) &&
+                !Matter.Query.collides(this, [player]).length
+            ) { //stick to walls
+                let createdBody = body[body.length] = Matter.Bodies.fromVertices(this.position.x, this.position.y, this.vertices);
+                createdBody.collisionFilter.category = cat.body;
+                createdBody.collisionFilter.mask = cat.player | cat.map | cat.body | cat.bullet | cat.mob | cat.mobBullet
+                createdBody.classType = "body";
+                createdBody.isStatic = true;
+                Composite.add(engine.world, createdBody);
+                setTimeout(()=>{
+                    for (let i = 0; i < body.length; i++) {
+                        if (body[i] === createdBody && body[i].isStatic) { // dont delete if it has been thrown
+                            Matter.Composite.remove(engine.world, body[i]);
+                            body.splice(i, 1);
+                        }
+                    }
+                }, 18000)
+                if (this.grabTarget) {
+                    if (tech.isRebarStunBoost) {
+                        if (Math.random() < 0.25) powerUps.spawn(this.position.x, this.position.y, "boost")
+                        if (Math.random() < 0.2) powerUps.spawn(this.position.x, this.position.y, "ammo")
+                    }
+                    if (this.grabTarget.health == 0.05) { // kill grabbed mobs at the end of life
+                        this.grabTarget.death()
+                    }
+                }
+                this.endCycle = -1
+            } else if (tech.isRebarBlockNails && block.length && !block[0].bodyA.isNotHoldable) { // convert blocks to nails
+                for (let i=0;i<body.length;i++) {
+                    if (block[0].bodyA === body[i]) {
+                        Matter.Composite.remove(engine.world, body[i]);
+                        body.splice(i, 1);
+                        b.targetedNail(block[0].bodyA.position, Math.max(1, Math.floor(block[0].bodyA.area/3000)), 40 + 10 * Math.random(), 1200, true, 1.4)
+                        break
+                    }
+                }
+            }
+            this.force.y += this.mass * simulation.g
+            Matter.Body.setAngle(this, Math.atan2(this.velocity.y, this.velocity.x))
+            if (this.grabTarget) {
+                if (this.grabTarget.isStunned && this.grabTarget.alive) {
+                    Matter.Body.setVelocity(this.grabTarget, this.velocity)
+                    if (!(m.cycle % 15)) Matter.Body.setPosition(this.grabTarget, this.position)
+                } else {
+                    if (this.grabTarget.alive && this.grabTarget.health == 0.05) this.grabTarget.death()
+                    this.grabTarget = null
+                }
+            }
+            if (!globalImmune) this.immuneList = [] // since the rebars are affected by gravity, its possible for them to hit 1 mob twice via gravity
+            if (tech.isRebarAttract) {
+                let attractList = []
+                for (let i=0;i<mob.length;i++) {
+                    if (Vector.magnitude(Vector.sub(mob[i].position, this.position)) < 900 && !mob[i].isBadTarget) {
+                        attractList.push(mob[i])
+                    }
+                }
+                ctx.beginPath()
+                for (let i=0;i<attractList.length;i++) {
+                    let angle = Math.atan2(this.position.y-attractList[i].position.y, this.position.x-attractList[i].position.x)
+                    Matter.Body.setVelocity(attractList[i], {x:attractList[i].velocity.x+Math.cos(angle)*Math.min(3/attractList[i].mass, 1.5),y:attractList[i].velocity.y+Math.sin(angle)*Math.min(3/attractList[i].mass, 1.5)})
+                    if (tech.isRebarAttractDamage) {
+                        attractList[i].damage(0.12*m.dmgScale, true)
+                        if (!tech.isEnergyHealth) {
+                            m.health -= 0.0002*simulation.dmgScale*m.harmReduction()
+                        } else {
+                            m.energy -= 0.0002*simulation.dmgScale
+                        }
+                    }
+                    ctx.moveTo(this.position.x, this.position.y);
+                    ctx.lineTo(attractList[i].position.x, attractList[i].position.y);
+                }
+                ctx.lineWidth = "12";
+                ctx.strokeStyle = (tech.isRebarAttractDamage) ? "rgba(255,0,0,0.5)" : "rgba(0,0,0,0.5)"
+                ctx.stroke()
+                if (tech.isRebarAttractDamage) {
+                    if (!tech.isEnergyHealth) m.displayHealth();
+                    ctx.beginPath()
+                    for (let i=0;i<attractList.length;i++) {
+                        ctx.moveTo(player.position.x, player.position.y);
+                        ctx.lineTo(attractList[i].position.x, attractList[i].position.y);
+                    }
+                    ctx.lineWidth = "12";
+                    ctx.strokeStyle = "hsla(51,100%,71%,0.5)"
+                    ctx.stroke()
+                }
+            }
+            if (tech.isHydrogenTrail && !(m.cycle % 4)) {
+                b.hydrogen(this.position, {x:0,y:0}, 30, 2)
+            }
+        };
+        const SPEED = 30*(input.down?1.25:1)
+        Matter.Body.setVelocity(bullet[me], {
+            x: SPEED * Math.cos(angle),
+            y: SPEED * Math.sin(angle)
+        });
+        Composite.add(engine.world, bullet[me]); //add bullet to world
+    },
+    controlRod(where, velocity, angle = 0) {
+        const bIndex = bullet.length;
+        bullet[bIndex] = Bodies.rectangle(where.x, where.y, 57, 26, {
+            angle: angle,
+            friction: 1,
+            frictionStatic: 1,
+            frictionAir: 0,
+            restitution: 0.5,
+            dmg: 0, //damage done in addition to the damage from momentum
+            classType: "bullet",
+            collisionFilter: {
+                category: cat.bullet,
+                mask: cat.map | cat.body | cat.mob | cat.mobBullet | cat.mobShield //  | cat.bullet   //doesn't collide with other bullets until it lands  (was crashing into bots)
+            },
+            endCycle: m.cycle+300,
+            maxRadioRadius: 300 + Math.floor(100 * Math.random()),
+            radioRadius: 0,
+            onEnd() {},
+            beforeDmg() {},
+            do() {
+                this.force.y += this.mass * simulation.g
+                //radioactive zone
+                this.radioRadius = this.radioRadius * 0.97 + 0.03 * this.maxRadioRadius //smooth radius towards max
+                //aoe damage to player
+                if (Vector.magnitude(Vector.sub(player.position, this.position)) < this.radioRadius) {
+                    const DRAIN = tech.isRadioactiveResistance ? 0.002 * 0.25 : 0.002
+                    if (m.energy > DRAIN) {
+                        if (m.immuneCycle < m.cycle) m.energy -= DRAIN
+                    } else {
+                        m.energy = 0;
+                        if (simulation.dmgScale) m.damage(tech.isRadioactiveResistance ? 0.00015 * 0.25 : 0.00015) //0.00015
+                    }
+                }
+                //aoe damage to mobs
+                for (let i = 0, len = mob.length; i < len; i++) {
+                    if (Vector.magnitude(Vector.sub(mob[i].position, this.position)) < this.radioRadius + mob[i].radius) {
+                        let dmg = 0.08 * m.dmgScale //neutron bombs  dmg = 0.09
+                        if (Matter.Query.ray(map, mob[i].position, this.position).length > 0) dmg *= 0.25 //reduce damage if a wall is in the way
+                        if (mob[i].shield) dmg *= 3 // to make up for the /5 that shields normally take
+                        mob[i].damage(dmg);
+                        mob[i].locatePlayer();
+                    }
+                }
+                //draw
+                ctx.beginPath();
+                ctx.arc(this.position.x, this.position.y, this.radioRadius, 0, 2 * Math.PI);
+                ctx.globalCompositeOperation = "lighter"
+                // ctx.fillStyle = `rgba(25,139,170,${0.15+0.05*Math.random()})`;
+                // ctx.fillStyle = `rgba(36, 207, 255,${0.1+0.05*Math.random()})`;
+                ctx.fillStyle = `rgba(28, 175, 217,${0.13+0.07*Math.random()})`;
+                ctx.fill();
+                ctx.globalCompositeOperation = "source-over"
+            },
+        });
+        Matter.Body.setVelocity(bullet[bIndex], velocity);
+        Composite.add(engine.world, bullet[bIndex]); //add bullet to world
+    },
+    hydrogen(position, velocity, radius = 30, diffuse = 0.7) {
+        // radius *= Math.sqrt(tech.bulletSize)
+        const me = bullet.length;
+        bullet[me] = Bodies.polygon(position.x, position.y, 20, 2, {
+            density: 0.000001, //  0.001 is normal density
+            inertia: Infinity,
+            frictionAir: 0,
+            classType: "bullet",
+            collisionFilter: {
+                category: cat.bullet,
+                mask: cat.map
+            },
+            count: 0,
+            radius: radius,
+            restitution: 1,
+            period: 200*Math.random(),
+            dontRender: true,
+            endCycle: m.cycle+400-(bullet.length*2),
+            isHydrogenGas: true,
+            onEnd() {},
+            do() {
+                if (this.count < 10) {
+                    this.count++
+                    //grow
+                    const SCALE = 1.12
+                    this.radius *= SCALE;
+                }
+                let effectiveRadius = this.radius + (Math.sin((m.cycle+10000)/(50+this.period))*this.radius*0.2)
+                for (let i=0;i<mob.length;i++) {
+                    if (Vector.magnitude(Vector.sub(mob[i].position, this.position)) < effectiveRadius) {
+                        Matter.Body.setVelocity(mob[i], {
+                            x: mob[i].velocity.x * 0.985,
+                            y: mob[i].velocity.y * 0.985
+                        })
+                        if (tech.isHydrogenRegression) mob[i].damageReduction *= 1.00081350011 * (mob[i].isBoss ? 0.25 : 1)
+                        if (tech.isHydrogenRadioactive) mob[i].damage(0.045*m.dmgScale)
+                    }
+                }
+                ctx.beginPath()
+                ctx.fillStyle = (tech.isHydrogenRadioactive) ? "rgba(0,102,119,0.4)" : "rgba(240,215,217,0.4)"
+                ctx.arc(this.position.x, this.position.y, effectiveRadius, 0, 2*Math.PI)
+                ctx.fill()
+            }
+        });
+        Composite.add(engine.world, bullet[me]); //add bullet to world
+        let effectivevelocity = {
+            x:velocity.x + ((Math.random()-0.5) * diffuse * 2),
+            y:velocity.y + ((Math.random()-0.5) * diffuse * 2),
+        }
+        Matter.Body.setVelocity(bullet[me], effectivevelocity);
+    },
     needle(angle = m.angle) {
         const me = bullet.length;
         bullet[me] = Bodies.rectangle(m.pos.x + 40 * Math.cos(m.angle), m.pos.y + 40 * Math.sin(m.angle), 75 * tech.bulletSize, 0.75 * tech.bulletSize, b.fireAttributes(angle));
@@ -5613,6 +5903,11 @@ const b = {
                                 }
                             }
                         };
+                    }
+                    if (tech.isBlastHydrogen) {
+                        for (let i=0;i<10;i++) {
+                            b.hydrogen(m.pos, {x:Math.cos(m.angle)*7,y:Math.sin(m.angle)*7}, 30, 2)
+                        }
                     }
                 }
                 if (tech.isShotgunFireEverything) tech.isShotgunFireEverythingCycle = (tech.isShotgunFireEverythingCycle + 1) % 8
@@ -7676,7 +7971,7 @@ const b = {
             // },
         }, {
             name: "blast",
-            description: "accumulate and release air in a <strong class='color-blast'>self-detonation</strong><br>that <strong>stuns</strong> and pushing away nearby <strong>mobs</strong>", //fires <strong>nails</strong> at mobs within range
+            description: "accumulate and release air in a <strong class='color-blast'>self-detonation</strong><br>that <strong class='color-stun'>stuns</strong> and pushes away nearby <strong>mobs</strong>", //fires <strong>nails</strong> at mobs within range
             ammo: 0,
             ammoPack: 28,
             defaultAmmoPack: 28,
@@ -7699,7 +7994,45 @@ const b = {
             },
             fire() {
                 b.detonation(player.position, b.getDetonationRange(), b.getDetonationDamage())
+                if (tech.isBlastHydrogen) {
+                    for (let i=0;i<10;i++) {
+                        b.hydrogen(m.pos, {x:Math.cos(2*Math.PI*(i/10))*7,y:Math.sin(2*Math.PI*(i/10))*7}, 30, 4)
+                    }
+                }
                 m.fireCDcycle = m.cycle + Math.floor(15 * b.fireCDscale * (tech.isHeavyShell ? 1.22 : 1)); // cool down
+            }
+        }, {
+            name: "rebar",
+            description: "fire a rod of <strong>rebar</strong> that <strong>pierces</strong> mobs<br>but <strong>transforms</strong> into a <strong class='color-block'>block</strong> on <strong>wall</strong> impact", //fires <strong>nails</strong> at mobs within range
+            ammo: 0,
+            ammoPack: 11.4,
+            defaultAmmoPack: 11.4,
+            have: false,
+            do() {
+                const cycles = 90*(input.down?1.25:1) //30
+                const speed = 30*(input.down?1.25:1)
+                const v = { x: speed * Math.cos(m.angle), y: speed * Math.sin(m.angle) } //m.Vy / 2 + removed to make the path less jerky
+                ctx.strokeStyle = "rgba(68, 68, 68, 0.2)" //color.map
+                ctx.lineWidth = 2
+                ctx.beginPath()
+                for (let i = 1.5/(input.down?1.25:1), len = 19; i < len + 1; i++) {
+                    const time = cycles * i / len
+                    ctx.lineTo(m.pos.x + time * v.x, m.pos.y + time * v.y + 0.34 * time * time)
+                }
+                ctx.stroke()
+            },
+            fire() {
+                if (!tech.isRebarEnergy || (tech.isRebarEnergy && m.energy > 0.2)) {
+                    b.rebar(m.angle)
+                    if (tech.isRebarEnergy) m.energy -= 0.2
+                    if (tech.isRebarControlRod) {
+                        let speed = 20 * (input.down?1.5:1)
+                        b.controlRod(player.position, {x:player.velocity.x+(Math.cos(m.angle+((Math.random()-0.5)*1))*speed),y:player.velocity.y+(Math.sin(m.angle+((Math.random()-0.5)*1))*speed)},Math.random()*Math.PI*2)
+                        b.controlRod(player.position, {x:player.velocity.x+(Math.cos(m.angle+((Math.random()-0.5)*1))*speed),y:player.velocity.y+(Math.sin(m.angle+((Math.random()-0.5)*1))*speed)},Math.random()*Math.PI*2)
+                    }
+                    m.fireCDcycle = m.cycle + Math.floor(60 * b.fireCDscale * (input.down?1.5:1) * (tech.isRebarEnergy?0.4:1)); // cool down
+                }
+                
             }
         },
     ],

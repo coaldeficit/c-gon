@@ -2782,6 +2782,7 @@ const m = {
         if (m.holdingTarget) {
             m.energy -= m.fieldRegen;
             if (m.energy < 0) m.energy = 0;
+            m.holdingTarget.isStatic = false
             Matter.Body.setPosition(m.holdingTarget, {
                 x: m.pos.x + 70 * Math.cos(m.angle),
                 y: m.pos.y + 70 * Math.sin(m.angle)
@@ -3021,6 +3022,11 @@ const m = {
             const unit = Vector.normalise(Vector.sub(player.position, who.position))
             if (tech.blockDmg) {
                 who.damage(tech.blockDmg * m.dmgScale, true)
+                m.energy -= Math.log(tech.blockDmg)/100
+                if (m.energy < 0) {
+                    m.energy = 0
+                    m.fieldCDcycle = m.cycle + 60;
+                }
                 //draw electricity
                 const step = 40
                 ctx.beginPath();
