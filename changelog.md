@@ -1,3 +1,11 @@
+# buffs (2024/10/24)
+- added 2 new tech:
+- - cloud condensation nuclei: hydrogen is attracted to nearby mobs
+- - deuterium: doubles all hydrogen effects, but hydrogen slowly sinks
+- fixed hydrogen embrittlement making bosses unkillable
+- Bohr magneton now deals 25% less harm
+- tritium now does 122% more damage
+- BLEVE now deals 33% less harm
 # long metal rod (2024/10/24)
 - added a new gun: rebar: fires a large, piercing projectile that becomes an immobile block on contact with walls. suggested by Cornbread 2100 and Masbird
 - added 11 new tech:
