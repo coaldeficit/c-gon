@@ -3834,7 +3834,7 @@ const b = {
         }
         sub = Vector.sub(pos, player.position);
         dist = Vector.magnitude(sub);
-        if (dist < range && tech.isBLEVE) m.damage(0.1 * simulation.dmgScale)
+        if (dist < range && tech.isBLEVE) m.damage(0.067 * simulation.dmgScale)
     },
     rebar(angle = m.angle) {
         const me = bullet.length;
@@ -3965,9 +3965,9 @@ const b = {
                     if (tech.isRebarAttractDamage) {
                         attractList[i].damage(0.12*m.dmgScale, true)
                         if (!tech.isEnergyHealth) {
-                            m.health -= 0.0002*simulation.dmgScale*m.harmReduction()
+                            m.health -= 0.00015*simulation.dmgScale*m.harmReduction()
                         } else {
-                            m.energy -= 0.0002*simulation.dmgScale
+                            m.energy -= 0.00015*simulation.dmgScale
                         }
                     }
                     ctx.moveTo(this.position.x, this.position.y);
@@ -4061,7 +4061,6 @@ const b = {
         const me = bullet.length;
         bullet[me] = Bodies.polygon(position.x, position.y, 20, 2, {
             density: 0.000001, //  0.001 is normal density
-            inertia: Infinity,
             frictionAir: 0,
             classType: "bullet",
             collisionFilter: {
@@ -4070,7 +4069,7 @@ const b = {
             },
             count: 0,
             radius: radius,
-            restitution: 1,
+            restitution: 0.5,
             period: 200*Math.random(),
             dontRender: true,
             endCycle: m.cycle+400-(bullet.length*2),
@@ -4084,15 +4083,29 @@ const b = {
                     this.radius *= SCALE;
                 }
                 let effectiveRadius = this.radius + (Math.sin((m.cycle+10000)/(50+this.period))*this.radius*0.2)
+                let mult = 1 + tech.isHydrogenHeavy
+                let nearest = [null, Infinity]
                 for (let i=0;i<mob.length;i++) {
                     if (Vector.magnitude(Vector.sub(mob[i].position, this.position)) < effectiveRadius) {
                         Matter.Body.setVelocity(mob[i], {
-                            x: mob[i].velocity.x * 0.985,
-                            y: mob[i].velocity.y * 0.985
+                            x: mob[i].velocity.x * (0.97**mult),
+                            y: mob[i].velocity.y * (0.97**mult)
                         })
-                        if (tech.isHydrogenRegression) mob[i].damageReduction *= 1.00081350011 * (mob[i].isBoss ? 0.25 : 1)
-                        if (tech.isHydrogenRadioactive) mob[i].damage(0.045*m.dmgScale)
+                        if (tech.isHydrogenRegression) mob[i].damageReduction *= 1 + (0.00081350011 * (mob[i].isBoss ? 0.25 : 1) * mult)
+                        if (tech.isHydrogenRadioactive) mob[i].damage(0.1*m.dmgScale*mult)
                     }
+                    if (tech.isHydrogenCondense && Vector.magnitude(Vector.sub(mob[i].position, this.position)) < nearest[1]) {
+                        nearest = [mob[i], Vector.magnitude(Vector.sub(mob[i].position, this.position))]
+                    }
+                }
+                if (tech.isHydrogenCondense && nearest[0] != null && nearest[1] < effectiveRadius * 7) {
+                    const sub = Vector.sub(nearest[0].position, this.position)
+                    const force = Vector.mult(Vector.normalise(sub), 0.000000003)
+                    this.force.x += force.x
+                    this.force.y += force.y
+                }
+                if (tech.isHydrogenHeavy) {
+                    this.force.y += this.mass * simulation.g * 0.025
                 }
                 ctx.beginPath()
                 ctx.fillStyle = (tech.isHydrogenRadioactive) ? "rgba(0,102,119,0.4)" : "rgba(240,215,217,0.4)"

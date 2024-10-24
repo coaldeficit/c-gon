@@ -5317,7 +5317,7 @@ const tech = {
         },
         {
             name: "compressed gas",
-            description: "<strong>shotgun</strong> and <strong class='color-blast'>blast</strong> guns release<br><strong class='color-hydrogen'>hydrogen gas</strong> while firing",
+            description: "<strong>shotgun</strong> and <strong class='color-blast'>blast</strong> release <strong class='color-hydrogen'>hydrogen gas</strong><br>that <strong class='color-s'>slows</strong> mobs and can <strong class='color-e'>ignite</strong>",
             isGunTech: true,
             maxCount: 1,
             count: 0,
@@ -7736,7 +7736,7 @@ const tech = {
         },
         {
             name: "hydrogen embrittlement",
-            description: "<strong class='color-hydrogen'>hydrogen gas</strong> increases <strong>vulnerability</strong> to<br><strong class='color-d'>damage</strong> by <strong>5%</strong> per second for mobs",
+            description: "<strong class='color-hydrogen'>hydrogen</strong> increases <strong>vulnerability</strong> to<br><strong class='color-d'>damage</strong> by <strong>5%</strong> per second for mobs",
             isGunTech: true,
             maxCount: 1,
             count: 0,
@@ -7755,7 +7755,7 @@ const tech = {
         },
         {
             name: "tritium",
-            description: "<strong class='color-hydrogen'>hydrogen gas</strong> is <strong class='color-p'>radioactive</strong><br>and does <strong class='color-d'>damage</strong> to <strong>mobs</strong>",
+            description: "<strong class='color-hydrogen'>hydrogen</strong> is <strong class='color-p'>radioactive</strong><br>and does <strong class='color-d'>damage</strong> to <strong>mobs</strong>",
             isGunTech: true,
             maxCount: 1,
             count: 0,
@@ -7770,6 +7770,44 @@ const tech = {
             },
             remove() {
                 tech.isHydrogenRadioactive = false;
+            }
+        },
+        {
+            name: "cloud condensation nuclei",
+            description: "<strong class='color-hydrogen'>hydrogen</strong> is <strong'>attracted</strong> to nearby <strong>mobs</strong>",
+            isGunTech: true,
+            maxCount: 1,
+            count: 0,
+            frequency: 2,
+            frequencyDefault: 2,
+            allowed() {
+                return (tech.haveGunCheck("rebar") || tech.haveGunCheck("missiles")) && (tech.isHydrogenTrail || tech.isBlastHydrogen) && !tech.isHydrogenHeavy
+            },
+            requires: "hydrogen, not deuterium",
+            effect() {
+                tech.isHydrogenCondense = true;
+            },
+            remove() {
+                tech.isHydrogenCondense = false;
+            }
+        },
+        {
+            name: "deuterium",
+            description: "<strong class='color-hydrogen'>hydrogen</strong> effects are <strong>boosted</strong> by <strong>100%</strong><br>but <strong class='color-hydrogen'>hydrogen</strong> <strong>sinks</strong> downwards",
+            isGunTech: true,
+            maxCount: 1,
+            count: 0,
+            frequency: 2,
+            frequencyDefault: 2,
+            allowed() {
+                return (tech.haveGunCheck("rebar") || tech.haveGunCheck("missiles")) && (tech.isHydrogenTrail || tech.isBlastHydrogen) && !tech.isHydrogenCondense
+            },
+            requires: "hydrogen, not cloud condensation nuclei",
+            effect() {
+                tech.isHydrogenHeavy = true;
+            },
+            remove() {
+                tech.isHydrogenHeavy = false;
             }
         },
         //************************************************** 
@@ -11388,6 +11426,8 @@ const tech = {
     bulletSize: null,
     energySiphon: null,
     healthDrain: null,
+    isHydrogenHeavy: null,
+    isHydrogenCondense: null,
     isBlastHydrogen: null,
     isHydrogenRadioactive: null,
     isHydrogenRegression: null,
