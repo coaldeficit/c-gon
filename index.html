@@ -35,6 +35,25 @@
     <div id="health-bg"></div>
     <div id="health"></div>
     <div id="dmg"></div>
+    <div id='mobile-controls' style="display: none;">
+	    <div id='mobileHideOnPowerup'>
+	        <div id="mobileButtonPause" class="mobileButton">P</div>
+	        <div id='mobileHideOnPause'>
+	            <div id="mobileButtonShoot" class="mobileButton">LMB</div>
+	            <div id="mobileButtonField" class="mobileButton">RMB</div>
+		    	<div id='mobileHideOnOneGun'>
+		    	    <div id="mobileButtonNextGun" class="mobileButton">E</div>
+		    	    <div id="mobileButtonPreviousGun" class="mobileButton">Q</div>
+		    	</div>
+                <div id='joystickMove'>
+	                <div id="joystickMoveMiddle" class="joystickMiddle"></div>
+	            </div>
+                <div id='joystickLook'>
+	                <div id="joystickLookMiddle" class="joystickMiddle"></div>
+	            </div>
+		    </div>
+		</div>
+	</div>
     <div id="choose-background"></div>
     <div id='construct'></div>
     <!-- <input type="text" id="console" spellcheck="false" /> -->
@@ -122,11 +141,13 @@
                     <br>
                     <label for="classic-select" title="other n-gon mods (and vanilla n-gon) made by cool people"> other mods:</label>
                     <select name="classic-select" id="classic-select" onChange="window.location.href=this.value">
-                        <option value="https://landgreen.github.io/sidescroller/">vanilla</option>
+                        <option value="" selected>c-gon</option>
+                        <option value="https://landgreen.github.io/n-gon/">vanilla</option>
+                        <option value="https://therealivyx.github.io/j-gon/">j-gon</option>
+						<!-- other community mods start here from most to least active -->
+                        <!-- <option value="https://3xiondev.github.io/n-gon-upgraded/">n-gon-upgraded</option> -->
                         <option value="https://ashortername.github.io/awfulgarbagebadngonmod/">awfulgarbagebadngonmod</option>
                         <!-- <option value="https://n-gon.theshwarma.repl.co/">orbBoss mod</option> sadly defunct -->
-                        <option value="https://therealivyx.github.io/j-gon/">j-gon</option>
-                        <option value="" selected>c-gon</option>
                     </select>
                     <br>
                     <label for="fps-select" title="use this to slow the game down">limit frames per second:</label>
@@ -137,6 +158,9 @@
                         <option value="45">45 fps</option>
                         <option value="30">30 fps</option>
                     </select>
+					<br>
+                    <label for="mobile-mode" title="enable mobile controls">mobile support:</label>
+                    <input type="checkbox" id="mobile-mode" name="mobile-mode" style="width:17px; height:17px;">
                 </div>
             </details>
         </div>

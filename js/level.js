@@ -10,7 +10,7 @@ const level = {
     //see level.populateLevels:   (intro, ... , reservoir, reactor, ... , gauntlet, final)    added later
     playableLevels: ["labs", "rooftops", "skyscrapers", "warehouse", "highrise", "office", "aerie", "satellite", "sewers", "testChamber", "pavilion"],
     modernPlayableLevels: ["lock", "towers", "flocculation", "gravitron"],
-    cgonLevels: ["descent", "split"],
+    cgonLevels: ["descent", "split", "bifurcate"],
     communityLevels: ["stronghold", "basement", "crossfire", "vats", "n-gon", "house", "perplex", "coliseum", "tunnel", "islands"],
     modernCommunityLevels: ["dripp", "fortress", "commandeer", "clock", "buttonbutton", "downpour", "LaunchSite", "shipwreck"],
     gimmickLevels: ["run", "temple", "biohazard", "stereoMadness", "yingYang", "staircase", "superNgonBros", "underpass", "cantilever", "tlinat", "ruins",
@@ -28747,6 +28747,167 @@ const level = {
             level.enter.draw();
         };
         level.customTopLayer = () => {};
+    },
+    bifurcate() {
+        level.setPosToSpawn(0, -50); //normal spawn
+        level.exit.x = 875;
+        level.exit.y = -3280;
+        spawn.mapRect(level.enter.x, level.enter.y + 20, 100, 20);
+        spawn.mapRect(level.exit.x, level.exit.y + 20, 100, 20);
+        level.defaultZoom = 1800
+        simulation.zoomTransition(level.defaultZoom)
+        document.body.style.backgroundColor = "#c3d6df" //"#d8dadf";
+        color.map = "#303639";
+        // powerUps.spawnStartingPowerUps(1475, -1175);
+        // spawn.debris(750, -2200, 3700, 16); //16 debris per level
+
+        spawn.mapRect(-250, -350, 500, 75);
+		spawn.mapRect(175, -350, 75, 175);
+		spawn.mapRect(-250, 0, 1225, 425);
+		spawn.mapRect(950, 100, 125, 325);
+		spawn.mapRect(950, 325, 475, 100);
+		spawn.mapRect(575, -350, 400, 175);
+		spawn.mapRect(800, -1150, 275, 875);
+		spawn.mapRect(475, -1275, 475, 150);
+		spawn.mapRect(-800, -675, 625, 1100);
+		spawn.mapRect(950, -1800, 725, 325);
+		spawn.mapRect(650, -1800, 400, 200);
+		spawn.mapRect(1275, -1800, 400, 2225);
+		spawn.mapVertex(950, -1150, '0 -125  125 0  0 125  -125 0');
+		spawn.mapVertex(1275, -1475, '0 -200  200 0  0 200  -200 0');
+		spawn.mapVertex(975, 100, '0 -100  100 0  0 100  -100 0');
+		spawn.mapVertex(975, -275, '0 -100  100 0  0 100  -100 0');
+		spawn.mapVertex(950, -1600, '0 -125  125 0  0 125  -125 0');
+		spawn.mapVertex(800, -1125, '0 -100  100 0  0 100  -100 0');
+		spawn.mapVertex(800, -350, '0 -100  100 0  0 100  -100 0');
+		const elevator0 = level.elevator(1075, 100, 200, 225, -700, 0.011, { up: 0.01, down: 0.2 })
+        spawn.bodyRect(-250, -1400, 400, 50, 1, spawn.propsHoist); //hoist
+        cons[cons.length] = Constraint.create({
+            pointA: {
+                x: -50,
+                y: -1775
+            },
+            bodyB: body[body.length - 1],
+            stiffness: 0.0007,
+            length: 200
+        });
+        Composite.add(engine.world, cons[cons.length - 1]);
+        
+        spawn.mapRect(-975, -1350, 350, 50);
+        spawn.mapRect(-1425, -350, 650, 775);
+        spawn.mapRect(-1425, -1675, 500, 50);
+        spawn.mapRect(-1425, -1675, 225, 975);
+        spawn.mapRect(-1575, -200, 175, 625);
+        spawn.mapRect(-1800, 25, 250, 400);
+        spawn.mapRect(-1575, -1675, 175, 825);
+        spawn.mapRect(-2125, -1525, 350, 1950);
+        spawn.mapRect(-4350, -1675, 2425, 2100);
+        const elevator1 = level.elevator(-1775, -200, 200, 225, -1300, 0.011, { up: 0.01, down: 0.1 })
+		spawn.mapVertex(-1925, -1525, '0 -150  150 0  0 150  -150 0');
+		spawn.mapVertex(-1425, -200, '0 -150  150 0  0 150  -150 0');
+		spawn.mapVertex(-1425, -850, '0 -150  150 0  0 150  -150 0');
+        spawn.mapRect(-1575, -2675, 375, 550);
+        spawn.mapRect(-1575, -2800, 3250, 350);
+        spawn.mapRect(525, -2800, 1150, 1075);
+        spawn.mapRect(-2100, -2800, 325, 675);
+        spawn.mapRect(-1900, -2150, 125, 150);
+        spawn.mapRect(-2225, -2800, 150, 550);
+        spawn.mapRect(-2550, -2800, 775, 50);
+        spawn.mapRect(-1450, -2150, 125, 150);
+        spawn.mapRect(-1800, -2325, 37.5, 125);
+		spawn.mapVertex(650, -1725, '0 -125  125 0  0 125  -125 0');
+		spawn.mapVertex(525, -2450, '0 -125  125 0  0 125  -125 0');
+		spawn.mapVertex(-1200, -2450, '0 -125  125 0  0 125  -125 0');
+		spawn.mapVertex(-1325, -2125, '0 -125  125 0  0 125  -125 0');
+		spawn.mapVertex(-1450, -2125, '0 -125  125 0  0 125  -125 0');
+		spawn.mapVertex(-1900, -2125, '0 -125  125 0  0 125  -125 0');
+		spawn.mapVertex(-2100, -2250, '0 -125  125 0  0 125  -125 0');
+        
+        spawn.mapRect(-4350, -5375, 750, 4100);
+        spawn.mapRect(-4350, -5375, 2575, 2000);
+        spawn.mapRect(-2075, -5375, 1000, 1150);
+        spawn.mapRect(-1375, -5375, 2750, 700);
+        spawn.mapRect(1175, -5375, 500, 2925);
+        spawn.mapRect(-3625, -3400, 1725, 150);
+        spawn.mapRect(-1575, -3900, 700, 525);
+        spawn.mapRect(-1450, -4025, 575, 775);
+        spawn.mapRect(-700, -3000, 450, 225);
+        spawn.mapRect(350, -3050, 850, 275);
+        spawn.mapRect(700, -3250, 500, 475);
+        spawn.mapRect(700, -4200, 150, 725);
+        spawn.mapRect(825, -4050, 175, 425);
+		spawn.mapVertex(-1775, -4225, '0 -200  200 0  0 200  -200 0');
+		spawn.mapVertex(-1450, -3900, '0 -125  125 0  0 125  -125 0');
+		spawn.mapVertex(-1450, -3375, '0 -125  125 0  0 125  -125 0');
+		spawn.mapVertex(-1900, -3375, '0 -125  125 0  0 125  -125 0');
+        spawn.mapRect(-1100, -4700, 150, 350);
+        spawn.mapRect(-925, -4025, 375, 50);
+        spawn.mapRect(375, -4200, 375, 50);
+        spawn.mapRect(-200, -3975, 250, 50);
+		spawn.mapVertex(-1075, -4350, '0 -125  125 0  0 125  -125 0');
+		spawn.mapVertex(-950, -4675, '0 -125  125 0  0 125  -125 0');
+		spawn.mapVertex(1175, -4675, '0 -150  150 0  0 150  -150 0');
+		spawn.mapVertex(1175, -3250, '0 -150  150 0  0 150  -150 0');
+		spawn.mapVertex(850, -4050, '0 -150  150 0  0 150  -150 0');
+		spawn.mapVertex(850, -3625, '0 -150  150 0  0 150  -150 0');
+		spawn.mapVertex(-700, -2800, '0 -200  100 0  0 200  -100 0');
+		spawn.mapVertex(-250, -2800, '0 -200  100 0  0 200  -100 0');
+		spawn.mapVertex(350, -2800, '0 -250  125 0  0 250  -125 0');
+		spawn.mapVertex(700, -3050, '0 -200  100 0  0 200  -100 0');
+        
+		spawn.mapVertex(-3600, -1675, '0 -300  300 0  0 300  -300 0');
+		spawn.mapVertex(-3600, -3250, '0 -300  300 0  0 300  -300 0');
+        let boost1 = level.boost(-3525, -1875, 1250, (Math.PI/2) - (Math.PI/8))  //x,y,push,angle radians
+		spawn.mapVertex(-800, -350, '0 -325  162.5 0  0 325  -162.5 0');
+        spawn.bodyRect(600, -400, 75, 50);
+        spawn.bodyRect(-175, -450, 100, 100);
+        spawn.bodyRect(-175, -475, 50, 25);
+        spawn.bodyRect(-975, -1425, 75, 75);
+        spawn.bodyRect(525, -1350, 125, 75);
+        spawn.bodyRect(-2325, -2875, 100, 75);
+        spawn.bodyRect(-2225, -2925, 100, 125);
+        spawn.bodyRect(-2125, -2900, 50, 100);
+        spawn.bodyRect(-2400, -1750, 150, 75);
+        spawn.bodyRect(-2325, -1825, 50, 75);
+        spawn.bodyRect(25, -2900, 150, 100);
+        spawn.bodyRect(-1150, -2875, 100, 75);
+        spawn.bodyRect(-1125, -4075, 50, 50);
+        spawn.bodyRect(-1125, -4125, 50, 50);
+        spawn.bodyRect(-1125, -4175, 50, 50);
+        spawn.bodyRect(-1125, -4225, 50, 50);
+        spawn.bodyRect(575, -4250, 150, 50);
+        
+        spawn.randomMob(0, -950, 1);
+        spawn.randomMob(-775, -2100, 1);
+        spawn.randomMob(475, -3300, 1);
+        spawn.randomMob(-400, -4275, 1);
+        spawn.randomMob(-2700, -2375, 1);
+        spawn.randomMob(-550, -3550, 1);
+        spawn.randomMob(-1275, -525, 1);
+        spawn.randomMob(-400, -2000, 1);
+        spawn.randomMob(-675, -1550, 1);
+        spawn.randomMob(-3200, -2925, 1);
+        spawn.randomMob(100, -4400, 1);
+        spawn.randomMob(-2900, -2900, 1);
+        spawn.randomSmallMob(75, -2100, Math.max(Math.min(Math.round(Math.random() * simulation.difficulty * 0.5), 6), 0), 16 + Math.ceil(Math.random() * 15), 1.3);
+        spawn.randomSmallMob(-850, -1000, Math.max(Math.min(Math.round(Math.random() * simulation.difficulty * 0.5), 6), 0), 16 + Math.ceil(Math.random() * 15), 1.3);
+        spawn.randomSmallMob(-1050, -3025, Math.max(Math.min(Math.round(Math.random() * simulation.difficulty * 0.5), 6), 0), 16 + Math.ceil(Math.random() * 15), 1.3);
+        spawn.randomSmallMob(600, -4450, Math.max(Math.min(Math.round(Math.random() * simulation.difficulty * 0.5), 6), 0), 16 + Math.ceil(Math.random() * 15), 1.3);
+        spawn.randomGroup(-3225, -2400, Infinity);
+        if (simulation.difficulty > 1) {
+            spawn.randomLevelBoss(0, -3600);
+            spawn.secondaryBossChance(-400, -1700);
+        }
+        powerUps.addResearchToLevel() //needs to run after mobs are spawned
+        level.custom = () => {
+            level.exit.drawAndCheck();
+            boost1.query()
+            level.enter.draw();
+        };
+        level.customTopLayer = () => {
+            elevator0.moveOnTouch()
+            elevator1.moveOnTouch()
+		};
     },
     // ********************************************************************************************************
     // ********************************************************************************************************

@@ -3818,7 +3818,7 @@ const b = {
                     mob[i].force.x += knock.x;
                     mob[i].force.y += knock.y;
                     if (tech.isNitrogen17) mobs.statusDoT(mob[i], dmg*0.17142857142, 240)
-                    if (Math.random() < 0.15 + (tech.isBlastWave ? 0.07*tech.isBlastWave : 0) + (tech.isHeavyShell ? 0.22 : 0) || (tech.isQuake && m.cycle > m.fireCDcycle + 120) || mob[i].isHealBossSpecifically) {
+                    if ((Math.random() < 0.15 + (tech.isBlastWave ? 0.07*tech.isBlastWave : 0) + (tech.isHeavyShell ? 0.22 : 0)) || (tech.isQuake && m.cycle > m.fireCDcycle + 120) || mob[i].isHealBossSpecifically) {
                         mobs.statusStun(mob[i], 120 + (tech.isBlastWave ? 18*tech.isBlastWave : 0))
                         if (tech.isWhitePhosphorus) b.explosion(mob[i].position, 150)
                     }
@@ -5706,7 +5706,7 @@ const b = {
                     spread = 1.3
                     knock = 0.1
                 }
-                if (tech.isShotgunFlak) spread *= 0.5
+                if (tech.isShotgunFlak) spread *= 0.25
 
                 if (tech.isShotgunReversed) {
                     player.force.x += 4 * knock * Math.cos(m.angle)
@@ -5776,7 +5776,7 @@ const b = {
                     spread *= 0.15
                     const END = Math.floor(input.down ? 10 : 7);
                     const totalBullets = 10 * (tech.isShotgunFlak ? 0.5 : 1)
-                    const angleStep = ((input.down ? 0.4 : 1.3) / totalBullets) * (tech.isShotgunFlak ? 0.5 : 1)
+                    const angleStep = ((input.down ? 0.4 : 1.3) / totalBullets) * (tech.isShotgunFlak ? 0.25 : 1)
                     let dir = m.angle - angleStep * totalBullets / 2;
                     for (let i = 0; i < totalBullets; i++) { //5 -> 7
                         dir += angleStep
@@ -5784,7 +5784,7 @@ const b = {
                         bullet[me] = Bodies.rectangle(m.pos.x + 50 * Math.cos(m.angle), m.pos.y + 50 * Math.sin(m.angle), 17, 4, b.fireAttributes(dir));
                         const end = END + Math.random() * 4
                         bullet[me].endCycle = 2 * end + simulation.cycle
-                        const speed = (25 * end / END) * (tech.isShotgunFlak && input.down ? 2 : 1)
+                        const speed = (25 * end / END) * (tech.isShotgunFlak && input.down ? 1.4 : 1)
                         const dirOff = dir + (Math.random() - 0.5) * spread
                         Matter.Body.setVelocity(bullet[me], {
                             x: speed * Math.cos(dirOff),

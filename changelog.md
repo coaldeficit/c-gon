@@ -1,3 +1,10 @@
+# c-gon in class (2024/10/26)
+- added bifurcate, a new c-gon exclusive map
+- added mobile support
+- - the control scheme might not be the best so feedback and suggestions on how to improve it are highly appreciated
+- flak now makes shotgun fire in an even narrower arc as suggested by Desboot
+- fixed induction braking still being selectable even if you have quenching
+- fixed pigeonhole principle not actually boosting damage
 # buffs (2024/10/24)
 - added 2 new tech:
 - - cloud condensation nuclei: hydrogen is attracted to nearby mobs
