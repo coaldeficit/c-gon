@@ -1012,6 +1012,89 @@ summary {
 }
 
 
+#mobile-controls {
+    width: 0%;
+    height: 0%;
+    z-index: 100;
+    position: absolute;
+    top: 0px;
+    left: 0px;
+}
+
+#joystickMove {
+    width: 120px;
+    height: 120px;
+    border-radius: 50%;
+    background-color: black;
+    top: 70%;
+    left: 20%;
+    position: fixed;
+    opacity: 0.5;
+    transform: translate(-50%, -50%);
+}
+
+#joystickLook {
+    width: 120px;
+    height: 120px;
+    border-radius: 50%;
+    background-color: black;
+    top: 70%;
+    left: 80%;
+    position: fixed;
+    opacity: 0.5;
+    transform: translate(-50%, -50%);
+}
+
+.joystickMiddle {
+    width: 70px;
+    height: 70px;
+    border-radius: 50%;
+    background-color: white;
+    position: fixed;
+    opacity: 0.75;
+    transform: translate(35%, 35%);
+    z-index: 101;
+}
+
+.mobileButton {
+    width: 50px;
+    height: 25px;
+    background: black;
+    color: white;
+    position: fixed;
+    opacity: 0.5;
+    transform: translate(-50%, -50%);
+    text-align: center;
+    display: flex;
+    align-items: center; /* Vertical center alignment */
+    justify-content: center; /* Horizontal center alignment */
+}
+
+#mobileButtonShoot {
+    top: 20%;
+    left: 80%;
+}
+
+#mobileButtonField {
+    top: 20%;
+    left: 20%;
+}
+
+#mobileButtonNextGun {
+    top: 30%;
+    left: 80%;
+}
+#mobileButtonPreviousGun {
+    top: 30%;
+    left: 20%;
+}
+
+#mobileButtonPause {
+    top: 5%;
+    left: 50%;
+}
+
+
 @keyframes fieldColorCycle {
     0% {
         background-color: rgb(255, 255, 255)

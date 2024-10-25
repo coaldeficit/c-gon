@@ -281,9 +281,12 @@ const powerUps = {
             b.giveGuns(index)
             let text = `b.giveGuns("<span class='color-text'>${b.guns[index].name}</span>")`
             if (b.inventory.length === 1) text += `<br>input.key.gun<span class='color-symbol'>:</span> ["<span class='color-text'>MouseLeft</span>"]`
-            if (b.inventory.length === 2) text += `
+            if (b.inventory.length === 2) {
+                text += `
             <br>input.key.nextGun<span class='color-symbol'>:</span> ["<span class='color-text'>${input.key.nextGun}</span>","<span class='color-text'>MouseWheel</span>"]
             <br>input.key.previousGun<span class='color-symbol'>:</span> ["<span class='color-text'>${input.key.previousGun}</span>","<span class='color-text'>MouseWheel</span>"]`
+                document.getElementById("mobileHideOnOneGun").style.display = "";
+            }
             simulation.makeTextLog(text);
         } else if (type === "field") {
             m.setField(index)
@@ -294,9 +297,11 @@ const powerUps = {
             simulation.makeTextLog(`<span class='color-var'>tech</span>.giveTech("<span class='color-text'>${tech.tech[index].name}</span>")`);
             tech.giveTech(index)
         }
+        document.getElementById("mobileHideOnPowerup").style.display = "";
         powerUps.endDraft(type);
     },
     showDraft() {
+        document.getElementById("mobileHideOnPowerup").style.display = "none";
         // document.getElementById("choose-grid").style.gridTemplateColumns = "repeat(2, minmax(370px, 1fr))"
         // document.getElementById("choose-background").style.display = "inline"
         // document.getElementById("choose-background").style.visibility = "visible"

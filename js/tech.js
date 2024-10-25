@@ -266,6 +266,7 @@ const tech = {
         if (tech.isInstability && m.harmReduction() > 0.65) dmg *= 2
         if (tech.isControlTheory && m.health == m.maxHealth) dmg *= 1.67
         if (tech.isPowerUpDamage) dmg *= 1 + 0.04 * powerUp.length
+        if (tech.isGunChoice && tech.buffedGun === b.inventoryGun) dmg *= 1 + 0.3 * b.inventory.length
         return dmg * tech.slowFire * tech.aimDamage
     },
     duplicationChance() {
@@ -3298,7 +3299,7 @@ const tech = {
             frequencyDefault: 1,
             isHealTech: true,
             allowed() {
-                return !tech.isPerfectBrake && !tech.isOverheal && !tech.isHealAttract
+                return !tech.isPerfectBrake && !tech.isOverHeal && !tech.isHealAttract
             },
             requires: "not eddy current brake, quenching, accretion",
             effect() {
@@ -3965,6 +3966,7 @@ const tech = {
             effect: () => {
                 tech.isExtraChoice = true;
                 this.refundAmount += tech.addJunkTechToPool(0.05)
+                if (localSettings.isMobile) setMobileUI(localSettings.isMobile)
             },
             refundAmount: 0,
             remove() {
@@ -3972,6 +3974,7 @@ const tech = {
                 if (this.count > 0 && this.refundAmount > 0) {
                     tech.removeJunkTechFromPool(this.refundAmount)
                     this.refundAmount = 0
+                    if (localSettings.isMobile) setMobileUI(localSettings.isMobile)
                 }
             }
         },

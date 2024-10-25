@@ -794,6 +794,11 @@ const simulation = {
         document.getElementById("pause-grid-right").style.display = "none"
         document.getElementById("pause-grid-right").style.opacity = "1"
         document.getElementById("pause-grid-left").style.opacity = "1"
+        
+        document.getElementById("mobileHideOnPowerup").style.display = "";
+        document.getElementById("mobileHideOnPause").style.display = "";
+        document.getElementById("mobileHideOnOneGun").style.display = "none";
+        
         ctx.globalCompositeOperation = "source-over"
         ctx.shadowBlur = 0;
         // ctx.shadowColor = '#000';
@@ -1882,13 +1887,15 @@ const simulation = {
             ctx.strokeRect(x, y, dx, dy);
         }
     },
-    enableConstructMode() {
+    enableConstructMode(changeZoom = true) {
         level.isProcedural = false //this is set to be true in levels like labs that need x+ and y+ in front of positions
         simulation.isConstructionMode = true;
         simulation.isHorizontalFlipped = false;
-        simulation.isAutoZoom = false;
-        simulation.zoomScale = 2600;
-        simulation.setZoom();
+		if (changeZoom) {
+            simulation.isAutoZoom = false;
+            simulation.zoomScale = 2600;
+            simulation.setZoom();
+		}
 
         document.body.addEventListener("mouseup", (e) => {
             if (simulation.testing && simulation.constructMouseDownPosition) {

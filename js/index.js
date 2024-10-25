@@ -1211,24 +1211,26 @@ function mouseMoveDefault(e) {
 }
 let mouseMove = mouseMoveDefault
 document.body.addEventListener("mousemove", (e) => {
-    mouseMove(e)
+    if (!localSettings.isMobile) mouseMove(e)
 });
 
 document.body.addEventListener("mouseup", (e) => {
-    // input.fire = false;
-    // console.log(e)
-    if (e.which === 3) {
-        input.field = false;
-    } else {
-        input.fire = false;
+    if (!localSettings.isMobile) {
+        if (e.which === 3) {
+            input.field = false;
+        } else {
+            input.fire = false;
+        }
     }
 });
 
 document.body.addEventListener("mousedown", (e) => {
-    if (e.which === 3) {
-        input.field = true;
-    } else {
-        input.fire = true;
+    if (!localSettings.isMobile) {
+        if (e.which === 3) {
+            input.field = true;
+        } else {
+            input.fire = true;
+        }
     }
 });
 
@@ -1271,6 +1273,191 @@ document.body.addEventListener("wheel", (e) => {
     passive: true
 });
 
+let mobileInputs = {
+    move: [0,0],
+    look: [0,0],
+    moveCenter: [window.innerWidth*0.2,window.innerHeight*0.7],
+    lookCenter: [window.innerWidth*0.8,window.innerHeight*0.7],
+    ids: {
+        move: -1,
+        look: -1
+    }
+}
+document.getElementById("canvas").addEventListener('touchstart', (e) => {
+    e.preventDefault();
+});
+document.getElementById("canvas").addEventListener('touchmove', (e) => {
+    e.preventDefault();
+});
+document.getElementById("canvas").addEventListener('touchend', (e) => {
+    e.preventDefault();
+});
+document.getElementById("canvas").addEventListener('touchcancel', (e) => {
+    e.preventDefault();
+});
+
+document.getElementById("joystickMove").addEventListener('touchstart', (e) => {
+    e.preventDefault();
+    if (mobileInputs.ids.move == -1) mobileInputs.ids.move = e.touches[e.touches.length-1].identifier
+});
+document.getElementById("joystickMove").addEventListener('touchmove', (e) => {
+    e.preventDefault();
+    for (let i=0;i<e.touches.length;i++) {
+        if (e.touches[i].identifier == mobileInputs.ids.move) {
+            mobileInputs.move = [mobileInputs.moveCenter[0]-e.touches[i].pageX,mobileInputs.moveCenter[1]-e.touches[i].pageY]
+            document.getElementById("joystickMoveMiddle").style.top = `${-mobileInputs.move[1]}px`
+            document.getElementById("joystickMoveMiddle").style.left = `${-mobileInputs.move[0]}px`
+            if (mobileInputs.move[0]<0) {
+                input.right = true
+            } else {
+                input.right = false
+            }
+            if (mobileInputs.move[0]>0) {
+                input.left = true
+            } else {
+                input.left = false
+            }
+            if (mobileInputs.move[1]>30) {
+                input.up = true
+            } else {
+                input.up = false
+            }
+            if (mobileInputs.move[1]<-30) {
+                input.down = true
+            } else {
+                input.down = false
+            }
+        }
+    }
+});
+document.getElementById("joystickMove").addEventListener('touchend', (e) => {
+    e.preventDefault();
+    mobileInputs.move = [0,0]
+    mobileInputs.ids.move = -1
+    document.getElementById("joystickMoveMiddle").style.top = `0px`
+    document.getElementById("joystickMoveMiddle").style.left = `0px`
+    input.right = false
+    input.left = false
+    input.up = false
+    input.down = false
+});
+document.getElementById("joystickMove").addEventListener('touchcancel', (e) => {
+    e.preventDefault();
+    mobileInputs.move = [0,0]
+    mobileInputs.ids.move = -1
+    document.getElementById("joystickMoveMiddle").style.top = `0px`
+    document.getElementById("joystickMoveMiddle").style.left = `0px`
+    input.right = false
+    input.left = false
+    input.up = false
+    input.down = false
+});
+
+document.getElementById("joystickLook").addEventListener('touchstart', (e) => {
+    e.preventDefault();
+    if (mobileInputs.ids.look == -1) mobileInputs.ids.look = e.touches[e.touches.length-1].identifier
+});
+document.getElementById("joystickLook").addEventListener('touchmove', (e) => {
+    e.preventDefault();
+    for (let i=0;i<e.touches.length;i++) {
+        if (e.touches[i].identifier == mobileInputs.ids.look) {
+            mobileInputs.look = [mobileInputs.lookCenter[0]-e.touches[i].pageX,mobileInputs.lookCenter[1]-e.touches[i].pageY]
+            if (mobileInputs.look[0] > window.innerWidth/7) mobileInputs.look[0] = window.innerWidth/7
+            if (mobileInputs.look[0] < -window.innerWidth/7) mobileInputs.look[0] = -window.innerWidth/7
+            if (mobileInputs.look[1] > window.innerHeight/7) mobileInputs.look[1] = window.innerHeight/7
+            if (mobileInputs.look[1] < -window.innerHeight/7) mobileInputs.look[1] = -window.innerHeight/7
+            document.getElementById("joystickLookMiddle").style.top = `${-mobileInputs.look[1]}px`
+            document.getElementById("joystickLookMiddle").style.left = `${-mobileInputs.look[0]}px`
+            simulation.mouse.x = (window.innerWidth/2) - (mobileInputs.look[0]*3);
+            simulation.mouse.y = (window.innerHeight/2) - (mobileInputs.look[1]*3);
+        }
+    }
+});
+document.getElementById("joystickLook").addEventListener('touchend', (e) => {
+    e.preventDefault();
+    mobileInputs.look = [0,0]
+    mobileInputs.ids.look = -1
+    document.getElementById("joystickLookMiddle").style.top = `0px`
+    document.getElementById("joystickLookMiddle").style.left = `0px`
+});
+document.getElementById("joystickLook").addEventListener('touchcancel', (e) => {
+    e.preventDefault();
+    mobileInputs.look = [0,0]
+    mobileInputs.ids.look = -1
+    document.getElementById("joystickLookMiddle").style.top = `0px`
+    document.getElementById("joystickLookMiddle").style.left = `0px`
+});
+
+document.getElementById("mobileButtonShoot").addEventListener('touchstart', (e) => {
+    e.preventDefault();
+    input.fire = true
+});
+document.getElementById("mobileButtonShoot").addEventListener('touchend', (e) => {
+    e.preventDefault();
+    input.fire = false
+});
+document.getElementById("mobileButtonShoot").addEventListener('touchcancel', (e) => {
+    e.preventDefault();
+    input.fire = false
+});
+
+document.getElementById("mobileButtonField").addEventListener('touchstart', (e) => {
+    e.preventDefault();
+    input.field = true
+});
+document.getElementById("mobileButtonField").addEventListener('touchend', (e) => {
+    e.preventDefault();
+    input.field = false
+});
+document.getElementById("mobileButtonField").addEventListener('touchcancel', (e) => {
+    e.preventDefault();
+    input.field = false
+});
+
+document.getElementById("mobileButtonNextGun").addEventListener('touchstart', (e) => {
+    e.preventDefault();
+    e.preventDefault();
+    simulation.nextGun()
+});
+document.getElementById("mobileButtonPreviousGun").addEventListener('touchstart', (e) => {
+    e.preventDefault();
+    e.preventDefault();
+    simulation.previousGun()
+});
+
+document.getElementById("mobileButtonPause").addEventListener('touchstart', (e) => {
+    e.preventDefault();
+    if (!simulation.isChoosing && input.isPauseKeyReady && m.alive) {
+        input.isPauseKeyReady = false
+        setTimeout(function() {
+            input.isPauseKeyReady = true
+        }, 300);
+        if (simulation.paused) {
+            build.unPauseGrid()
+            simulation.paused = false;
+            document.getElementById("mobileHideOnPause").style.display = "";
+            // level.levelAnnounce();
+            document.body.style.cursor = "none";
+            requestAnimationFrame(cycle);
+        } else {
+            simulation.paused = true;
+            build.pauseGrid()
+            document.getElementById("mobileHideOnPause").style.display = "none";
+            document.body.style.cursor = "auto";
+
+            if (tech.isPauseSwitchField || simulation.testing) {
+                document.getElementById("pause-field").addEventListener("click", () => {
+                    const energy = m.energy
+                    m.setField((m.fieldMode === m.fieldUpgrades.length - 1) ? 1 : m.fieldMode + 1) //cycle to next field
+                    m.energy = energy
+                    document.getElementById("pause-field").innerHTML = `<div class="grid-title"><div class="circle-grid field"></div> &nbsp; ${m.fieldUpgrades[m.fieldMode].name}</div> ${m.fieldUpgrades[m.fieldMode].description}`
+                });
+            }
+        }
+    }
+});
+
+
 //**********************************************************************
 //  local storage
 //**********************************************************************
@@ -1292,6 +1479,31 @@ function setMaxLevelCountSetting() {
         localSettings.mapSettings.levelCount = simulation.mapSettings.levelCount
         if (localSettings.isAllowed) localStorage.setItem("localSettings", JSON.stringify(localSettings)); //update local storage
     }
+}
+function setMobileUI(isMobile) {
+    document.getElementById("info").style.transform = isMobile ? "scale(0.5, 0.5) translate(-50%, 50%)"
+    : "scale(1, 1)"
+    document.getElementById("choose-grid").style.transform = isMobile ? `translate(-50%, -50%) scale(${tech.isExtraChoice ? 0.475 : 0.7}, ${tech.isExtraChoice ? 0.475 : 0.7})`
+    : "translate(-50%, -50%)"
+    document.getElementById("choose-grid").style.maxHeight = isMobile ? "180vh"
+    : "100vh"
+    document.getElementById("text-log").style.transform = isMobile ? "scale(0.5, 0.5) translate(-50%, 50%)"
+    : "scale(1, 1)"
+    document.getElementById("guns").style.transform = isMobile ? "scale(0.5, 0.5) translate(-50%, -50%) translate(0px, -25px)"
+    : "scale(1, 1)"
+    document.getElementById("field").style.transform = isMobile ? "scale(0.5, 0.5) translate(50%, -50%)"
+    : "scale(1, 1)"
+    document.getElementById("tech").style.transform = isMobile ? "scale(0.5, 0.5) translate(50%, -50%) translate(0px, -50px)"
+    : "scale(1, 1)"
+    document.getElementById("health").style.transform = isMobile ? "scale(0.5, 0.5) translate(-50%, -50%)"
+    : "scale(1, 1)"
+    document.getElementById("health-bg").style.transform = isMobile ? "scale(0.5, 0.5) translate(-50%, -50%)"
+    : "scale(1, 1)"
+    document.getElementById("pause-grid-left").style.transform = isMobile ? "scale(0.5, 0.5) translate(-50%, -50%)"
+    : "scale(1, 1)"
+    document.getElementById("pause-grid-right").style.transform = isMobile ? "scale(0.5, 0.5) translate(50%, -50%)"
+    : "scale(1, 1)"
+    document.getElementById("mobile-controls").style.display = isMobile ? "" : "none"
 }
 if (localstorageCheck()) {
     localSettings = JSON.parse(localStorage.getItem("localSettings"))
@@ -1398,6 +1610,9 @@ if (localSettings.isAllowed && !localSettings.isEmpty) {
     simulation.difficultyMode = localSettings.difficultyMode
     lore.setTechGoal()
     document.getElementById("difficulty-select").value = localSettings.difficultyMode
+    if (localSettings.isMobile === undefined) localSettings.isMobile = /android|mobi/i.test(navigator.userAgent)
+    document.getElementById("mobile-mode").checked = localSettings.isMobile
+    setMobileUI(localSettings.isMobile)
 
     if (localSettings.fpsCapDefault === undefined) localSettings.fpsCapDefault = 'max'
     if (localSettings.personalSeeds === undefined) localSettings.personalSeeds = [];
@@ -1421,6 +1636,7 @@ if (localSettings.isAllowed && !localSettings.isEmpty) {
         levelsClearedLastGame: 0,
         loreCount: 0,
         isHuman: false,
+        isMobile: false,
         mapSettings: {
           main: true,
           modern: true,
@@ -1440,9 +1656,12 @@ if (localSettings.isAllowed && !localSettings.isEmpty) {
         key: undefined
     };
     input.setDefault()
+    localSettings.isMobile = /android|mobi/i.test(navigator.userAgent)
     if (localSettings.isAllowed) localStorage.setItem("localSettings", JSON.stringify(localSettings)); //update local storage
     document.getElementById("difficulty-select").value = localSettings.difficultyMode
     document.getElementById("fps-select").value = localSettings.fpsCapDefault
+    document.getElementById("mobile-mode").checked = localSettings.isMobile
+    setMobileUI(localSettings.isMobile)
     
     document.getElementById("main-maps").checked = localSettings.mapSettings.main
     document.getElementById("new-main-maps").checked = localSettings.mapSettings.modern
@@ -1477,6 +1696,11 @@ document.getElementById("fps-select").addEventListener("input", () => {
     }
     localSettings.fpsCapDefault = value
     if (localSettings.isAllowed) localStorage.setItem("localSettings", JSON.stringify(localSettings)); //update local storage
+});
+document.getElementById("mobile-mode").addEventListener("input", () => {
+    localSettings.isMobile = document.getElementById("mobile-mode").checked
+    if (localSettings.isAllowed) localStorage.setItem("localSettings", JSON.stringify(localSettings)); //update local storage
+    setMobileUI(localSettings.isMobile)
 });
 
 document.getElementById("main-maps").addEventListener("input", () => {
