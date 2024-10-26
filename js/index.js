@@ -747,6 +747,11 @@ ${simulation.isCheating ? "<br><br><em>lore disabled</em>": ""}
         document.body.style.cursor = "none";
         document.body.style.overflow = "hidden"
         document.getElementById("experiment-grid").style.display = "none"
+        document.getElementById("mobileHideOnPowerup").style.display = "";
+        document.getElementById("mobileHideOnLevel1").style.display = "";
+        document.getElementById("mobileHideOnLevel1").style.opacity = 0.2;
+        document.getElementById("mobileHideOnPause").style.display = "";
+        document.getElementById("mobileHideOnOneGun").style.display = "none";
         simulation.paused = false;
         requestAnimationFrame(cycle);
     }

@@ -482,6 +482,8 @@ const m = {
                 tech.isImmortal = false //disable future immortality
             }, 6 * swapPeriod);
         } else if (m.alive) { //normal death code here
+            document.getElementById("mobileHideOnPowerup").style.display = "none";
+            document.getElementById("mobileHideOnLevel1").style.display = "none";
             m.alive = false;
             simulation.paused = true;
             m.health = 0;

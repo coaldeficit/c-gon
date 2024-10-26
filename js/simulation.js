@@ -795,9 +795,13 @@ const simulation = {
         document.getElementById("pause-grid-right").style.opacity = "1"
         document.getElementById("pause-grid-left").style.opacity = "1"
         
-        document.getElementById("mobileHideOnPowerup").style.display = "";
-        document.getElementById("mobileHideOnPause").style.display = "";
-        document.getElementById("mobileHideOnOneGun").style.display = "none";
+        if (!isBuildRun) {
+            document.getElementById("mobileHideOnPowerup").style.display = "";
+            document.getElementById("mobileHideOnLevel1").style.display = "";
+            document.getElementById("mobileHideOnLevel1").style.opacity = 0.2;
+            document.getElementById("mobileHideOnPause").style.display = "";
+            document.getElementById("mobileHideOnOneGun").style.display = "none";
+        }
         
         ctx.globalCompositeOperation = "source-over"
         ctx.shadowBlur = 0;
@@ -1159,6 +1163,7 @@ const simulation = {
     //   }
     // },
     checks() {
+        if (localSettings.isMobile && m.cycle > 960) document.getElementById("mobileHideOnLevel1").style.opacity -= 0.0012;
         if (tech.isShotgunHeat && tech.isShotgunHeat > 1) {
             if (m.fireCDcycle >= m.cycle || b.guns[b.activeGun].name != 'shotgun' || input.fire) tech.isShotgunHeat -= 0.00667
             if (tech.isShotgunHeat < 1) tech.isShotgunHeat = 1
