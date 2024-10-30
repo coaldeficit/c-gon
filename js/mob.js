@@ -231,6 +231,7 @@ const mobs = {
             alive: true,
             index: i,
             health: tech.mobSpawnWithHealth,
+            painless: false,
             showHealthBar: true,
             accelMag: 0.001 * simulation.accelScale,
             cd: 0, //game cycle when cooldown will be over

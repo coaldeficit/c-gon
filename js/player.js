@@ -1336,7 +1336,7 @@ const m = {
                 ctx.translate(m.pos.x, m.pos.y);
                 m.calcLeg(Math.PI, -3);
 
-                const diff = (m.lastKillCycle - m.cycle + tech.isDamageCooldownTime) / tech.isDamageCooldownTime
+                const diff = (m.lastKillCycle + (240-tech.isRepolarization)) - m.cycle
                 const color = diff < 0 ? "#fff" : "#aaa"
                 const hue = 220 + 20 * Math.sin(0.01 * m.cycle)
                 const colorInverse = diff < 0 ? `hsl(${hue}, 80%, 40%)` : "#fff"
@@ -5648,7 +5648,6 @@ const m = {
 
                             function collideMob(obj) { // note: this function is never called. apparently.
                                 //player + mob collision
-				console.log('bro do you even work')
                                 if (
                                     m.immuneCycle < m.cycle &&
                                     // (obj === playerBody || obj === playerHead) &&

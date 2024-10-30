@@ -5656,7 +5656,7 @@ const level = {
                             if (laserHit.length) {
                                 for (let i = 0; i < body.length; i++) {
                                     if (laserHit[0].body.id === body[i].id) { //need to find the block id so it can be removed
-                                        let list = ["flutter", "flutter", "flutter", "hopper", "slasher", "slasher", "slasher", "stabber", "springer", "striker", "sneaker", "launcher", "launcherOne", "exploder", "sucker", "spinner", "grower", "beamer", "spawner", "ghoster"]
+                                        let list = ["flutter", "flutter", "flutter", "hopper", "slasher", "slasher", "slasher", "stabber", "springer", "striker", "sneaker", "launcher", "launcherOne", "exploder", "sucker", "spinner", "grower", "beamer", "spawner", "ghoster", "slasher2", "slasher3", "drifter"]
                                         const pick = list[Math.floor(Math.random() * list.length)]
                                         spawn[pick](lasers[laserIndex].max.x, lasers[laserIndex].max.y - 20);
                                         const who = mob[mob.length - 1]
@@ -28458,6 +28458,7 @@ const level = {
       powerUps.addResearchToLevel() //needs to run after mobs are spawned
 	},
     boundary() {
+        simulation.makeTextLog(`<strong>boundary</strong> by <span class='color-var'>CD</span>. made for c-gon`);
         level.setPosToSpawn(0, -50); //normal spawn
         level.exit.x = 1500;
         level.exit.y = -1875;
@@ -28674,6 +28675,7 @@ const level = {
                 spawn.setSpawnList()
                 if (spawn.pickList[1] == 'ghoster') spawn.pickList[1] = 'grower' // goes through walls + literally invisible half the time
                 if (spawn.pickList[1] == 'sucker') spawn.pickList[1] = 'rainer' // goes through walls
+                if (spawn.pickList[1] == 'boidCulture') spawn.pickList[1] = 'stabber' // capable of spawning out of bounds due to limited space
                 if (['hopper','hopMother','striker'].includes(spawn.pickList[1])) spawn.pickList[1] = 'focuser' // gravity affected
                 level.announceMobTypes()
             }
@@ -28749,6 +28751,7 @@ const level = {
         level.customTopLayer = () => {};
     },
     bifurcate() {
+        simulation.makeTextLog(`<strong>bifurcate</strong> by <span class='color-var'>CD</span>. made for c-gon`);
         level.setPosToSpawn(0, -50); //normal spawn
         level.exit.x = 875;
         level.exit.y = -3280;

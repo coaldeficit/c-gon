@@ -108,7 +108,7 @@ function collisionChecks(event) {
                     ) {
                         let dmg = Math.min(Math.max(0.025 * Math.sqrt(mob[k].mass), 0.05), 0.3) * simulation.dmgScale; //player damage is capped at 0.3*dmgScale of 1.0
                         if (m.isCloak) dmg *= 0.5
-                        mob[k].foundPlayer();
+                        if (!mob[k].painless) mob[k].foundPlayer();
                         if (tech.isRewindAvoidDeath && m.energy > 0.66 && !tech.isEnemyStomp) { //CPT reversal runs in m.damage, but it stops the rest of the collision code here too. collision code is stopped later if you have the stomp tech so that it works with cpt
                             m.damage(dmg);
                             return
@@ -200,7 +200,7 @@ function collisionChecks(event) {
                             if (tech.isCrit && mob[k].isStunned) dmg *= 4
                             // console.log(dmg)
                             mob[k].damage(dmg);
-                            if (mob[k].alive) mob[k].foundPlayer();
+                            if (mob[k].alive && !mob[k].painless) mob[k].foundPlayer();
                             if (mob[k].damageReduction) {
                                 simulation.drawList.push({ //add dmg to draw queue
                                     x: pairs[i].activeContacts[0].vertex.x,
