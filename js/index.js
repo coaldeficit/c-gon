@@ -1810,7 +1810,6 @@ document.getElementById("updates").addEventListener("toggle", function() {
         changelog[i] += `<br>`
         if (changelog[Math.min(i+1,changelog.length-1)].substring(0,2) == '# ' && i != changelog.length-1) changelog[i] += `<hr>`
       }
-      console.log(changelog)
       let fullchangelog = ''
       for (let i=0;i<changelog.length;i++) {
         fullchangelog+=changelog[i]

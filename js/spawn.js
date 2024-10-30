@@ -32,7 +32,7 @@ const spawn = {
         "laser", "laser",
         "laserLayer", "laserLayer",
         "drifter", "drifter",
-        "launcher", "launcherOne", "exploder", "sneaker", "sucker", "sniper", "spinner", "grower", "beamer", "focuser", "spawner", "ghoster", "rainer",
+        "launcher", "launcherOne", "exploder", "sneaker", "sucker", "sniper", "spinner", "grower", "beamer", "focuser", "spawner", "ghoster", "rainer", "boidCulture"
     ],
     mobTypeSpawnOrder: [], //preset list of mob names calculated at the start of a run by the randomSeed
     mobTypeSpawnIndex: 0, //increases as the mob type cycles
@@ -7507,6 +7507,7 @@ const spawn = {
         me.memory = 240;
         me.seeAtDistance2 = 2000000 //1400 vision range
         me.randombsgo = 0
+        me.startCycle = -1
         Matter.Body.setDensity(me, 0.0017 + 0.0002 * Math.sqrt(simulation.difficulty))
         me.onDeath = function() {
             powerUps.spawnBossPowerUp(this.position.x, this.position.y)
@@ -7528,8 +7529,9 @@ const spawn = {
 	      if (Vector.magnitude(Vector.sub(player.position, this.position)) <= 666 &&
             Matter.Query.ray(map, this.position, player.position).length === 0
           ) { // attach constraint to player if too close and in sight
-            me.damageReduction = 0.17 / (tech.isScaleMobsWithDuplication ? 1 + tech.duplicationChance() : 1)
-	        me.randombsgo = 1
+            this.damageReduction = 0.17 / (tech.isScaleMobsWithDuplication ? 1 + tech.duplicationChance() : 1)
+	        this.randombsgo = 1
+            this.startCycle = m.cycle
 	        consBB[consBB.length] = Constraint.create({
 	            bodyA: me,
 	            bodyB: player,
@@ -7538,8 +7540,8 @@ const spawn = {
 	        Composite.add(engine.world, consBB[consBB.length - 1]);
 	      }
 	    }
-	    if (me.randombsgo == 1) {
-	      if (!(simulation.cycle % 60)) m.damage(0.04 * simulation.dmgScale)
+	    if (this.randombsgo == 1) {
+	      if (!(((m.cycle-this.startCycle)+1) % 120)) m.damage(0.08 * simulation.dmgScale)
 	      Matter.Body.setAngularVelocity(this, 0.1)
 	    }
         };
@@ -7553,7 +7555,8 @@ const spawn = {
         me.accelMag = 0.001 + (0.00005*simulation.difficulty)
         // me.torque -= me.inertia * 0.002
         Matter.Body.setDensity(me, 0.03); //extra dense //normal is 0.001 //makes effective life much larger
-        me.damageReduction = 0.25 / (tech.isScaleMobsWithDuplication ? 1 + tech.duplicationChance() : 1)
+        me.intendedDamageReduction = 0.25 / (tech.isScaleMobsWithDuplication ? 1 + tech.duplicationChance() : 1)
+        me.damageReduction = 0
         me.isBoss = true;
         // spawn.shield(me, x, y, 1);  //not working, not sure why
         me.onDeath = function() {
@@ -7561,10 +7564,29 @@ const spawn = {
         };
         me.rotateVelocity = (0.0145 + (0.0005*simulation.difficulty)) * (Math.random() > 0.5 ? 1 : -1)
         me.memory = Infinity
+        me.painless = true
+        me.showHealthBar = false
         me.do = function() {
             this.attraction();
             this.checkStatus();
 
+            if (this.damageReduction != 0) this.intendedDamageReduction = this.damageReduction
+            
+            if (Vector.magnitude(Vector.sub(player.position, this.position)) > 1060) {
+                this.damageReduction = 0
+                ctx.beginPath();
+                let vertices = this.vertices;
+                ctx.moveTo(vertices[0].x, vertices[0].y);
+                for (let j = 1; j < vertices.length; j++) ctx.lineTo(vertices[j].x, vertices[j].y);
+                ctx.lineTo(vertices[0].x, vertices[0].y);
+                ctx.lineWidth = 13 + 5 * Math.random();
+                ctx.strokeStyle = `rgba(255,255,255,${0.5+0.2*Math.random()})`;
+                ctx.stroke();
+            } else {
+                this.damageReduction = this.intendedDamageReduction
+                this.healthBar()
+            }
+            
             if (!this.isStunned) {
                 //check if slowed
                 let slowed = false
@@ -8529,6 +8551,133 @@ const spawn = {
             }
             this.health = this.headBody.health
         };
+    },
+    boid(x, y, radius = 25, boidID = 0) {
+        mobs.spawn(x, y, 3, radius, "#ffffff");
+        let me = mob[mob.length - 1];
+        // console.log(`mass=${me.mass}, radius = ${radius}`)
+        me.accelMag = (0.00002/Math.SQRT2) * simulation.accelScale
+        me.vertices = Matter.Vertices.rotate(me.vertices, Math.PI, me.position); //make the pointy side of triangle the front
+        //Matter.Body.rotate(me, Math.random() * Math.PI * 2);
+        me.radius *= 1.333
+        me.vertices[1].x = me.position.x + Math.cos(me.angle) * me.radius; //make one end of the triangle longer
+        me.vertices[1].y = me.position.y + Math.sin(me.angle) * me.radius;
+        // me.memory = 120;
+        me.seeAtDistance2 = 2000000 //1400 vision range
+        me.cycle = Math.floor(512*Math.random())-256
+        me.neighbours = []
+        me.isBoid = true
+        me.boidRadius = 400
+        me.frictionAir = 0.2
+        me.collisionFilter.mask = cat.player | cat.body | cat.map | cat.mob | cat.bullet // dont collide with other mobs
+        Matter.Body.setDensity(me, 0.001)
+        me.boidTarget = {x:0,y:0}
+        me.boidID = boidID
+        me.damageReduction = 2
+        me.do = function() {
+            this.seePlayerByHistory();
+            this.fill = `rgb(${Math.abs(this.cycle) % 256}, ${Math.abs(this.cycle) % 256}, 255)`
+            this.cycle += 2 + (Math.random() * 4)
+            if (this.cycle >= 256) this.cycle = -255
+            
+            this.updateNeighbours()
+            
+            this.boidTarget = {x:Math.cos(this.angle)*150,y:Math.sin(this.angle)*150}
+            // separate
+            for (let i=0;i<this.neighbours.length;i++) {
+                const diff = Vector.sub(this.neighbours[i].position, this.position)
+                this.boidTarget = Vector.sub(this.boidTarget, Vector.mult(Vector.normalise(diff), (this.boidRadius-Vector.magnitude(diff))/5))
+            }
+            // align
+            let alignVect = {x:0,y:0}
+            for (let i=0;i<this.neighbours.length;i++) {
+                alignVect = Vector.add(alignVect, {x:Math.cos(this.neighbours[i].angle)*150,y:Math.sin(this.neighbours[i].angle)*150})
+            }
+            if (this.neighbours.length) this.boidTarget = Vector.add(this.boidTarget, Vector.div(alignVect, this.neighbours.length))
+            // cohere
+            let cohereVect = {x:0,y:0}
+            for (let i=0;i<this.neighbours.length;i++) {
+                cohereVect = Vector.add(cohereVect, Vector.sub(this.neighbours[i].position, this.position))
+            }
+            if (this.neighbours.length) this.boidTarget = Vector.add(this.boidTarget, Vector.div(cohereVect, this.neighbours.length))
+            // chase
+            if (this.seePlayer.yes) {
+                this.boidTarget = Vector.add(this.boidTarget, Vector.mult(Vector.normalise(Vector.sub(Vector.add(this.seePlayer.position,{x:0,y:150}), this.position)), 80))
+            }
+            // wall avoidance
+            for (let i=0;i<4;i++) {
+                const rotateVector = Vector.rotate({x:80,y:0},(Math.PI/2)*i)
+                if (Matter.Query.ray(map, this.position, Vector.add(this.position, rotateVector)).length !== 0 || Matter.Query.ray(body, this.position, Vector.add(this.position, rotateVector)).length !== 0) {
+                    this.boidTarget = Vector.sub(this.boidTarget, Vector.mult(rotateVector,5))
+                }
+            }
+            // color sync
+            for (let i=0;i<this.neighbours.length;i++) {
+                this.cycle += (((this.neighbours[i].cycle + 512) - this.cycle) % 256) - 128 > 0 ? 5 : this.neighbours[i].cycle != this.cycle ? -5 : 0
+                if (this.cycle >= 256) {
+                    this.cycle -= 511
+                } else if (this.cycle < -255) this.cycle += 511
+            }
+            
+            // rotate to target
+            let targetAngle = this.angleDifference(this.angle, Math.atan2(this.boidTarget.y, this.boidTarget.x)) / ((10*Math.SQRT2) / simulation.accelScale)
+            Matter.Body.setAngularVelocity(this, targetAngle)
+            
+            // move only if chasing player
+            if (this.seePlayer.yes) {
+                this.force = Vector.add(this.force, Vector.mult(this.boidTarget, this.accelMag))
+            }
+            this.checkStatus();
+            
+            // debug
+            /*ctx.beginPath()
+            ctx.arc(this.position.x+this.boidTarget.x,this.position.y+this.boidTarget.y, 10, 0, Math.PI*2)
+            ctx.fillStyle = "#ff0000"
+            ctx.fill()*/
+        }
+        me.onDeath = function() {
+            this.isBoid = false;
+            let count = 0 //count other cells by id
+            // console.log(this.cellID)
+            for (let i = 0, len = mob.length; i < len; i++) {
+                if (mob[i].isBoid && mob[i].boidID === this.boidID) count++
+            }
+            if (count > 0) {
+                this.leaveBody = false;
+                this.isDropPowerUp = false;
+            }
+        }
+        me.updateNeighbours = function() {
+            this.neighbours = []
+            for (let i=0;i<mob.length;i++) {
+                if (Vector.magnitude(Vector.sub(mob[i].position, this.position)) < this.boidRadius && this != mob[i] && mob[i].isBoid) {
+                    this.neighbours.push(mob[i])
+                }
+            }
+        }
+        me.angleDifference = function(sourceA, targetA) {    
+            let mod = function(a, n) {
+                return (a % n + n) % n;
+            };
+            let a = targetA - sourceA;
+            return mod(a + Math.PI, 2*Math.PI) - Math.PI;
+        }
+    },
+    boidCulture(x,y,radius=25,rings=Math.min(2,Math.floor(simulation.difficulty/20)+1)) {
+        const curCycle = m.cycle
+        const colCycle = Math.floor(Math.random()*512)-256
+        const angle = 2*Math.PI*Math.random()
+        function spawnBoid(subx,suby) {
+            spawn.boid(subx,suby,radius,curCycle)
+            mob[mob.length-1].cycle = colCycle
+            Matter.Body.setAngle(mob[mob.length-1], angle)
+        }
+        spawnBoid(x,y)
+        for (let i=1;i<=rings;i++) {
+            for (let j=0;j<i*7;j++) {
+                spawnBoid(x+(Math.cos(((Math.PI*2)/(i*7))*j)*radius*5*i),y+(Math.sin(((Math.PI*2)/(i*7))*j)*radius*5*i))
+            }
+        }
     },
     //complex constrained mob templates**********************************************************************
     //*******************************************************************************************************

@@ -1,3 +1,14 @@
+# bird-oid object (2024/10/30)
+- added 1 new mob:
+- - boid: spawns in flocks that attack collectively
+- - boids can be found on levels 6 and 7 on seed 39977 with main, modern main and c-gon maps plus classic and modern intermission maps as of this update
+- constraintBoss changes:
+- - now does harm every 2 seconds instead of 1 second
+- - harm timer now uses time since it has attached instead of global cycle timer
+- tripwireBoss no longer spots you on taking damage, but is now invulnerable when you're not in the range of its lasers
+- gun powerups spawned when you have all guns available are now converted into 3 ammo powerups
+- fixed depolarization skin not turning blue
+- factory can now spawn slasher2, slasher3 and drifter from block to mob conversion
 # c-gon in class (2024/10/26)
 - added bifurcate, a new c-gon exclusive map
 - added mobile support

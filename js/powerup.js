@@ -1378,6 +1378,7 @@ const powerUps = {
         if (
             (!tech.isSuperDeterminism || (target !== 'research')) &&
             !(tech.isEnergyNoAmmo && target === 'ammo') &&
+            !(b.inventory.length >= b.guns.length && target === 'gun') &&
             (!simulation.isNoPowerUps)
         ) {
             powerUps.directSpawn(x, y, target, moving, mode, size)
@@ -1388,6 +1389,8 @@ const powerUps = {
                 if (tech.isDupEnergy) m.energy *= 2
                 if (tech.isDupEnergy && m.energy > m.maxEnergy) m.energy = m.maxEnergy
             }
+        } else if (b.inventory.length >= b.guns.length && target === 'gun') {
+            for (let i=0;i<3;i++) powerUps.spawn(x,y,"ammo")
         }
     },
 };
