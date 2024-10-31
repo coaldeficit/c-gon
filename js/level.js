@@ -28727,7 +28727,7 @@ const level = {
                 }
                 if (curSection < 5) {
                     for (let i=0;i<mob.length-oldMobLength;i++) { // make mobs more massive to buff health and damage
-                        mob[oldMobLength+i].mass *= 1.8 + (Math.max(0,(tech.totalCount-6)**3)*0.00017) // the exponential increase is to punish duplication chance builds
+                        if (!mob[oldMobLength+i].isBadTarget) mob[oldMobLength+i].mass *= 1.8 + (Math.max(0,(tech.totalCount-6)**3)*0.00017) // the exponential increase is to punish duplication chance builds
                     }
                 }
                 if (curSection == 5) { // remove parts of previous sections for the 6th one
