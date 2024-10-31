@@ -1,3 +1,10 @@
+# simulatory edge (2024/10/31)
+- added 1 new tech:
+- - fourth dimension: inserts a special, difficult level into the level list with a unique boss that may grant 6 tech on completion
+- - please tell me if i went overboard with the difficulty
+- special reduction can no longer be obtained as a random tech
+- annihilation now uses 33 energy instead of 33% of your max energy
+- added link to n-gon-upgraded in the settings
 # bird-oid object (2024/10/30)
 - added 1 new mob:
 - - boid: spawns in flocks that attack collectively

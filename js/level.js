@@ -440,14 +440,24 @@ const level = {
             } else if (level.exitCount > 0) {
                 level.exitCount -= 2
             }
-
+            const isBoundary = level.levels[level.onLevel+1] == 'boundary'
+            if (isBoundary) {
+                ctx.beginPath()
+                ctx.arc(level.exit.x+50,level.exit.y-60, 300, Math.PI*2, 0)
+                let gradient = ctx.createRadialGradient(level.exit.x+50, level.exit.y-60, 0, level.exit.x+50, level.exit.y-60, 300)
+                gradient.addColorStop(0, "rgba(0,0,0,1)")
+                gradient.addColorStop(1, "rgba(0,0,0,0)")
+                ctx.fillStyle = gradient
+                ctx.fill()
+            }
+            
             ctx.beginPath();
             ctx.moveTo(level.exit.x, level.exit.y + 30);
             ctx.lineTo(level.exit.x, level.exit.y - 80);
             ctx.bezierCurveTo(level.exit.x, level.exit.y - 170, level.exit.x + 100, level.exit.y - 170, level.exit.x + 100, level.exit.y - 80);
             ctx.lineTo(level.exit.x + 100, level.exit.y + 30);
             ctx.lineTo(level.exit.x, level.exit.y + 30);
-            ctx.fillStyle = "#0ff";
+            ctx.fillStyle = isBoundary ? "#fff" : "#0ff";
             ctx.fill();
 
             if (level.exitCount > 0) { //stroke outline of door from 2 sides,  grows with count
@@ -460,8 +470,8 @@ const level = {
                 ctx.bezierCurveTo(level.exit.x + 100, level.exit.y - 148, level.exit.x + 50, level.exit.y - 148, level.exit.x + 50, level.exit.y - 148);
                 ctx.setLineDash([200, 200]);
                 ctx.lineDashOffset = Math.max(-15, 185 - 2.1 * level.exitCount)
-                ctx.strokeStyle = "#444"
-                ctx.lineWidth = 2
+                ctx.strokeStyle = isBoundary ? "#a37acc" : "#444"
+                ctx.lineWidth = isBoundary ? 6 : 2
                 ctx.stroke();
                 ctx.setLineDash([0, 0]);
 
@@ -28460,8 +28470,8 @@ const level = {
     boundary() {
         simulation.makeTextLog(`<strong>boundary</strong> by <span class='color-var'>CD</span>. made for c-gon`);
         level.setPosToSpawn(0, -50); //normal spawn
-        level.exit.x = 1500;
-        level.exit.y = -1875;
+        level.exit.x = 4925;
+        level.exit.y = 1525-30;
         spawn.mapRect(level.enter.x, level.enter.y + 20, 100, 20);
         level.defaultZoom = 1800
         simulation.zoomTransition(level.defaultZoom)
@@ -28533,6 +28543,12 @@ const level = {
             spawn.randomMob(1600, 200, Infinity);
             activeButtons = [level.button(1600-63, 550)]
         }, ()=>{
+            m.spawnPos.x = m.pos.x;
+            m.spawnPos.y = m.pos.y;
+            level.enter.x = m.spawnPos.x - 50;
+            level.enter.y = m.spawnPos.y + 20;
+            level.defaultZoom = 2200
+            simulation.zoomTransition(level.defaultZoom)
             spawn.mapRect(1875, 900, 100, 500);
             spawn.mapRect(225, 1300, 1750, 100);
             spawn.mapRect(225, 700, 100, 700);
@@ -28560,6 +28576,11 @@ const level = {
             spawn.randomMob(-950, 325, Infinity);
             activeButtons = [level.button(-1100-63, 525)]
         }, ()=>{
+            m.spawnPos.x = m.pos.x;
+            m.spawnPos.y = m.pos.y;
+            level.enter.x = m.spawnPos.x - 50;
+            level.enter.y = m.spawnPos.y + 20;
+            simulation.fallHeight = 6000
             spawn.mapRect(-2200, 625, 500, 100);
             spawn.mapRect(-2750, 150, 100, 1275);
             spawn.mapRect(-2750, 150, 650, 100);
@@ -28625,8 +28646,14 @@ const level = {
             spawn.randomGroup(1525, 2700, Infinity);
             activeButtons = [level.button(-3087.5-63, 850), level.button(-450-63, 750), level.button(800-63, 2800)]
         }, ()=>{
+            m.spawnPos.x = m.pos.x;
+            m.spawnPos.y = m.pos.y;
+            level.enter.x = m.spawnPos.x - 50;
+            level.enter.y = m.spawnPos.y + 20;
+            level.defaultZoom = 1800
+            simulation.zoomTransition(level.defaultZoom)
             simulation.makeTextLog(`level<span class='color-symbol'>.</span>boundary<span class='color-symbol'>.</span>allowHealing<span class='color-symbol'>(</span>true<span class='color-symbol'>)</span>`)
-            simulation.makeTextLog(`for (let i <span class='color-symbol'>=</span> 0; i <span class='color-symbol'><</span> Math.max(1, 6 - simulation.difficultyMode) <span class='color-symbol'>/</span> 3; i<span class='color-symbol'>++</span>)`);
+            simulation.makeTextLog(`for (let i <span class='color-symbol'>=</span> 0; i <span class='color-symbol'><</span> Math.max(1, 6 - simulation.difficultyMode); i<span class='color-symbol'>++</span>)`);
             simulation.makeTextLog(`{ powerUps.spawn(m.pos.x, m.pos.y, "heal") <em>//preparation</em>}`);
             for (let i=0;i<Math.max(1,6-simulation.difficultyMode);i++) { // mercy heal before the boss
                 powerUps.spawn(m.pos.x+Math.random(),m.pos.y+Math.random(),"heal")
@@ -28660,17 +28687,24 @@ const level = {
             spawn.mapRect(3150, -1300, 2000, 100);
             spawn.mapRect(5050, -1300, 100, 2250);
             activeButtons = [level.button(4850-63, 850)]
-        }, ()=>{ // todo: boss
+        }, ()=>{
+            m.spawnPos.x = m.pos.x;
+            m.spawnPos.y = m.pos.y;
+            level.enter.x = m.spawnPos.x - 50;
+            level.enter.y = m.spawnPos.y + 20;
             document.body.style.backgroundColor = "#fff"
-            spawn.mapRect(4375, 850, 775, 100);
-            spawn.mapRect(3150, 850, 775, 100);
-            spawn.mapRect(3150, -1300, 775, 100);
-            spawn.mapRect(4375, -1300, 775, 100);
+            spawn.mapRect(4325, 850, 825, 100);
+            spawn.mapRect(3150, 850, 825, 100);
+            spawn.mapRect(3150, -1300, 825, 100);
+            spawn.mapRect(4325, -1300, 825, 100);
             spawn.mapRect(3150, -1300, 100, 2250);
             spawn.mapRect(5050, -1300, 100, 2250);
+            
+            spawn.boundaryBoss(4150,-175)
         }]
         function loadNextSection() {
             let oldMapLength = map.length
+            let oldMobLength = mob.length
             if (curSection < 5 && curSection) {
                 spawn.setSpawnList()
                 if (spawn.pickList[1] == 'ghoster') spawn.pickList[1] = 'grower' // goes through walls + literally invisible half the time
@@ -28681,11 +28715,20 @@ const level = {
             }
             sections[curSection]()
             if (curSection) {
+                for (let i = 0; i < body.length; i++) {
+                    Matter.Composite.remove(engine.world, body[i]);
+                    body.splice(i, 1)
+                }
                 for (let i=0;i<map.length-oldMapLength;i++) {
                     map[oldMapLength+i].collisionFilter.category = cat.map;
                     map[oldMapLength+i].collisionFilter.mask = cat.player | cat.map | cat.body | cat.bullet | cat.powerUp | cat.mob | cat.mobBullet;
                     Matter.Body.setStatic(map[oldMapLength+i], true); //make static
                     Composite.add(engine.world, map[oldMapLength+i]);
+                }
+                if (curSection < 5) {
+                    for (let i=0;i<mob.length-oldMobLength;i++) { // make mobs more massive to buff health and damage
+                        mob[oldMobLength+i].mass *= 1.8 + (Math.max(0,(tech.totalCount-6)**3)*0.00017) // the exponential increase is to punish duplication chance builds
+                    }
                 }
                 if (curSection == 5) { // remove parts of previous sections for the 6th one
                     Matter.Composite.remove(engine.world, map[7]);
@@ -28707,8 +28750,9 @@ const level = {
         let curColor = [270+((Math.random()-0.5)*120), 45, 64]
         let targetColor = curColor
         let mHealthCap = m.health // do not permit healing even with tech that directly increase health
+        let mHealthAtCheckpoint = m.health // heal by 33% of damage taken inbetween buttons
         level.custom = () => {
-            level.exit.drawAndCheck();
+            if (curSection >= 7) level.exit.drawAndCheck();
             for (let i=0;i<activeButtons.length;i++) {
                 activeButtons[i].draw()
                 activeButtons[i].queryPlayer()
@@ -28719,6 +28763,16 @@ const level = {
                     let col = [color.map, document.body.style.backgroundColor]
                     document.body.style.backgroundColor = col[0]
                     color.map = col[1]
+                    if (curSection < 6) {
+                        let heal = (mHealthAtCheckpoint-m.health)/4
+                        if (heal > 0) {
+                            m.health += heal
+                            m.displayHealth();
+                            mHealthCap = m.health
+                            mHealthAtCheckpoint = m.health
+                            simulation.makeTextLog(`level<span class='color-symbol'>.</span>boundary<span class='color-symbol'>.</span>undoHarmPercent<span class='color-symbol'>(</span>0.25<span class='color-symbol'>)</span>`)
+                        }
+                    }
                 }
             }
             if (activeButtons.length == 0 && curSection < sections.length) loadNextSection()
@@ -28731,6 +28785,11 @@ const level = {
                     document.body.style.backgroundColor = `hsl(${curColor[0]} ${curColor[1]}% ${curColor[2]}%)`
                 } else {
                     color.map = `hsl(${curColor[0]} ${curColor[1]}% ${curColor[2]}%)`
+                }
+                if (curSection == 7) {
+                    for (let i=0;i<mob.length;i++) {
+                        if (!mob[i].isBoundaryBossCenter) mob[i].fill = `hsla(${curColor[0]},${curColor[1]}%,${curColor[2]+10}%,${(mob[i].health*0.67)+0.33})` 
+                    }
                 }
                 if (curSection < 6 && curSection > 1) {
                     if (m.health > mHealthCap) {
@@ -28745,10 +28804,28 @@ const level = {
                         }
                     }
                 }
+                if (curSection == 7) {
+                    for (let i = 0; i < body.length; i++) {
+                        Matter.Composite.remove(engine.world, body[i]);
+                        body.splice(i, 1)
+                    }
+                }
             }
-            level.enter.draw();
+            if (curSection < 2) level.enter.draw();
         };
-        level.customTopLayer = () => {};
+        level.customTopLayer = () => {
+            let bossAlive = false
+            for (let i=0;i<mob.length;i++) {
+                if (mob[i].isBoss) bossAlive = true
+            }
+            if (curSection == 7 && bossAlive) {
+                if (player.position.y > 900) Matter.Body.setPosition(player,{x:player.position.x,y:-1240})
+                if (player.position.y < -1250) Matter.Body.setPosition(player,{x:player.position.x,y:890})
+                ctx.beginPath() // hide level exit
+                ctx.fillStyle = "#fff"
+                ctx.fillRect(150,1000,7325,3275)
+            }
+        };
     },
     bifurcate() {
         simulation.makeTextLog(`<strong>bifurcate</strong> by <span class='color-var'>CD</span>. made for c-gon`);

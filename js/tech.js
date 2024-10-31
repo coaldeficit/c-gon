@@ -4694,6 +4694,23 @@ const tech = {
                 tech.isArmoredConfig = false
             }
         },
+        {
+            name: "fourth dimension",
+            link: `<a target="_blank" href='https://en.wikipedia.org/wiki/Four-dimensional_space' class="link">fourth dimension</a>`,
+            description: `inserts a <strong>special difficult level</strong> into the level list<br>that may grant <strong>6</strong> <strong class='color-m'>tech</strong> on <strong>completion</strong>`,
+            maxCount: 1,
+            count: 0,
+            frequency: 1,
+            frequencyDefault: 1,
+            isNonRefundable: true,
+            isBadRandomOption: true,
+            allowed() { return !build.isExperimentSelection && simulation.difficulty > 9 && !simulation.mapSettings.blacklist.split(',').includes('boundary') },
+            requires: "NOT EXPERIMENT MODE, atleast 9 simulation difficulty, boundary not blacklisted",
+            effect() {
+                level.levels.splice(level.onLevel+1, 0, 'boundary');
+            },
+            remove() {}
+        },
         // {
         //     name: "backward induction",
         //     descriptionFunction() {
@@ -8076,7 +8093,7 @@ const tech = {
         },
         {
             name: "annihilation",
-            description: "<strong>touching</strong> normal mobs <strong>annihilates</strong> them<br>but drains <strong>33%</strong> of your maximum <strong class='color-f'>energy</strong>",
+            description: "<strong>touching</strong> normal mobs <strong>annihilates</strong> them<br>but drains <strong>33</strong> <strong class='color-f'>energy</strong>",
             isFieldTech: true,
             maxCount: 1,
             count: 0,
@@ -9099,9 +9116,10 @@ const tech = {
             description: "reduce combat <strong>difficulty</strong> by <strong>2 levels</strong><br>remove <strong>70%</strong> of your current <strong class='color-h'>health</strong>",
             maxCount: 5,
             count: 0,
-            frequency: 8,
-            frequencyDefault: 8,
+            frequency: 9,
+            frequencyDefault: 9,
             isNonRefundable: true,
+            isBadRandomOption: true,
             allowed() {
                 return simulation.specialMode
             },

@@ -8679,6 +8679,520 @@ const spawn = {
             }
         }
     },
+    boundaryBoss(x, y, radius = 35) {
+        mobs.spawn(x, y+1025, 6, radius, "hsl(0 100% 50%)");
+        let me = mob[mob.length - 1];
+        me.isBoss = true;
+        me.isBoundaryBossCenter = true
+
+        me.accelMag = 0.001 * simulation.accelScale;
+        me.frictionStatic = 0;
+        me.friction = 0;
+        me.frictionAir = 0.035;
+        me.memory = Infinity;
+        me.inertia = Infinity
+        me.collisionFilter.mask = cat.player | cat.bullet
+        Matter.Body.setDensity(me, 0.1); //extra dense //normal is 0.001 //makes effective life much larger
+        me.onDeath = function() {
+            for (let i=0;i<6;i++) {
+                powerUps.spawn(this.position.x+Math.random(),this.position.y+Math.random(),"tech")
+            }
+            requestAnimationFrame(()=>{
+                for (let i = 0; i < mob.length; i++) {
+                    if (mob[i].alive) mob[i].damage(Infinity, true)
+                }
+            })
+            let oldMapLength = map.length
+            spawn.mapRect(3150, 1525, 2000, 100);
+            spawn.mapRect(level.exit.x, level.exit.y + 20, 100, 20);
+            spawn.mapRect(3700, 1175, 500, 100);
+            spawn.mapRect(4100, 1175, 100, 450);
+            for (let i=0;i<map.length-oldMapLength;i++) {
+                map[oldMapLength+i].collisionFilter.category = cat.map;
+                map[oldMapLength+i].collisionFilter.mask = cat.player | cat.map | cat.body | cat.bullet | cat.powerUp | cat.mob | cat.mobBullet;
+                Matter.Body.setStatic(map[oldMapLength+i], true); //make static
+                Composite.add(engine.world, map[oldMapLength+i]);
+            }
+            simulation.draw.setPaths()
+        }
+        me.damageReduction = 0 //.25 / (tech.isScaleMobsWithDuplication ? 1 + tech.duplicationChance() : 1)
+        
+        me.introStage = 0
+        me.introCycle = 205
+        me.introDone = false
+        
+        function laser(where, angle) {
+            const vertexCollision = function(v1, v1End, domain) {
+                for (let i = 0; i < domain.length; ++i) {
+                    let vertices = domain[i].vertices;
+                    const len = vertices.length - 1;
+                    for (let j = 0; j < len; j++) {
+                        results = simulation.checkLineIntersection(v1, v1End, vertices[j], vertices[j + 1]);
+                        if (results.onLine1 && results.onLine2) {
+                            const dx = v1.x - results.x;
+                            const dy = v1.y - results.y;
+                            const dist2 = dx * dx + dy * dy;
+                            if (dist2 < best.dist2 && (!domain[i].mob || domain[i].alive)) best = {
+                                x: results.x,
+                                y: results.y,
+                                dist2: dist2,
+                                who: domain[i],
+                                v1: vertices[j],
+                                v2: vertices[j + 1]
+                            };
+                        }
+                    }
+                    results = simulation.checkLineIntersection(v1, v1End, vertices[0], vertices[len]);
+                    if (results.onLine1 && results.onLine2) {
+                        const dx = v1.x - results.x;
+                        const dy = v1.y - results.y;
+                        const dist2 = dx * dx + dy * dy;
+                        if (dist2 < best.dist2) best = {
+                            x: results.x,
+                            y: results.y,
+                            dist2: dist2,
+                            who: domain[i],
+                            v1: vertices[0],
+                            v2: vertices[len]
+                        };
+                    }
+                }
+            };
+
+            const seeRange = 7000;
+            best = {
+                x: null,
+                y: null,
+                dist2: Infinity,
+                who: null,
+                v1: null,
+                v2: null
+            };
+            const look = {
+                x: where.x + seeRange * Math.cos(angle),
+                y: where.y + seeRange * Math.sin(angle)
+            };
+            // vertexCollision(where, look, mob);
+            vertexCollision(where, look, map);
+            vertexCollision(where, look, body);
+            if (!m.isCloak) vertexCollision(where, look, [playerBody, playerHead]);
+            if (best.who && (best.who === playerBody || best.who === playerHead) && m.immuneCycle < m.cycle) {
+                m.immuneCycle = m.cycle + tech.collisionImmuneCycles + 60; //player is immune to damage for an extra second
+                const dmg = 0.14 * simulation.dmgScale;
+                m.damage(dmg);
+                simulation.drawList.push({ //add dmg to draw queue
+                    x: best.x,
+                    y: best.y,
+                    radius: dmg * 1500,
+                    color: this.fill,
+                    time: 20
+                });
+            }
+            //draw beam
+            if (best.dist2 === Infinity) best = look;
+            ctx.moveTo(where.x, where.y);
+            ctx.lineTo(best.x, best.y);
+        }
+        function laserFire() {
+            ctx.beginPath();
+            laser(this.vertices[3], this.angle);
+            ctx.strokeStyle = this.fill;
+            ctx.lineWidth = 6;
+            ctx.setLineDash([70 + 300 * Math.random(), 55 * Math.random()]);
+            ctx.stroke(); // Draw it
+            ctx.setLineDash([]);
+            ctx.lineWidth = 80;
+            ctx.globalAlpha = 0.07;
+            ctx.stroke(); // Draw it
+            ctx.globalAlpha = 1
+        }
+        function gunFire() {
+            spawn.seeker(this.vertices[3].x, this.vertices[3].y, 7)
+            //give the bullet a rotational velocity as if they were attached to a vertex
+            const velocity = Vector.mult(Vector.normalise(Vector.sub(this.position, this.vertices[3])), -8)
+            Matter.Body.setVelocity(mob[mob.length - 1], {
+                x: velocity.x,
+                y: velocity.y
+            });
+        }
+        function spawnFire() {
+            let pick = ['laser','boidCulture','drifter','focuser','laserLayer','striker','rainer','stabber','grower','springer'] // mob selection where each has a distinct shape
+            spawn[pick[Math.floor(Math.random() * pick.length)]](this.vertices[3].x, this.vertices[3].y)
+            mob[mob.length-1].foundPlayer()
+            //give the bullet a rotational velocity as if they were attached to a vertex
+            const velocity = Vector.mult(Vector.normalise(Vector.sub(this.position, this.vertices[3])), -4)
+            Matter.Body.setVelocity(mob[mob.length - 1], {
+                x: velocity.x,
+                y: velocity.y
+            });
+        }
+        me.crystals = []
+        // filler
+        spawn.boundaryBossCrystal(x,y+100)
+        Matter.Body.setAngle(mob[mob.length-1], mob[mob.length-1].angle + (Math.PI/2) + (Math.PI/8))
+        me.crystals.push([mob[mob.length-1], {x:2100, y:2100}, mob[mob.length-1].angle])
+        spawn.boundaryBossCrystal(x,y+100)
+        Matter.Body.setAngle(mob[mob.length-1], mob[mob.length-1].angle + (Math.PI/2) - (Math.PI/8))
+        me.crystals.push([mob[mob.length-1], {x:-2100, y:2100}, mob[mob.length-1].angle])
+        spawn.boundaryBossCrystal(x,y-100)
+        Matter.Body.setAngle(mob[mob.length-1], mob[mob.length-1].angle - (Math.PI/8))
+        me.crystals.push([mob[mob.length-1], {x:2130, y:-2100}, mob[mob.length-1].angle])
+        spawn.boundaryBossCrystal(x,y-100)
+        Matter.Body.setAngle(mob[mob.length-1], mob[mob.length-1].angle + (Math.PI/8))
+        me.crystals.push([mob[mob.length-1], {x:-2130, y:-2100}, mob[mob.length-1].angle])
+        // guns
+        spawn.boundaryBossCrystal(x,y+100,1)
+        Matter.Body.setAngle(mob[mob.length-1], mob[mob.length-1].angle + (Math.PI/2) - (Math.PI/8))
+        mob[mob.length-1].fire = gunFire
+        me.crystals.push([mob[mob.length-1], {x:2240, y:100}, mob[mob.length-1].angle])
+        spawn.boundaryBossCrystal(x,y+100,1)
+        Matter.Body.setAngle(mob[mob.length-1], mob[mob.length-1].angle + (Math.PI/2) + (Math.PI/8))
+        mob[mob.length-1].fire = gunFire
+        me.crystals.push([mob[mob.length-1], {x:-2240, y:100}, mob[mob.length-1].angle])
+        spawn.boundaryBossCrystal(x,y+100,1)
+        Matter.Body.setAngle(mob[mob.length-1], mob[mob.length-1].angle + (Math.PI/2) - (Math.PI/16))
+        mob[mob.length-1].fire = gunFire
+        me.crystals.push([mob[mob.length-1], {x:2140, y:300}, mob[mob.length-1].angle])
+        spawn.boundaryBossCrystal(x,y+100,1)
+        Matter.Body.setAngle(mob[mob.length-1], mob[mob.length-1].angle + (Math.PI/2) + (Math.PI/16))
+        mob[mob.length-1].fire = gunFire
+        me.crystals.push([mob[mob.length-1], {x:-2140, y:300}, mob[mob.length-1].angle])
+        // mobs
+        spawn.boundaryBossCrystal(x,y-100,1)
+        Matter.Body.setAngle(mob[mob.length-1], mob[mob.length-1].angle - (Math.PI/2) - (Math.PI/8))
+        mob[mob.length-1].fire = spawnFire
+        me.crystals.push([mob[mob.length-1], {x:2260, y:-100}, mob[mob.length-1].angle])
+        spawn.boundaryBossCrystal(x,y-100,1)
+        Matter.Body.setAngle(mob[mob.length-1], mob[mob.length-1].angle - (Math.PI/2) + (Math.PI/8))
+        mob[mob.length-1].fire = spawnFire
+        me.crystals.push([mob[mob.length-1], {x:-2260, y:-100}, mob[mob.length-1].angle])
+        // lasers
+        spawn.boundaryBossCrystal(x,y+100,1)
+        Matter.Body.setAngle(mob[mob.length-1], mob[mob.length-1].angle + (Math.PI/2))
+        mob[mob.length-1].fire = laserFire
+        me.crystals.push([mob[mob.length-1], {x:0, y:2170}, mob[mob.length-1].angle])
+        spawn.boundaryBossCrystal(x,y+100,1)
+        Matter.Body.setAngle(mob[mob.length-1], mob[mob.length-1].angle - (Math.PI/2))
+        mob[mob.length-1].fire = laserFire
+        me.crystals.push([mob[mob.length-1], {x:0, y:-2170}, mob[mob.length-1].angle])
+        
+        for (let i=0;i<me.crystals.length;i++) me.crystals[i][0].master = me
+        
+        me.originPosition = {x:x,y:y}
+        me.releasedGunCrystals = false
+        me.lowerFillerOffset = 0
+        me.lasersCritical = false
+        me.mobsCritical = false
+        me.cycle = 0
+        me.mode = -1
+        me.targetPosition = {x:x,y:y}
+        
+        me.do = function() {
+            this.foundPlayer();
+            this.checkStatus();
+            this.fill = `hsl(${(simulation.cycle*3) % 360} 100% 50%)`
+            if (!this.damageReduction) {
+                ctx.beginPath();
+                let vertices = this.vertices;
+                ctx.moveTo(vertices[0].x, vertices[0].y);
+                for (let j = 1; j < vertices.length; j++) ctx.lineTo(vertices[j].x, vertices[j].y);
+                ctx.lineTo(vertices[0].x, vertices[0].y);
+                ctx.lineWidth = 13 + 5 * Math.random();
+                ctx.strokeStyle = `rgba(255,255,255,${0.5+0.2*Math.random()})`;
+                ctx.stroke();
+                if (!this.crystalCheck('all')) {
+                    this.speech("COMBAT SHELL: NULL")
+                    this.speech("ERROR: CANNOT GENERATE NEW SHELL")
+                    this.damageReduction = 0.2 / (tech.isScaleMobsWithDuplication ? 1 + tech.duplicationChance() : 1)
+                }
+            }
+            if (!this.releasedGunCrystals && this.crystalCheck('gun') <= 2) {
+                this.detachGuns()
+            }
+            if (this.crystals[10][0].health < 0.5 || !this.crystals[11][0].alive) {
+                if (this.lowerFillerOffset < 140) this.lowerFillerOffset+=2
+                if (!this.lasersCritical) {
+                    this.lasersCritical = true
+                    this.speech("LASERS: CRITICAL")
+                    if (this.crystals[0][0].alive || this.crystals[1][0].alive) {
+                        this.speech("RECONFIGURING COMBAT SHELL")
+                    } else {
+                        this.speech("ERROR: CANNOT RECONFIGURE COMBAT SHELL")
+                    }
+                }
+            } else {
+                if (this.lowerFillerOffset > 0) this.lowerFillerOffset-=2
+            }
+            if (!this.mobsCritical && this.crystalCheck('mob') < 2) {
+                this.mobsCritical = true
+                this.speech("SPAWNERS: CRITICAL")
+                this.speech("REROUTING POWER")
+            }
+            if (this.introDone) {
+                this.crystals[0][1] = {x:100+(Math.cos(this.crystals[0][2])*this.lowerFillerOffset), y:100+(Math.sin(this.crystals[0][2])*this.lowerFillerOffset)}
+                this.crystals[1][1] = {x:-100+(Math.cos(this.crystals[1][2])*this.lowerFillerOffset), y:100+(Math.sin(this.crystals[1][2])*this.lowerFillerOffset)}
+                Matter.Body.setPosition(this, Vector.add(this.position, Vector.div(Vector.sub(this.targetPosition, this.position), 30)))
+                switch (this.mode) {
+                    case -1:
+                        if (this.cycle > 30) {
+                            this.cycle = -1
+                            this.mode++
+                        }
+                        break
+                    case 0:
+                        if (this.crystalCheck('laser')) {
+                            if (this.cycle == 0) this.laserDir = player.position.x>this.originPosition.x?1:-1
+                            if (this.cycle < 90*Math.max(0.5,this.crystalCheck('all')/12)) {
+                                this.targetPosition = {x:this.originPosition.x+(950*this.laserDir),y:this.originPosition.y}
+                            } else {
+                                if ((this.position.x > this.originPosition.x-700 && this.laserDir == 1) || (this.position.x < this.originPosition.x+700 && this.laserDir == -1)) {
+                                    for (let i=10;i<12;i++) {
+                                        if (this.crystals[i][0].alive) this.crystals[i][0].fire()
+                                    }
+                                    this.targetPosition = {x:this.position.x-(140*this.laserDir),y:this.originPosition.y+(300*!this.crystals[10][0].alive)+(300*!(this.crystalCheck('gun')>2))}
+                                } else {
+                                    this.cycle = -1
+                                    this.mode++
+                                }
+                            }
+                        } else {
+                            this.cycle = -1
+                            this.mode++
+                        }
+                        break
+                    case 1:
+                        if (this.crystalCheck('gun') > 2) {
+                            if (!(this.cycle % (120*Math.max(0.5,this.crystalCheck('all')/12)))) {
+                                this.targetPosition = {x:this.originPosition.x+(1300*(Math.random()-0.5)),y:this.originPosition.y-(750*Math.random())}
+                            }
+                            if (!(this.cycle % 30) && (this.cycle % (120*Math.max(0.5,this.crystalCheck('all')/12))) >= 50) {
+                                for (let i=4;i<8;i++) {
+                                    if (this.crystals[i][0].alive) this.crystals[i][0].fire()
+                                }
+                            }
+                            if (this.cycle > 360) {
+                                this.cycle = -1
+                                this.mode++
+                            }
+                        } else {
+                            this.cycle = -1
+                            this.mode++
+                        }
+                        break   
+                    case 2:
+                        if (this.crystalCheck('mob')) {
+                            this.targetPosition = {x:this.originPosition.x,y:this.originPosition.y-(150*(this.crystalCheck('gun')>2))+(150*(this.crystalCheck('gun')<=1))}
+                            if (!(this.cycle % (90-(60*this.mobsCritical))) && this.cycle >= 90 && this.cycle <= 180) {
+                                for (let i=8;i<10;i++) {
+                                    if (this.crystals[i][0].alive) this.crystals[i][0].fire()
+                                }
+                            }
+                            if (this.cycle > 240) {
+                                this.cycle = -1
+                                this.mode = 0
+                            }
+                        } else {
+                            this.cycle = -1
+                            this.mode = this.crystalCheck('laser')+this.crystalCheck('gun')+this.crystalCheck('mob')?0:3
+                        }
+                        break   
+                    case 3:
+                        if (!(this.cycle % 130)) {
+                            this.targetPosition = {x:this.originPosition.x+(1800*(Math.random()-0.5)),y:this.originPosition.y-(750*(Math.random()-0.5))}
+                            //fire a bullet from each vertex
+                            for (let i = 0, len = this.vertices.length; i < len; i++) {
+                                spawn.seeker(this.vertices[i].x, this.vertices[i].y, 7)
+                                //give the bullet a rotational velocity as if they were attached to a vertex
+                                const velocity = Vector.mult(Vector.perp(Vector.normalise(Vector.sub(this.position, this.vertices[i]))), -8)
+                                Matter.Body.setVelocity(mob[mob.length - 1], {
+                                    x: velocity.x,
+                                    y: velocity.y
+                                });
+                            }
+                        }
+                        break         
+                }
+                this.cycle++
+            }
+            if (this.introStage < 4) {
+                this.introCycle--
+                switch (this.introStage) {
+                    case 0:
+                        Matter.Body.setPosition(this,{x:this.originPosition.x,y:this.originPosition.y+(this.introCycle*5)})
+                        break
+                    case 1:
+                        Matter.Body.setPosition(this,this.originPosition)
+                        this.crystals[0][1].x -= 20
+                        this.crystals[0][1].y -= 20
+                        
+                        this.crystals[1][1].x += 20
+                        this.crystals[1][1].y -= 20
+                        
+                        this.crystals[2][1].x -= 20
+                        this.crystals[2][1].y += 20
+                        
+                        this.crystals[3][1].x += 20
+                        this.crystals[3][1].y += 20
+                        break
+                    case 2:
+                        Matter.Body.setPosition(this,this.originPosition)
+                        this.crystals[10][1].y -= 20
+                        this.crystals[11][1].y += 20
+                        break
+                    case 3:
+                        Matter.Body.setPosition(this,this.originPosition)
+                        this.crystals[4][1].x -= 20
+                        this.crystals[6][1].x -= 20
+                        this.crystals[8][1].x -= 20
+                        this.crystals[5][1].x += 20
+                        this.crystals[7][1].x += 20
+                        this.crystals[9][1].x += 20
+                        break
+                }
+                if (this.introCycle <= 0) {
+                    switch (this.introStage) {
+                        case 0:
+                            this.speech("INTRUSION DETECTED")
+                            this.speech("GENERATING COMBAT SHELL")
+                            break
+                        case 1:
+                            this.speech("33% DONE")
+                            break
+                        case 2:
+                            this.speech("50% DONE")
+                            break
+                        case 3:
+                            this.speech("COMBAT SHELL GENERATED")
+                            this.speech("INITIATING")
+                            break
+                    }
+                    this.introStage++
+                    this.introCycle = 100
+                }
+            } else if (!this.introDone) {
+                this.introDone = true
+                for (let i=0;i<12;i++) {
+                    this.crystals[i][0].collisionFilter.mask = cat.player | cat.bullet
+                    this.crystals[i][0].damageReduction = 0.14 / (tech.isScaleMobsWithDuplication ? 1 + tech.duplicationChance() : 1)
+                }
+            }
+            for (let i=0;i<this.crystals.length;i++) {
+                if (!(i>=4&&i<8) || !this.releasedGunCrystals) { // gun crystals begin to move independently after 2 go down
+                    Matter.Body.setPosition(this.crystals[i][0], Vector.add(this.position, this.crystals[i][1]))
+                    Matter.Body.setAngle(this.crystals[i][0], this.crystals[i][2])
+                }
+            }
+        };
+        me.crystalCheck = function(section) {
+            let count = 0
+            let start = 0
+            let end = 12
+            switch (section) {
+                case 'filler':
+                    start = 0
+                    end = 4
+                    break
+                case 'gun':
+                    start = 4
+                    end = 8
+                    break
+                case 'mob':
+                    start = 8
+                    end = 10
+                    break
+                case 'laser':
+                    start = 10
+                    end = 12
+                    break
+                case 'all':
+                default:
+                    start = 0
+                    end = 12
+                    break
+            }
+            for (let i=start;i<end;i++) {
+                if (this.crystals[i][0].alive) count++
+            }
+            return count
+        }
+        me.detachGuns = function() {
+            this.releasedGunCrystals = true
+            for (let i=4;i<8;i++) {
+                if (this.crystals[i][0].alive) {
+                    this.crystals[i][0].originPosition = this.originPosition
+                    this.crystals[i][0].crystalDetach()
+                }
+            }
+            this.speech("CANNONS: CRITICAL")
+            this.speech("DETACHING")
+        }
+        me.speech = function(text) {
+            const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ`!@#$%^&*():;[]{}-_=+,.<>?/|'
+            for (let i=0;i<text.length;i++) { // scramble text slightly
+                if (text[i] != ' ' && text[i] != ':' && Math.random() < 0.05) text = text.substring(0,i) + (Math.random()<0.5?letters[Math.floor(Math.random()*letters.length)]:'') + text.substring(i+1,text.length)
+            }
+            simulation.makeTextLog(`spawn<span class='color-symbol'>.</span>boundaryBoss<span class='color-symbol'>.</span>speech<span class='color-symbol'>(</span>text<span class='color-symbol'>):</span> ${text}`)
+        }
+        me.speech("AWOKEN BY DISTURBANCE")
+    },
+    boundaryBossCrystal(x, y, type = 0, radius = 30) {
+        mobs.spawn(x, y, 6-(type*2), radius+(type*5), "hsl(0 100% 50%)");
+        let me = mob[mob.length - 1];
+
+        me.accelMag = 0.001 * simulation.accelScale;
+        me.frictionStatic = 0;
+        me.friction = 0;
+        me.frictionAir = 0.035;
+        me.memory = Infinity;
+        me.inertia = Infinity
+        me.stroke = "transparent"; //used for drawGhost
+        me.collisionFilter.mask = cat.bullet
+        Matter.Body.setDensity(me, 0.1); //extra dense //normal is 0.001 //makes effective life much larger
+        me.damageReduction = 0
+        me.showHealthBar = false
+        if (type == 0) {
+            me.vertices = Matter.Vertices.rotate(me.vertices, Math.PI/2, me.position);
+        } else {
+            me.vertices = Matter.Vertices.rotate(me.vertices, Math.PI/4, me.position);
+        }
+        for (let i=0;i<me.vertices.length;i++) {
+            me.vertices[i].x += 60 * (me.vertices[i].x-2>me.position.x?1:-1)
+        }
+        me.onDeath = function() {
+            powerUps.spawn(this.position.x+Math.random(),this.position.y+Math.random(),Math.random()<0.5||m.health==m.maxHealth?"ammo":"heal")
+        }
+        me.do = function() {
+            this.checkStatus();
+            if (!this.damageReduction) {
+                ctx.beginPath();
+                let vertices = this.vertices;
+                ctx.moveTo(vertices[0].x, vertices[0].y);
+                for (let j = 1; j < vertices.length; j++) ctx.lineTo(vertices[j].x, vertices[j].y);
+                ctx.lineTo(vertices[0].x, vertices[0].y);
+                ctx.lineWidth = 13 + 5 * Math.random();
+                ctx.strokeStyle = `rgba(255,255,255,${0.5+0.2*Math.random()})`;
+                ctx.stroke();
+            }
+        };
+        me.crystalDetach = function() {
+            this.cycle = 0
+            this.damageReduction *= 2
+            this.do = function() {
+                this.foundPlayer()
+                this.checkStatus();
+                if (!(this.cycle % 120)) {
+                    this.targetPosition = {x:this.originPosition.x+(1300*(Math.random()-0.5)),y:this.originPosition.y+(750*Math.random())}
+                }
+                if (!(this.cycle % 30) && (this.cycle % 120) >= 50) {
+                    if (this.alive) this.fire()
+                }
+                Matter.Body.setPosition(this, Vector.add(this.position, Vector.div(Vector.sub(this.targetPosition, this.position), 30)))
+                Matter.Body.setAngle(this, Math.atan2(player.position.y-this.position.y, player.position.x-this.position.x))
+                this.cycle++
+            }
+        }
+        me.fire = function() {}
+    },
     //complex constrained mob templates**********************************************************************
     //*******************************************************************************************************
     allowShields: true,
