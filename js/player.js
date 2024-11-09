@@ -2867,7 +2867,7 @@ const m = {
                         //trajectory prediction
                         const cycles = 30
                         const charge = Math.min(m.throwCharge / 5, 1)
-                        const speed = 80 * charge * Math.min(0.85, 0.8 / Math.pow(m.holdingTarget.mass, 0.25));
+                        const speed = ((tech.isPrinter && m.holdingTarget.isPrinted) ? 1.8 : 1) * 80 * charge * Math.min(0.85, 0.8 / Math.pow(m.holdingTarget.mass, 0.25));
                         const v = { x: speed * Math.cos(m.angle), y: speed * Math.sin(m.angle) } //m.Vy / 2 + removed to make the path less jerky
                         ctx.beginPath()
                         for (let i = 1, len = 10; i < len + 1; i++) {
@@ -2923,7 +2923,7 @@ const m = {
 
                     const charge = Math.min(m.throwCharge / 5, 1)
                     //***** scale throw speed with the first number, 80 *****
-                    let speed = 80 * charge * Math.min(0.85, 0.8 / Math.pow(m.holdingTarget.mass, 0.25));
+                    let speed = ((tech.isPrinter && m.holdingTarget.isPrinted) ? 1.8 : 1) * 80 * charge * Math.min(0.85, 0.8 / Math.pow(m.holdingTarget.mass, 0.25));
                     if (Matter.Query.collides(m.holdingTarget, map).length !== 0) {
                         speed *= 0.7 //drop speed by 30% if touching map
                         if (Matter.Query.ray(map, m.holdingTarget.position, m.pos).length !== 0) speed = 0 //drop to zero if the center of the block can't see the center of the player through the map
@@ -2966,6 +2966,8 @@ const m = {
                         }
                     }
                 }
+                
+                if (m.holdingTarget.isPrinted) m.holdingTarget.isPrinted = undefined
             }
         } else {
             m.isHolding = false
@@ -3761,10 +3763,26 @@ const m = {
                         m.drawHold(m.holdingTarget);
                         m.holding();
                         m.throwBlock();
+                        if (tech.isPrinter && m.holdingTarget.isPrinted && input.field) {
+                            // if (Math.random() < 0.004 && m.holdingTarget.vertices.length < 12) m.holdingTarget.vertices.push({ x: 0, y: 0 }) //small chance to increase the number of vertices
+                            m.holdingTarget.radius += Math.min(1.1, 1.3 / m.holdingTarget.mass) //grow up to a limit
+                            const r1 = m.holdingTarget.radius * (1 + 0.12 * Math.sin(m.cycle * 0.11))
+                            const r2 = m.holdingTarget.radius * (1 + 0.12 * Math.cos(m.cycle * 0.11))
+                            let angle = (m.cycle * 0.01) % (2 * Math.PI) //rotate the object 
+                            let vertices = []
+                            for (let i = 0, len = m.holdingTarget.vertices.length; i < len; i++) {
+                                angle += 2 * Math.PI / len
+                                vertices.push({ x: m.holdingTarget.position.x + r1 * Math.cos(angle), y: m.holdingTarget.position.y + r2 * Math.sin(angle) })
+                            }
+                            Matter.Body.setVertices(m.holdingTarget, vertices)
+                            m.definePlayerMass(m.defaultMass + m.holdingTarget.mass * m.holdingMassScale)
+                        }
                     } else if ((input.field && m.fieldCDcycle < m.cycle)) { //not hold but field button is pressed
                         m.grabPowerUp();
                         m.lookForPickUp();
-                        if (m.energy > 0.05) {
+                        if (tech.isPrinter && input.down) {
+                            m.printBlock();
+                        } else if (m.energy > 0.05) {
                             m.drawField();
                             m.pushMobsFacing();
                         }
