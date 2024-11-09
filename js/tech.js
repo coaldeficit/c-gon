@@ -1928,7 +1928,7 @@ const tech = {
             frequency: 3,
             frequencyDefault: 3,
             allowed() {
-                return (tech.blockDamage > 0.075 || tech.isPrinter) && m.fieldUpgrades[m.fieldMode].name !== "pilot wave" && m.fieldUpgrades[m.fieldMode].name !== "wormhole" && !tech.isTokamak
+                return (tech.blockDamage > 0.075 || tech.isPrinter) && (m.fieldUpgrades[m.fieldMode].name !== "pilot wave" || tech.isPrinter) && m.fieldUpgrades[m.fieldMode].name !== "wormhole" && !tech.isTokamak
             },
             requires: "mass driver, additive manufacturing, not pilot wave, wormhole, tokamak",
             effect() {
