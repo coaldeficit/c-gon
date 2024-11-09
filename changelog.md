@@ -1,3 +1,10 @@
+# porting P (2024/11/09)
+- ported Halbach array, additive manufacturing and working mass tech
+- dark matter is now unaffected by damage to hopefully make it not despawn in certain situations where the player deals ridiculous damage
+- fixed dark matter despawning on subway
+- Bohr magneton now makes electron magnetic moment not affect mobs that are invulnerable
+- started work on porting constraints
+- - note: constraints are only <span style="font-style:italic;">PARTIALLY</span> in the game right now. they only exist in a non-functional state in the code and are inaccessible during normal gameplay
 # simulatory edge (2024/10/31)
 - added 1 new tech:
 - - fourth dimension: inserts a special, difficult level into the level list with a unique boss that may grant 6 tech on completion

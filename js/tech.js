@@ -1921,6 +1921,24 @@ const tech = {
             }
         },
         {
+            name: "Halbach array",
+            description: "throwing a <strong class='color-block'>block</strong> will<br>also throw other nearby <strong class='color-block'>blocks</strong>",
+            maxCount: 1,
+            count: 0,
+            frequency: 3,
+            frequencyDefault: 3,
+            allowed() {
+                return (tech.blockDamage > 0.075 || tech.isPrinter) && m.fieldUpgrades[m.fieldMode].name !== "pilot wave" && m.fieldUpgrades[m.fieldMode].name !== "wormhole" && !tech.isTokamak
+            },
+            requires: "mass driver, additive manufacturing, not pilot wave, wormhole, tokamak",
+            effect() {
+                tech.isGroupThrow = true
+            },
+            remove() {
+                tech.isGroupThrow = false
+            }
+        },
+        {
             name: "inflation",
             link: `<a target="_blank" href='https://en.wikipedia.org/wiki/Inflation_(cosmology)' class="link">inflation</a>`,
             description: "<strong>throwing</strong> a <strong class='color-block'>block</strong> expands it by <strong>300%</strong><br><strong>holding</strong> a <strong class='color-block'>block</strong> reduces <strong class='color-harm'>harm</strong> by <strong>85%</strong>",
@@ -1929,9 +1947,9 @@ const tech = {
             frequency: 3,
             frequencyDefault: 3,
             allowed() {
-                return tech.blockDamage > 0.075 && m.fieldUpgrades[m.fieldMode].name !== "pilot wave" && m.fieldUpgrades[m.fieldMode].name !== "wormhole" && !tech.isTokamak
+                return (tech.blockDamage > 0.075 || tech.isPrinter) && m.fieldUpgrades[m.fieldMode].name !== "pilot wave" && m.fieldUpgrades[m.fieldMode].name !== "wormhole" && !tech.isTokamak
             },
-            requires: "mass driver, not pilot wave, tokamak, wormhole",
+            requires: "mass driver, additive manufacturing, not pilot wave, tokamak, wormhole",
             effect() {
                 tech.isAddBlockMass = true
             },
@@ -1947,9 +1965,9 @@ const tech = {
             frequency: 3,
             frequencyDefault: 3,
             allowed() {
-                return tech.blockDamage > 0.075 && m.fieldUpgrades[m.fieldMode].name !== "pilot wave" && m.fieldUpgrades[m.fieldMode].name !== "wormhole" && !tech.isTokamak
+                return (tech.blockDamage > 0.075 || tech.isPrinter) && m.fieldUpgrades[m.fieldMode].name !== "pilot wave" && m.fieldUpgrades[m.fieldMode].name !== "wormhole" && !tech.isTokamak
             },
-            requires: "mass driver, not pilot wave not tokamak, wormhole",
+            requires: "mass driver, additive manufacturing, not pilot wave not tokamak, wormhole",
             effect() {
                 tech.isBlockRestitution = true
             },
@@ -1965,9 +1983,9 @@ const tech = {
             frequency: 3,
             frequencyDefault: 3,
             allowed() {
-                return tech.blockDamage > 0.075 && !tech.nailsDeathMob && !tech.sporesOnDeath && !tech.isExplodeMob && !tech.botSpawner && !tech.iceIXOnDeath
+                return (tech.blockDamage > 0.075 || tech.isPrinter) && !tech.nailsDeathMob && !tech.sporesOnDeath && !tech.isExplodeMob && !tech.botSpawner && !tech.iceIXOnDeath
             },
-            requires: "mass driver, no other mob death tech",
+            requires: "mass driver, additive manufacturing, no other mob death tech",
             effect() {
                 tech.isMobBlockFling = true
             },
@@ -2019,9 +2037,9 @@ const tech = {
             frequency: 3,
             frequencyDefault: 3,
             allowed() {
-                return tech.blockDamage > 0.075 && m.fieldUpgrades[m.fieldMode].name !== "pilot wave" && !tech.isTokamak
+                return (tech.blockDamage > 0.075 || tech.isPrinter) && m.fieldUpgrades[m.fieldMode].name !== "pilot wave" && !tech.isTokamak
             },
-            requires: "mass driver, not pilot wave, tokamak",
+            requires: "mass driver, additive manufacturing, not pilot wave, tokamak",
             effect() {
                 tech.isBlockPowerUps = true
             },
@@ -8127,6 +8145,101 @@ const tech = {
             },
             remove() {
                 tech.isFlyFaster = false;
+            }
+        },
+        {
+            name: "additive manufacturing",
+            description: `hold <strong>crouch</strong> and use your <strong class='color-f'>field</strong> to <strong class='color-print'>print</strong> a <strong class='color-block'>block</strong><br>with <strong>180%</strong> density, <strong class='color-d'>damage</strong>, and launch speed`,
+            isFieldTech: true,
+            maxCount: 1,
+            count: 0,
+            frequency: 2,
+            frequencyDefault: 2,
+            allowed() {
+                return (m.fieldUpgrades[m.fieldMode].name === "molecular assembler" || m.fieldUpgrades[m.fieldMode].name === "pilot wave") && !tech.isTokamak
+            },
+            requires: "molecular assembler, pilot wave, not tokamak",
+            effect() {
+                tech.isPrinter = true;
+            },
+            remove() {
+                if (this.count > 0) m.holdingTarget = null;
+                tech.isPrinter = false;
+            }
+        },
+        {
+            name: "working mass",
+            description: "pressing <strong>jump</strong> in <strong>midair</strong><br>will <strong class='color-print'>print</strong> a <strong class='color-block'>block</strong> to <strong>jump</strong> off",
+            isFieldTech: true,
+            maxCount: 1,
+            count: 0,
+            frequency: 2,
+            frequencyDefault: 2,
+            allowed() {
+                return m.fieldUpgrades[m.fieldMode].name === "molecular assembler" || m.fieldUpgrades[m.fieldMode].name === "pilot wave"
+            },
+            requires: "molecular assembler, pilot wave",
+            effect() {
+                simulation.ephemera.push({
+                    name: "blockJump",
+                    blockJumpPhase: 0,
+                    do() {
+                        if (m.onGround && m.buttonCD_jump + 10 < m.cycle && !(m.lastOnGroundCycle + m.coyoteCycles > m.cycle)) this.blockJumpPhase = 0 //reset after touching ground or block
+                        if (this.blockJumpPhase === 0 && !m.onGround && !input.up && m.buttonCD_jump + 10 < m.cycle) { //not pressing jump
+                            this.blockJumpPhase = 1
+                        } else if (this.blockJumpPhase === 1 && input.up && m.buttonCD_jump + 10 < m.cycle) { //2nd jump
+                            this.blockJumpPhase = 2
+                            let horizontalVelocity = 8 * (- input.left + input.right)  //ive player and block horizontal momentum
+    
+                            const radius = 25 + Math.floor(15 * Math.random())
+                            body[body.length] = Matter.Bodies.polygon(m.pos.x, m.pos.y + 60 + radius, 4, radius, {
+                                friction: 0.05,
+                                frictionAir: 0.001,
+                                collisionFilter: {
+                                    category: cat.body,
+                                    mask: cat.player | cat.map | cat.body | cat.bullet | cat.mob | cat.mobBullet
+                                },
+                                classType: "body",
+                            });
+                            const block = body[body.length - 1]
+                            //mess with the block shape (this code is horrible)
+                            Composite.add(engine.world, block); //add to world
+                            const r1 = radius * (1 + 0.4 * Math.random())
+                            const r2 = radius * (1 + 0.4 * Math.random())
+                            let angle = Math.PI / 4
+                            const vertices = []
+                            for (let i = 0, len = block.vertices.length; i < len; i++) {
+                                angle += 2 * Math.PI / len
+                                vertices.push({ x: block.position.x + r1 * Math.cos(angle), y: block.position.y + r2 * Math.sin(angle) })
+                            }
+                            Matter.Body.setVertices(block, vertices)
+                            // Matter.Body.setAngle(block, Math.PI / 4)
+                            Matter.Body.setVelocity(block, { x: 0.9 * player.velocity.x - horizontalVelocity, y: 10 });
+                            Matter.Body.applyForce(block, m.pos, { x: 0, y: m.jumpForce * 0.12 * Math.min(m.standingOn.mass, 5) });
+                            if (tech.isBlockRestitution) {
+                                block.restitution = 0.999 //extra bouncy
+                                block.friction = block.frictionStatic = block.frictionAir = 0.001
+                            }
+                            if (tech.isAddBlockMass) {
+                                const expand = function (that, massLimit) {
+                                    if (that.mass < massLimit) {
+                                        const scale = 1.04;
+                                        Matter.Body.scale(that, scale, scale);
+                                        setTimeout(expand, 20, that, massLimit);
+                                    }
+                                };
+                                expand(block, Math.min(20, block.mass * 3))
+                            }
+                            //jump
+                            m.buttonCD_jump = m.cycle; //can't jump again until 20 cycles pass
+                            Matter.Body.setVelocity(player, { x: player.velocity.x + horizontalVelocity, y: -7.5 + 0.25 * player.velocity.y });
+                            player.force.y = -m.jumpForce; //player jump force
+                        }
+                    },
+                })
+            },
+            remove() {
+                if (this.count) simulation.removeEphemera("blockJump")
             }
         },
         // {
