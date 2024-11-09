@@ -163,6 +163,8 @@ const level = {
             // for (let i = 0; i < 2; i++) powerUps.spawn(player.position.x + 90 * (Math.random() - 0.5), player.position.y + 90 * (Math.random() - 0.5), "tech", false); //start
         }
         if (m.plasmaBall) m.plasmaBall.reset()
+            
+        //level.setConstraints()
     },
     trainingText(say) {
         simulation.lastLogTime = 0; //clear previous messages
@@ -172,6 +174,316 @@ const level = {
         // lore.trainer.text("Wow. Just a platform.")
     },
     trainingBackgroundColor: "#e1e1e1",
+    constraintIndex: 0,
+    setConstraints() {
+        //populate array with possible constraints and reset constraints
+        level.constraintDescription1 = level.constraintDescription2 = ""
+        const possible = []
+        for (let i = 0; i < level.constraint.length; i++) {
+            level.constraint[i].remove()
+            possible.push(i)
+        }
+        if (level.levels[level.onLevel] !== "final" && level.levels[level.onLevel] !== "null" && level.levels[level.onLevel] !== "intro" && !simulation.isTraining && m.alive && level.levelsCleared) {
+            if (simulation.difficultyMode > 4 && possible.length) {
+                //choose a random constraint from possible array and remove it from that array
+                level.constraint[level.constraintIndex].effect()
+                possible.splice(level.constraintIndex, 1)
+                //generate text to describe the active constraints for the pause menu
+                level.constraintDescription1 = level.constraint[level.constraintIndex].description
+                level.constraintIndex++
+                if (level.constraintIndex > level.constraint.length - 1) level.constraintIndex = 0
+
+                if (simulation.difficultyMode > 6 && possible.length) {
+                    level.constraint[level.constraintIndex].effect()
+                    possible.splice(level.constraintIndex, 1)
+                    level.constraintDescription2 += level.constraint[level.constraintIndex].description
+                    level.constraintIndex++
+                    if (level.constraintIndex > level.constraint.length - 1) level.constraintIndex = 0
+                }
+                //document.getElementById("right-HUD-constraint").style.display = "block";
+            } else {
+                //document.getElementById("right-HUD-constraint").style.display = "none";
+            }
+        } else {
+            //document.getElementById("right-HUD-constraint").style.display = "none";
+        }
+        //update HUD with constraints
+        let text = `${level.constraintDescription1}`
+        if (simulation.difficultyMode > 6 && level.constraintDescription2) {
+            text += `<br>${level.constraintDescription2}`
+        }
+    },
+    constraintDescription1: "", //used in pause menu and console
+    constraintDescription2: "",
+    constraint: [
+        {
+            description: "50% healing",
+            effect() {
+                level.isLowHeal = true
+            },
+            remove() {
+                level.isLowHeal = false
+            }
+        },
+        {
+            description: "no pause while choosing",
+            effect() {
+                level.isNoPause = true
+            },
+            remove() {
+                level.isNoPause = false
+            }
+        },
+        /*{ // requires fixes to health bar ui
+            description: "no health bars",
+            effect() {
+                mobs.healthBar = () => { }
+                level.isHideHealth = true
+                document.getElementById("health").style.display = "none"
+                document.getElementById("health-bg").style.display = "none"
+            },
+            remove() {
+                mobs.healthBar = mobs.defaultHealthBar
+                level.isHideHealth = false
+                if (tech.isEnergyHealth) {
+                    document.getElementById("health").style.display = "none"
+                    document.getElementById("health-bg").style.display = "none"
+                } else if (!level.isHideHealth) {
+                    document.getElementById("health").style.display = "inline"
+                    document.getElementById("health-bg").style.display = "inline"
+                }
+            }
+        },*/
+        {
+            description: "50% energy regen",
+            effect() {
+                level.isReducedRegen = 0.5
+            },
+            remove() {
+                level.isReducedRegen = 1
+            }
+        },
+        {
+            description: "50% max health",
+            effect() {
+                level.isReducedHealth = true
+                m.setMaxHealth()
+            },
+            remove() {
+                if (level.isReducedHealth) {
+                    level.isReducedHealth = false
+                    m.setMaxHealth()
+                    m.addHealth(level.reducedHealthLost);
+                    level.reducedHealthLost = 0
+                } else {
+                    level.isReducedHealth = false
+                }
+
+            }
+        },
+        {
+            description: "after 30 seconds spawn WIMPs",
+            effect() {
+                simulation.ephemera.push({
+                    name: "WIMPS",
+                    time: 0,
+                    levelName: level.levels[level.onLevel],
+                    do() {
+                        this.time++
+                        if (level.levels[level.onLevel] === this.levelName) {
+                            if (this.time > 1800 && !(this.time % 360)) spawn.WIMP(level.enter.x, level.enter.y)
+                        } else {
+                            simulation.removeEphemera(this.name);
+                        }
+                    },
+                })
+            },
+            remove() {
+
+            }
+        },
+        {
+            description: "10% harm after getting power ups",
+            effect() {
+                level.isNoDamage = true
+                level.noDamageCycle = 0
+            },
+            remove() {
+                level.isNoDamage = false
+                level.noDamageCycle = 0
+            }
+        },
+        {
+            description: "mobs heal after you take damage",
+            effect() {
+                level.isMobHealPlayerDamage = true
+            },
+            remove() {
+                level.isMobHealPlayerDamage = false
+            }
+        },
+        {
+            description: "mob death heals nearby mobs",
+            effect() {
+                level.isMobDeathHeal = true
+            },
+            remove() {
+                level.isMobDeathHeal = false
+            }
+        },
+        // {
+        //     description: "full damage taken after boss dies",
+        //     // description: "after boss dies damage taken = 1",
+        //     effect() {
+        //         level.noDefenseSetting = 1 //defense goes to zero once equal to 2
+        //     },
+        //     remove() {
+        //         level.noDefenseSetting = 0
+        //     }
+        // },
+        {
+            description: "400% shielded mobs",
+            effect() {
+                level.isMobShields = true
+            },
+            remove() {
+                level.isMobShields = false
+            }
+        },
+        {
+            description: "40% JUNK chance",
+            effect() {
+                level.junkAdded = 0.4
+            },
+            remove() {
+                level.junkAdded = 0
+            }
+        },
+        {
+            description: "-1 choice",
+            effect() {
+                level.fewerChoices = true
+            },
+            remove() {
+                level.fewerChoices = false
+            }
+        },
+        {
+            description: "power ups in stasis",
+            effect() {
+                level.isNextLevelPowerUps = true
+                //remove all current power ups
+                for (let i = powerUp.length - 1; i > -1; i--) {
+                    powerUps.powerUpStorage.push({ name: powerUp[i].name, size: powerUp[i].size })
+                    Matter.Composite.remove(engine.world, powerUp[i]);
+                    powerUp.splice(i, 1)
+                }
+            },
+            remove() {
+                level.isNextLevelPowerUps = false
+                if (powerUps.powerUpStorage.length) {
+                    const delay = 5
+                    let i = 0
+                    let cycle = () => {
+                        if (powerUps.powerUpStorage.length && m.alive && powerUp.length < 300) {
+                            requestAnimationFrame(cycle);
+                            if (!simulation.paused && !simulation.isChoosing) {
+                                if (!(simulation.cycle % delay)) {
+                                    const where = { x: m.pos.x + 70 * (Math.random() - 0.5), y: m.pos.y + 70 * (Math.random() - 0.5) }
+                                    powerUps.directSpawn(where.x, where.y, powerUps.powerUpStorage[i].name, true, powerUps.powerUpStorage[i].size);
+                                    powerUps.powerUpStorage.splice(i, 1);
+                                }
+                            }
+                        } else {
+                            powerUps.powerUpStorage = []
+                        }
+                    }
+                    requestAnimationFrame(cycle);
+                }
+            }
+        },
+        {
+            description: "33% of mobs respawn",
+            effect() {
+                level.isMobRespawn = true
+            },
+            remove() {
+                level.isMobRespawn = false
+            }
+        },
+        {
+            description: "0 duplication",
+            effect() {
+                level.isNoDuplicate = true
+            },
+            remove() {
+                level.isNoDuplicate = false
+            }
+        },
+        {
+            description: "200% ammo cost",
+            effect() {
+                level.is2xAmmo = true
+            },
+            remove() {
+                level.is2xAmmo = false
+            }
+        },
+        {
+            description: "50% max energy",
+            effect() {
+                level.isReducedEnergy = true
+                m.setMaxEnergy()
+            },
+            remove() {
+                if (level.isReducedEnergy) {
+                    level.isReducedEnergy = false
+                    m.setMaxEnergy()
+                } else {
+                    level.isReducedEnergy = false
+                }
+
+            }
+        },
+        {
+            description: "slow bots",
+            effect() {
+                level.isSlowBots = true
+                b.clearPermanentBots();
+                b.respawnBots();
+            },
+            remove() {
+                if (level.isSlowBots) {
+                    level.isSlowBots = false
+                    b.clearPermanentBots();
+                    b.respawnBots();
+                } else {
+                    level.isSlowBots = false
+                }
+
+            }
+        },
+    ],
+    isMobShields: false,
+    junkAdded: 0,
+    isNextLevelPowerUps: false,
+    isMobRespawn: false,
+    fewerChoices: false,
+    isNoDuplicate: false,
+    is2xAmmo: false,
+    isReducedEnergy: false,
+    isSlowBots: false,
+    // noDefenseSetting: 0,
+    isMobDeathHeal: false,
+    isMobHealPlayerDamage: false,
+    isNoDamage: false,
+    noDamageCycle: 0,
+    reducedHealthLost: 0,
+    isReducedHealth: false,
+    isReducedRegen: 1,
+    isHideHealth: false,
+    isNoPause: false,
+    isLowHeal: false,
     custom() {},
     customTopLayer() {},
     setDifficulty() {
@@ -5924,7 +6236,7 @@ const level = {
                 }
                 //remove any mob that is too far from player
                 for (let i = 0; i < mob.length; ++i) {
-                    if (Vector.magnitudeSquared(Vector.sub(player.position, mob[i].position)) > 4000000) { //remove any mob farther then 2000 pixels from player
+                    if (Vector.magnitudeSquared(Vector.sub(player.position, mob[i].position)) > 4000000 && !mob[i].isMACHO) { //remove any mob farther then 2000 pixels from player
                         mob[i].removeConsBB()
                         mob[i].removeCons()
                         mob[i].leaveBody = false

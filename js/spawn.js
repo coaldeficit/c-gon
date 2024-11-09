@@ -159,6 +159,7 @@ const spawn = {
         me.chaseSpeed = 3.3
         me.isMACHO = true;
         me.frictionAir = 0.006
+        me.damageReduction = 0
         me.onDeath = function() {
             tech.isHarmMACHO = false;
         }

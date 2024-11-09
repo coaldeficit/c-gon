@@ -315,6 +315,23 @@ const m = {
             if (player.velocity.x < m.airSpeedLimit / player.mass / player.mass) player.force.x += m.FxAir; //move player  right / d
         }
     },
+    printBlock() {
+        const sides = Math.floor(4 + 6 * Math.random() * Math.random())
+        body[body.length] = Matter.Bodies.polygon(m.pos.x, m.pos.y, sides, 8, {
+            friction: 0.05,
+            frictionAir: 0.001,
+            collisionFilter: { category: 0, mask: 0 }, //no collision because player is holding
+            classType: "body",
+            isPrinted: true,
+            radius: 10, //used to grow and warp the shape of the block
+            density: 0.002, //double density for 2x damage
+        });
+        const who = body[body.length - 1]
+        Composite.add(engine.world, who); //add to world
+        m.throwCharge = 4;
+        m.holdingTarget = who
+        m.isHolding = true;
+    },
     alive: false,
     switchWorlds() {
         powerUps.boost.endCycle = 0
@@ -2933,6 +2950,21 @@ const m = {
                         };
                         expand(m.holdingTarget, Math.min(20, m.holdingTarget.mass * 3))
                     }
+                    if (tech.isGroupThrow) {
+                        const range = 810000
+                        for (let i = 0; i < body.length; i++) {
+                            if (body[i] !== m.holdingTarget) {
+                                const dist2 = Vector.magnitudeSquared(Vector.sub(m.pos, body[i].position))
+                                if (dist2 < range) {
+                                    const blockSpeed = 90 * charge * Math.min(0.85, 0.8 / Math.pow(body[i].mass, 0.25)) * Math.pow((range - dist2) / range, 0.2)
+                                    Matter.Body.setVelocity(body[i], {
+                                        x: body[i].velocity.x * 0.5 + Math.cos(m.angle) * blockSpeed,
+                                        y: body[i].velocity.y * 0.5 + Math.sin(m.angle) * blockSpeed
+                                    });
+                                }
+                            }
+                        }
+                    }
                 }
             }
         } else {
@@ -3205,10 +3237,26 @@ const m = {
                         m.drawHold(m.holdingTarget);
                         m.holding();
                         m.throwBlock();
+                        if (tech.isPrinter && m.holdingTarget.isPrinted && input.field) {
+                            // if (Math.random() < 0.004 && m.holdingTarget.vertices.length < 12) m.holdingTarget.vertices.push({ x: 0, y: 0 }) //small chance to increase the number of vertices
+                            m.holdingTarget.radius += Math.min(1.1, 1.3 / m.holdingTarget.mass) //grow up to a limit
+                            const r1 = m.holdingTarget.radius * (1 + 0.12 * Math.sin(m.cycle * 0.11))
+                            const r2 = m.holdingTarget.radius * (1 + 0.12 * Math.cos(m.cycle * 0.11))
+                            let angle = (m.cycle * 0.01) % (2 * Math.PI) //rotate the object 
+                            let vertices = []
+                            for (let i = 0, len = m.holdingTarget.vertices.length; i < len; i++) {
+                                angle += 2 * Math.PI / len
+                                vertices.push({ x: m.holdingTarget.position.x + r1 * Math.cos(angle), y: m.holdingTarget.position.y + r2 * Math.sin(angle) })
+                            }
+                            Matter.Body.setVertices(m.holdingTarget, vertices)
+                            m.definePlayerMass(m.defaultMass + m.holdingTarget.mass * m.holdingMassScale)
+                        }
                     } else if ((input.field && m.fieldCDcycle < m.cycle)) { //not hold but field button is pressed
                         m.grabPowerUp();
                         m.lookForPickUp();
-                        if (m.energy > 0.05) {
+                        if (tech.isPrinter && input.down) {
+                            m.printBlock();
+                        } else if (m.energy > 0.05) {
                             m.drawField();
                             m.pushMobsFacing();
                         }
@@ -4744,6 +4792,34 @@ const m = {
                 m.fieldRadius = 0;
                 m.drop();
                 m.hold = function() {
+                    if (tech.isPrinter) {
+                        //spawn blocks if field and crouch
+                        if (input.field && m.fieldCDcycle < m.cycle && input.down && !m.isHolding) {
+                            m.printBlock()
+                        }
+                        //if holding block grow it
+                        if (m.isHolding) {
+                            m.drawHold(m.holdingTarget);
+                            m.holding();
+                            if (tech.isPrinter && m.holdingTarget.isPrinted && input.field) {
+                                // if (Math.random() < 0.004 && m.holdingTarget.vertices.length < 12) m.holdingTarget.vertices.push({ x: 0, y: 0 }) //small chance to increase the number of vertices
+                                m.holdingTarget.radius += Math.min(1.1, 1.3 / m.holdingTarget.mass) //grow up to a limit
+                                const r1 = m.holdingTarget.radius * (1 + 0.12 * Math.sin(m.cycle * 0.11))
+                                const r2 = m.holdingTarget.radius * (1 + 0.12 * Math.cos(m.cycle * 0.11))
+                                let angle = (m.cycle * 0.01) % (2 * Math.PI) //rotate the object 
+                                let vertices = []
+                                for (let i = 0, len = m.holdingTarget.vertices.length; i < len; i++) {
+                                    angle += 2 * Math.PI / len
+                                    vertices.push({ x: m.holdingTarget.position.x + r1 * Math.cos(angle), y: m.holdingTarget.position.y + r2 * Math.sin(angle) })
+                                }
+                                Matter.Body.setVertices(m.holdingTarget, vertices)
+                                m.definePlayerMass(m.defaultMass + m.holdingTarget.mass * m.holdingMassScale)
+                            }
+                            m.throwBlock()
+                        } else {
+                            m.holdingTarget = null; //clears holding target (this is so you only pick up right after the field button is released and a hold target exists)
+                        }
+                    }
                     if (input.field) {
                         if (m.fieldCDcycle < m.cycle) {
                             const scale = 25

@@ -3954,7 +3954,7 @@ const b = {
             if (tech.isRebarAttract) {
                 let attractList = []
                 for (let i=0;i<mob.length;i++) {
-                    if (Vector.magnitude(Vector.sub(mob[i].position, this.position)) < 900 && !mob[i].isBadTarget) {
+                    if (Vector.magnitude(Vector.sub(mob[i].position, this.position)) < 900 && !mob[i].isBadTarget && (!tech.isRebarAttractDamage || mob[i].damageReduction) && mob[i].alive) {
                         attractList.push(mob[i])
                     }
                 }
