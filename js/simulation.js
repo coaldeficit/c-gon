@@ -1094,6 +1094,58 @@ const simulation = {
             requestAnimationFrame(respawnWorms);
         }
 
+        if (tech.isPWTransferBlocks && m.alive && input.field && m.fieldUpgrades[m.fieldMode].name === "pilot wave") { //send blocks to the next level and make them heavier if using empty wavefunction
+            let blocksToTransfer = []
+            let blockTransferIndex = 0
+            for (let i = 0, len = body.length; i < len; i++) {
+                if (Vector.magnitude(Vector.sub(body[i].position, m.fieldPosition)) < m.fieldRadius) {
+                    blocksToTransfer.push([
+                        body[i].position,
+                        body[i].vertices,
+                        body[i].mass,
+                    ])
+                }
+            }
+            if (blocksToTransfer.length > 8) {
+                function sortBlocks(a, b) {
+                    if (a[2] === b[2]) {
+                        return 0;
+                    } else {
+                        return (a[2] > b[2]) ? -1 : 1;
+                    }
+                }
+                blocksToTransfer.sort(sortBlocks)
+            }
+            //respawn health in animation frame
+            let respawnBlock = () => {
+                if (blockTransferIndex < Math.min(8,blocksToTransfer.length)) {
+                    requestAnimationFrame(respawnBlock);
+                    if (!simulation.paused && !simulation.isChoosing) {
+                        let vertices = []
+                        for (let i=0;i<blocksToTransfer[blockTransferIndex][1].length;i++) {
+                            vertices.push({
+                                x:blocksToTransfer[blockTransferIndex][1][i].x - blocksToTransfer[blockTransferIndex][0].x,
+                                y:blocksToTransfer[blockTransferIndex][1][i].y - blocksToTransfer[blockTransferIndex][0].y,
+                            })
+                        }
+                        const where = { x: level.enter.x + 50, y: level.enter.y - 60 }
+                        body[body.length] = Matter.Bodies.fromVertices(where.x + 100 * (Math.random() - 0.5), where.y + 120 * (Math.random() - 0.5), vertices);
+                        body[body.length-1].collisionFilter.category = cat.body;
+                        body[body.length-1].collisionFilter.mask = cat.player | cat.map | cat.body | cat.bullet | cat.mob | cat.mobBullet
+                        body[body.length-1].classType = "body";
+                        if (body[body.length-1].area > 18906) { // 137.5**2 rounded down
+                            let factor = 18906/body[body.length-1].area
+                            Matter.Body.scale(body[body.length-1], factor*factor, factor*factor)
+                        }
+                        body[body.length-1].mass = blocksToTransfer[blockTransferIndex][2] * 1.33
+                        Composite.add(engine.world, body[body.length-1])
+                        blockTransferIndex++
+                    }
+                }
+            }
+            requestAnimationFrame(respawnBlock);
+        }
+        
         function removeAll(array) {
             // for (let i = 0; i < array.length; ++i) Matter.Composite.remove(engine.world, array[i]);
             for (let i = 0; i < array.length; ++i) Matter.Composite.remove(engine.world, array[i]);
