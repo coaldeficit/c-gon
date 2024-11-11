@@ -4924,7 +4924,7 @@ const m = {
                                 let radius, radiusSmooth
                                 if (Matter.Query.ray(map, m.fieldPosition, player.position).length) { //is there something block the player's view of the field
                                     radius = 0
-                                    radiusSmooth = Math.max(0, isInMap ? 0.96 - 0.02 * speed : 0.995); //0.99
+                                    radiusSmooth = Math.max(0, isInMap ? 0.96 - 0.02 * speed : tech.isDeBroglie ? 0.9995 : 0.995); //0.99
                                 } else {
                                     radius = Math.max(50, 250 - 2 * speed)
                                     radiusSmooth = 0.97
@@ -4944,9 +4944,16 @@ const m = {
                                             const push = Vector.mult(Vector.normalise(sub), 0.0001 * body[i].mass * Vector.magnitude(sub))
                                             body[i].force.x += push.x
                                             body[i].force.y += push.y - body[i].mass * simulation.g //remove gravity effects
-                                            // if (body[i].collisionFilter.category !== cat.bullet) {
-                                            //     body[i].collisionFilter.category = cat.bullet;
-                                            // }
+                                            // copy pasted from wormhole lmao
+                                            if (tech.isPWBlockDecay) {
+                                                const shrinkScale = 0.9966
+                                                Matter.Body.scale(body[i], shrinkScale, shrinkScale);
+                                                if (body[i].mass < 0.15) {
+                                                    Matter.Composite.remove(engine.world, body[i]);
+                                                    body.splice(i, 1);
+                                                    break
+                                                }
+                                            }
                                         } else {
                                             m.fieldCDcycle = m.cycle + 120;
                                             m.fieldOn = false

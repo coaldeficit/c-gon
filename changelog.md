@@ -1,3 +1,20 @@
+# block-assisted mob battery (2024/11/11)
+- added 3 new tech:
+- - de Broglie-Bohm theory: pilot wave shrinks significantly slower when out of sight. suggested by garfunkel
+- - empty Ψ(t): pilot wave can transfer and increase the mass of up to 8 blocks between levels
+- - Zeeman effect: blocks do triple damage but slowly shrink and lose mass inside pilot wave
+- added 1 new junk tech:
+- - leash: get constrained to your current position
+- removed duplicate bot prototypes tech
+- fork bomb now floods the ingame console
+- fixed working mass carrying over between runs
+- removed springBoss from the boss pool until i can make it less insufferable
+- fixed newer vanilla bosses being unaffected by parthenogenesis boss health increase
+- laserLayerBoss changes:
+- - removed invulnerability at each 1/4th of its health
+- - previous lasers now go away when the indicators for the next ones appear
+- - buffed laser damage by 33.(3)%
+- increased base bot fabrication cost to 3 research per bot and made it increase in cost by 1 research every 2 bots
 # porting P (2024/11/09)
 - ported Halbach array, additive manufacturing and working mass tech
 - dark matter is now unaffected by damage to hopefully make it not despawn in certain situations where the player deals ridiculous damage

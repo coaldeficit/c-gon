@@ -1624,7 +1624,7 @@ const tech = {
             name: "bot fabrication",
             link: `<a target="_blank" href='https://en.wikipedia.org/wiki/Robot' class="link">bot fabrication</a>`,
             descriptionFunction() {
-                return `after you collect ${powerUps.orb.research(2 + Math.floor(0.1666 * b.totalBots()))} use them to build a<br>random <strong class='color-bot'>bot</strong> <em>(+1 cost every 6 bots)</em>`
+                return `after you collect ${powerUps.orb.research(3 + Math.floor(0.5 * b.totalBots()))} use them to build a<br>random <strong class='color-bot'>bot</strong> <em>(+1 cost every 2 bots)</em>`
             },
             // description: `if you collect ${powerUps.orb.research(2)}use them to build a<br>random <strong class='color-bot'>bot</strong> <em>(+1 cost every 5 bots)</em>`,
             maxCount: 1,
@@ -1633,9 +1633,9 @@ const tech = {
             frequencyDefault: 2,
             isBotTech: true,
             allowed() {
-                return powerUps.research.count > 1 || build.isExperimentSelection
+                return powerUps.research.count > 2 || build.isExperimentSelection
             },
-            requires: "at least 2 research",
+            requires: "at least 3 research",
             effect() {
                 tech.isRerollBots = true;
                 powerUps.research.changeRerolls(0)
@@ -1800,7 +1800,7 @@ const tech = {
                 }
             }
         },
-    {
+    /*{
         name: "bot prototypes",
         description: `use ${powerUps.orb.research(3)}to build <strong>2</strong> random <strong class='color-bot'>bots</strong><br>and <strong>upgrade</strong> all <strong class='color-bot'>bots</strong> to a random type`,
         maxCount: 1,
@@ -1883,7 +1883,7 @@ const tech = {
             })
         },
         remove() { }
-    },
+    },*/
         {
             name: "stomp",
             description: `<strong>jumping</strong> on a mob <strong class='color-d'>damages</strong> it<br>jumping on mobs no longer does <strong class='color-harm'>harm</strong>`,
@@ -8156,9 +8156,9 @@ const tech = {
             frequency: 2,
             frequencyDefault: 2,
             allowed() {
-                return (m.fieldUpgrades[m.fieldMode].name === "molecular assembler" || m.fieldUpgrades[m.fieldMode].name === "pilot wave") && !tech.isTokamak
+                return (m.fieldUpgrades[m.fieldMode].name === "molecular assembler" || m.fieldUpgrades[m.fieldMode].name === "pilot wave") && !tech.isTokamak && !tech.isDeBroglie
             },
-            requires: "molecular assembler, pilot wave, not tokamak",
+            requires: "molecular assembler, pilot wave, not tokamak, de Broglie-Bohm theory",
             effect() {
                 tech.isPrinter = true;
             },
@@ -8239,7 +8239,7 @@ const tech = {
                 })
             },
             remove() {
-                if (this.count) simulation.removeEphemera("blockJump")
+                simulation.removeEphemera("blockJump")
             }
         },
         // {
@@ -9004,6 +9004,64 @@ const tech = {
             }
         },
         {
+            name: "de Broglie-Bohm theory",
+            description: "your <strong class='color-f'>field</strong> shrinks <strong>90%</strong> slower out of <strong>sight</strong>",
+            isFieldTech: true,
+            maxCount: 1,
+            count: 0,
+            frequency: 2,
+            frequencyDefault: 2,
+            allowed() {
+                return m.fieldUpgrades[m.fieldMode].name === "pilot wave" && !tech.isPrinter
+            },
+            requires: "pilot wave, not additive manufacturing",
+            effect() {
+                tech.isDeBroglie = true
+            },
+            remove() {
+                tech.isDeBroglie = false
+            }
+        },
+        {
+            name: "empty Ψ(t)",
+            link: `<a target="_blank" href='https://en.wikipedia.org/wiki/Empty_wave_function' class="link">empty Ψ(t)</a>`,
+            description: "your <strong class='color-f'>field</strong> transfers up to <strong>8</strong> <strong class='color-block'>blocks</strong><br>and increases their <strong>mass</strong> by <strong>33%</strong> between levels",
+            isFieldTech: true,
+            maxCount: 1,
+            count: 0,
+            frequency: 2,
+            frequencyDefault: 2,
+            allowed() {
+                return m.fieldUpgrades[m.fieldMode].name === "pilot wave" && !tech.isPWBlockDecay
+            },
+            requires: "pilot wave, not Zeeman effect",
+            effect() {
+                tech.isPWTransferBlocks = true
+            },
+            remove() {
+                tech.isPWTransferBlocks = false
+            }
+        },
+        {
+            name: "Zeeman effect",
+            description: "increase <strong class='color-block'>block</strong> collision <strong class='color-d'>damage</strong> by <strong>200%</strong><br>but <strong class='color-block'>blocks</strong> in your <strong class='color-f'>field</strong> slowly <strong>shrink</strong>",
+            isFieldTech: true,
+            maxCount: 1,
+            count: 0,
+            frequency: 2,
+            frequencyDefault: 2,
+            allowed() {
+                return m.fieldUpgrades[m.fieldMode].name === "pilot wave" && !tech.isPWTransferBlocks
+            },
+            requires: "pilot wave, not empty Ψ(t)",
+            effect() {
+                tech.isPWBlockDecay = true
+            },
+            remove() {
+                tech.isPWBlockDecay = false
+            }
+        },
+        {
             name: "virtual particles",
             description: `use ${powerUps.orb.research(4)}to exploit your <strong class='color-f'>field</strong> for a<br><strong>12%</strong> chance to <strong class='color-dup'>duplicate</strong> spawned <strong>power ups</strong>`,
             isFieldTech: true,
@@ -9470,6 +9528,31 @@ const tech = {
         //     remove() {}
         // },
         {
+            name: "leash",
+            description: "get constrained to your current position",
+            maxCount: 1,
+            count: 0,
+            frequency: 0,
+            isNonRefundable: true,
+            isJunk: true,
+            allowed() {
+                return !build.isExperimentSelection
+            },
+            requires: "",
+            effect() {
+                cons[cons.length] = Constraint.create({
+                    pointA: {
+                        x: m.pos.x,
+                        y: m.pos.y+100
+                    },
+                    bodyB: player,
+                    stiffness: 0.00035,
+                });
+                Composite.add(engine.world, cons[cons.length-1]);
+            },
+            remove() {}
+        },
+        {
             name: "complete fuck up",
             description: "shuffle everything about tech<br>names, descriptions, effects, requirements, removal effects<br><h1 class='color-d'>everything</h1>",
             maxCount: 1,
@@ -9568,6 +9651,8 @@ const tech = {
                 requestAnimationFrame(()=>{
                     tech.giveTech('fork bomb')
                     tech.giveTech('fork bomb')
+                    simulation.makeTextLog(`<span class='color-var'>tech</span>.giveTech("<span class='color-text'>fork bomb</span>")`);
+                    simulation.makeTextLog(`<span class='color-var'>tech</span>.giveTech("<span class='color-text'>fork bomb</span>")`);
                 })
             },
             remove() {}
@@ -11560,6 +11645,10 @@ const tech = {
     bulletSize: null,
     energySiphon: null,
     healthDrain: null,
+    isPWTransferBlocks: null,
+    isDeBroglie: null,
+    isPrinter: null,
+    isGroupThrow: null,
     isHydrogenHeavy: null,
     isHydrogenCondense: null,
     isBlastHydrogen: null,
