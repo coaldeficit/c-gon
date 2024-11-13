@@ -7998,7 +7998,7 @@ const spawn = {
                         for (let i=0;i<this.tail.length;i++) {
                             this.tail[i].damageReduction = this.tail[i].oldDamageReduction
                         }
-                        Matter.Body.setPosition(this, {x:this.position.x*0.5,y:2500})
+                        Matter.Body.setPosition(this, {x:this.position.x*(0.8+(Math.random()*0.2)),y:2500})
                         this.intendedVelocity = {x:(player.position.x-this.position.x)*0.0036*(this.attackSwitchCycle%2 ? 1 : 1.5),y:-37.6}
                     }
                     if (this.phase2Started && !this.phase2Done) {
@@ -8152,6 +8152,13 @@ const spawn = {
                     ctx.fillStyle = "rgba(0,255,0,0.333)"
                     ctx.fill()
                 }
+                ctx.beginPath()
+                ctx.moveTo(this.position.x,this.position.y)
+                ctx.lineTo(this.position.x+((4800+(3600*Math.max(0,(this.position.y+600)/-400))) * simulation.accelScale * Math.sign(this.velocity.x)),this.position.y+3600)
+                ctx.lineTo(this.position.x+((4800-(3600*Math.max(0,(this.position.y+600)/-400))) * simulation.accelScale * Math.sign(this.velocity.x)),this.position.y+3600)
+                ctx.lineTo(this.position.x,this.position.y)
+                ctx.fillStyle = "rgba(255,0,155,0.333)"
+                ctx.fill()
             }
             if (this.position.y <= -1000 && this.velocity.y < 0) {
                 ctx.beginPath();
@@ -8166,6 +8173,13 @@ const spawn = {
                     ctx.fillStyle = "rgba(0,255,0,0.667)"
                     ctx.fill()
                 }
+                ctx.beginPath()
+                ctx.moveTo(this.position.x,this.position.y)
+                ctx.lineTo(this.position.x+(8400 * simulation.accelScale * Math.sign(this.velocity.x)),this.position.y+3600)
+                ctx.lineTo(this.position.x+(1200 * simulation.accelScale * Math.sign(this.velocity.x)),this.position.y+3600)
+                ctx.lineTo(this.position.x,this.position.y)
+                ctx.fillStyle = "rgba(255,0,155,0.667)"
+                ctx.fill()
             }
             if (this.velocity.y > 0 && !this.halfwaySlowdown) {
                 this.intendedVelocity.x /= 5

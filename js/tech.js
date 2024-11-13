@@ -270,7 +270,7 @@ const tech = {
         return dmg * tech.slowFire * tech.aimDamage
     },
     duplicationChance() {
-        return Math.max(0 + (tech.isPowerUpsVanish ? 0.12 : 0) + (tech.isStimulatedEmission ? 0.15 : 0) + tech.cancelCount * 0.045 + tech.duplicateChance + m.duplicateChance + tech.fieldDuplicate + tech.cloakDuplication + (tech.isAnthropicTech && tech.isDeathAvoidedThisLevel ? 0.5 : 0))
+        return Math.max(0 + (tech.isPowerUpsVanish ? 0.12 : 0) + (tech.isStimulatedEmission ? 0.15 : 0) + tech.cancelCount * 0.03 + tech.duplicateChance + m.duplicateChance + tech.fieldDuplicate + tech.cloakDuplication + (tech.isAnthropicTech && tech.isDeathAvoidedThisLevel ? 0.5 : 0))
     },
     isScaleMobsWithDuplication: false,
     maxDuplicationEvent() {
@@ -4250,7 +4250,7 @@ const tech = {
         },
         {
             name: "futures exchange",
-            description: "clicking <strong style = 'font-size:150%;'>×</strong> to <strong>cancel</strong> a <strong class='color-f'>field</strong>, <strong class='color-m'>tech</strong>, or <strong class='color-g'>gun</strong><br>adds <strong>4.5%</strong> power up <strong class='color-dup'>duplication</strong> chance",
+            description: "clicking <strong style = 'font-size:150%;'>×</strong> to <strong>cancel</strong> a <strong class='color-f'>field</strong>, <strong class='color-m'>tech</strong>, or <strong class='color-g'>gun</strong><br>adds <strong>3%</strong> power up <strong class='color-dup'>duplication</strong> chance",
             maxCount: 1,
             count: 0,
             frequency: 1,
@@ -11645,6 +11645,7 @@ const tech = {
     bulletSize: null,
     energySiphon: null,
     healthDrain: null,
+    isPWBlockDecay: null,
     isPWTransferBlocks: null,
     isDeBroglie: null,
     isPrinter: null,

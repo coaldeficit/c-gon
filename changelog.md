@@ -1,3 +1,10 @@
+# porting Q (2024/11/13)
+- ported substructure and downpour update
+- - downpour has sounds muted by default
+- nerfed futures exchange from 4.5% duplication chance per cancel to 3%
+- slimeFinalBoss changes:
+- - now has an indicator for the bullet spam in its beam attack
+- - now comes from farther from the spawn room after finishing the beam attack
 # block-assisted mob battery (2024/11/11)
 - added 3 new tech:
 - - de Broglie-Bohm theory: pilot wave shrinks significantly slower when out of sight. suggested by garfunkel
