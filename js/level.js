@@ -8574,7 +8574,6 @@ const level = {
     },
     corridor() {
         // simulation.fallHeight = 4000
-        level.announceMobTypes()
         level.defaultZoom = 2400
         simulation.zoomTransition(level.defaultZoom)
         document.body.style.backgroundColor = "#d0d5d5";
