@@ -2392,6 +2392,55 @@ const level = {
             },
         }
     },
+    fizzler(p1, p2) {
+        return {
+            isOn: true,
+            position: p1,
+            look: p2,
+            color: color,
+            query() {
+                if (!m.isTimeDilated) {
+                    // let best = { x: null, y: null, dist2: Infinity, who: null, v1: null, v2: null }
+                    // best = vertexCollision(this.position, this.look, [body]);
+
+                    const hits = Matter.Query.ray(body, this.position, this.look, 25)
+                    for (let i = hits.length - 1; i > -1; i--) {
+                        // console.log(what)
+                        const what = hits[i].bodyA
+                        simulation.drawList.push({ x: what.position.x, y: what.position.y, radius: 11, color: "rgba(0,160,255,0.7)", time: 10 });
+                        if (what === m.holdingTarget) m.drop()
+                        for (let i = 0; i < body.length; i++) {
+                            if (body[i] === what) {
+                                body.splice(i, 1);
+                                break
+                            }
+                        }
+                        Matter.Composite.remove(engine.world, what);
+                    }
+                    //draw
+                    ctx.beginPath();
+                    ctx.moveTo(this.position.x, this.position.y);
+                    ctx.lineTo(this.look.x, this.look.y);
+                    // ctx.strokeStyle = "rgba(50,200,255,0.3)";
+                    // ctx.lineWidth = 2 + 5 * Math.random()
+                    // ctx.stroke();
+                    ctx.strokeStyle = "rgba(50,160,255,0.17)";
+                    ctx.lineWidth = 35 + 25 * Math.random() * Math.random();
+                    ctx.stroke();
+
+                    //draw random dots in the path
+                    if (Math.random() < 0.05) {
+                        const r = Math.random();
+                        const where = {
+                            x: this.position.x + r * (this.look.x - this.position.x) + 60 * (Math.random() - 0.5),
+                            y: this.position.y + r * (this.look.y - this.position.y) + 60 * (Math.random() - 0.5)
+                        };
+                        simulation.drawList.push({ x: where.x, y: where.y, radius: 6, color: "rgba(0,160,255,0.7)", time: 5 });
+                    }
+                }
+            },
+        }
+    },
     isHazardRise: false,
     hazard(x, y, width, height, damage = 0.003) {
         return {
@@ -8522,6 +8571,257 @@ const level = {
         powerUps.directSpawn(2475, -650, "heal");
         powerUps.directSpawn(2100, 925, "heal");
         powerUps.directSpawn(625, -100, "heal");
+    },
+    corridor() {
+        // simulation.fallHeight = 4000
+        level.announceMobTypes()
+        level.defaultZoom = 2400
+        simulation.zoomTransition(level.defaultZoom)
+        document.body.style.backgroundColor = "#d0d5d5";
+        color.map = "#444"
+
+        // level.isHorizontalFlipped = true
+        if (level.isHorizontalFlipped) {
+            level.setPosToSpawn(14075, -625);
+            level.exit.x = -350
+            level.exit.y = 505
+            spawn.bodyRect(13525, -675, 50, 100);
+            var color1 = "rgba(0,20,60,0.09)"
+            var color2 = "rgba(0,255,255,0.1)"
+        } else {
+            level.setPosToSpawn(-350, 475);
+            level.exit.x = 14025
+            level.exit.y = -600
+            spawn.bodyRect(-225, 475, 50, 50);
+            var color1 = "rgba(0,255,255,0.1)"
+            var color2 = "rgba(0,20,60,0.09)"
+        }
+        spawn.mapRect(14015, -585, 120, 75); //exit/entrance platform
+
+        const buttonLeft = level.button(-4100, 991)
+        const buttonRight = level.button(4050, 991)
+        buttonLeft.isUp = true
+        // const buttonCamera = level.button(940, -1545)
+        // buttonRight.isUp = false
+        const boosts = []
+        boosts.push(level.boost(-3650, 990, 2700, 1.45))
+        boosts.push(level.boost(3325, 990, 1600, 1.4))
+        boosts.push(level.boost(7960, -1110, 1650, 2.3))
+        boosts.push(level.boost(13345, -460, 2070, 2.35))
+
+        const fizzlers = []
+        fizzlers.push(level.fizzler({ x: -135, y: 265 }, { x: -135, y: 535 }))
+        fizzlers.push(level.fizzler({ x: -3850, y: 650 }, { x: -3850, y: 1025 }))
+        fizzlers.push(level.fizzler({ x: 3875, y: 675 }, { x: 3875, y: 1025 }))
+        fizzlers.push(level.fizzler({ x: 13425, y: -1275 }, { x: 13425, y: -550 }))
+
+        const movers = []
+        const baseMoverSpeed = 15
+        movers.push(level.mover(-3550, 995, 6875, 150, -baseMoverSpeed))
+        movers.push(level.mover(225, -1190, 2450, 50, -baseMoverSpeed))
+        movers.push(level.mover(-3000, -1190, 3000, 50, baseMoverSpeed))
+        movers.push(level.mover(4000, -2025, 2000, 150, -23))
+        movers.push(level.mover(8000, -1125, 2000, 150, -23))
+        movers.push(level.mover(3775, -425, 1650, 150, 20))
+        movers.push(level.mover(5425, -425, 1925, 150, 40))
+        movers.push(level.mover(7350, -425, 6000, 150, 60))
+
+        function setMoverDirection(index, VxGoal, force) {
+            movers[index].VxGoal = VxGoal
+            movers[index].force = force
+        }
+        level.custom = () => {
+            // buttonCamera.query()
+            // if (!buttonCamera.isUp) {
+            //     simulation.setCameraPosition(100, -1000, 0.29)
+            //     //block spawner
+            //     spawn.mapRect(0, -2375, 200, 100);
+            //     if (!(simulation.cycle % 10) && !m.isTimeDilated && body.length < 200) {
+            //         const where = { x: 112, y: -3800 }
+            //         // simulation.drawList.push({ x: where.x + 100 * (Math.random() - 0.5), y: where.y + 100 * (Math.random() - 0.5), radius: 11, color: "rgba(0,160,255,0.5)", time: 10 });
+
+            //         let makeBlock = function (where, size) {
+            //             const sides = Math.floor(4 + 6 * Math.random() * Math.random())
+            //             body[body.length] = Matter.Bodies.polygon(where.x, where.y, sides, size, {
+            //                 friction: 0.05,
+            //                 frictionAir: 0.001,
+            //                 collisionFilter: {
+            //                     category: cat.body,
+            //                     mask: cat.player | cat.map | cat.body | cat.bullet | cat.mob | cat.mobBullet
+            //                 },
+            //                 classType: "body",
+            //                 density: 0.001,
+            //             });
+            //             const who = body[body.length - 1]
+            //             Composite.add(engine.world, who); //add to world
+            //         }
+            //         makeBlock({ x: where.x, y: where.y }, Math.floor(20 + 35 * Math.random() * Math.random()))
+            //     }
+            // }
+            ctx.fillStyle = "#c8cccc"//background color is "#d0d5d5"
+            ctx.fillRect(-2150, 675, 500, 400);
+            ctx.fillRect(-1050, 675, 500, 400);
+            ctx.fillRect(750, 675, 500, 400);
+            ctx.fillRect(1850, 675, 500, 400);
+            ctx.fillRect(-2250, -2425, 700, 1325);
+            ctx.fillRect(-1150, -2400, 700, 1300);
+            ctx.fillRect(650, -2375, 700, 1325);
+            ctx.fillRect(1750, -2375, 700, 1350);
+            ctx.fillRect(8000, -2425, 2000, 2225);
+            ctx.fillRect(4000, -2375, 2000, 2100);
+            ctx.fillRect(11125, -2425, 1000, 2150)
+            level.exit.drawAndCheck();
+            level.enter.draw();
+            if (buttonRight.isUp) {
+                buttonRight.query();
+                if (!buttonRight.isUp) {
+                    requestAnimationFrame(() => buttonLeft.isUp = true);
+                    setMoverDirection(0, -baseMoverSpeed, -0.0005)
+                    const list = Matter.Query.region(body, buttonLeft) //are any blocks colliding with this
+                    if (list.length > 0) Matter.Body.setVelocity(list[0], { x: baseMoverSpeed, y: -20 });
+                }
+            } else if (buttonLeft.isUp) {
+                buttonLeft.query();
+                if (!buttonLeft.isUp) {
+                    requestAnimationFrame(() => buttonRight.isUp = true);
+                    setMoverDirection(0, 20, 0.0005)
+                    const list = Matter.Query.region(body, buttonRight) //are any blocks colliding with this
+                    if (list.length > 0) Matter.Body.setVelocity(list[0], { x: -15, y: -20 });
+                }
+            }
+            buttonRight.draw();
+            buttonLeft.draw();
+            for (let i = 0; i < movers.length; i++) movers[i].push();
+            for (let i = 0; i < boosts.length; i++) boosts[i].query();
+        };
+        level.customTopLayer = () => {
+            for (let i = 0; i < fizzlers.length; i++) fizzlers[i].query();
+            ctx.fillStyle = color1 //exit
+            ctx.fillRect(13400, -1325, 1000, 825);
+            //shadows
+            ctx.fillStyle = color2
+            ctx.fillRect(-500, 225, 494, 350);
+            ctx.fillStyle = "rgba(0,5,10,0.06)"
+            ctx.beginPath();
+            ctx.moveTo(0, -1180)
+            ctx.lineTo(225, -1180)
+            ctx.lineTo(3220, 669)
+            ctx.lineTo(3180, 1010)
+            ctx.lineTo(-2960, 1010)
+            ctx.lineTo(-2995, 674)
+            ctx.fill()
+            ctx.beginPath();
+            //right button room
+            ctx.beginPath();
+            ctx.moveTo(3780, 720)
+            ctx.lineTo(4325, 720)
+            ctx.lineTo(4325, 1010)
+            ctx.lineTo(3810, 1010)
+            ctx.fill()
+            //left button room
+            ctx.beginPath();
+            ctx.moveTo(-3755, 675)
+            ctx.lineTo(-3785, 1010)
+            ctx.lineTo(-4250, 1010)
+            ctx.lineTo(-4250, 675)
+            ctx.fill()
+            ctx.fillStyle = "rgba(68, 68, 68,0.9)"
+            ctx.fillRect(-50, -4300, 325, 1950);
+            for (let i = 0; i < movers.length; i++) movers[i].draw();
+        };
+        spawn.mapRect(-6000, 1000, 12000, 3000); //floor
+        spawn.mapRect(-6000, -4300, 6020, 1950);
+        spawn.mapRect(205, -4300, 15120, 1950);
+        spawn.mapVertex(-250, 602.5, "-200 0  235 0 400 50  400 150  -200 150");
+        spawn.mapVertex(-3675, -2275, "0 0  500 0  0 500");
+        spawn.mapVertex(13275, -2275, "0 0  -500 0  0 500");
+        spawn.mapRect(-525, -1175, 525, 1450);
+        spawn.mapRect(225, -1175, 3000, 1850);
+        spawn.mapRect(-3000, -1175, 2525, 1850);
+        spawn.mapRect(-4350, -2500, 600, 3175);
+        spawn.mapRect(-6000, -2350, 1775, 3350);
+        spawn.mapVertex(-1900, 675, "-350 0  -250 100  250 100  350 0");
+        spawn.mapVertex(-800, 675, "-350 0  -250 100  250 100  350 0");
+        spawn.mapVertex(1000, 675, "-350 0  -250 100  250 100  350 0");
+        spawn.mapVertex(2100, 675, "-350 0  -250 100  250 100  350 0");
+
+        spawn.mapVertex(-1900, -1450, "-400 -40  -350 -90   350 -90 400 -40   400 40 350 90  -350 90 -400 40");
+        spawn.mapVertex(-800, -1450, "-400 -40  -350 -90   350 -90 400 -40   400 40 350 90  -350 90 -400 40");
+        spawn.mapVertex(1000, -1450, "-400 -40  -350 -90   350 -90 400 -40   400 40 350 90  -350 90 -400 40");
+        spawn.mapVertex(2100, -1450, "-400 -40  -350 -90   350 -90 400 -40   400 40 350 90  -350 90 -400 40");
+
+        spawn.mapVertex(-1900, -2350, "-450 0  -350 100  350 100  450 0");
+        spawn.mapVertex(-800, -2350, "-450 0  -350 100  350 100  450 0");
+        spawn.mapVertex(1000, -2350, "-450 0  -350 100  350 100  450 0");
+        spawn.mapVertex(2100, -2350, "-450 0  -350 100  350 100  450 0");
+        spawn.mapRect(-1500, 840, 300, 20);
+        spawn.mapRect(1400, 840, 300, 20);
+        //ramp to catch blocks
+        spawn.mapVertex(3001, -1260, "0 0  400 -200  550 -200  550 75  0 75");
+        spawn.mapVertex(4100, -1100, "-625 0  -600 -60  600 -60  625 0  600 60  -600 60");
+        spawn.mapVertex(5550, -750, "-625 0  -600 -60  600 -60  625 0  600 60  -600 60");
+        spawn.mapVertex(11625, -900, "-525 0  -500 -50  500 -50  525 0  500 50  -500 50");
+        //base for mover
+        spawn.mapVertex(5000, -1935, "-1050 0  -1000 -90  1000 -90  1050 0  1000 90  -1000 90");
+        spawn.mapVertex(9000, -1035, "-1050 0  -1000 -90  1000 -90  1050 0  1000 90  -1000 90");
+        spawn.mapVertex(5000, -2370, "-1200 0  -1000 100  1000 100  1200 0");
+        spawn.mapVertex(9000, -2310, "-1200 0  -1000 100  1000 100  1200 0");
+        spawn.mapVertex(11625, -2310, "-600 0  -500 100  500 100  600 0");
+        spawn.mapRect(3775, -400, 675, 1125);
+        spawn.mapRect(4300, -400, 11025, 4400);
+        //exit
+        spawn.mapRect(13400, -575, 1925, 300);
+        spawn.mapRect(14275, -2375, 1050, 2050);
+        spawn.mapRect(13400, -2375, 900, 1125);
+
+
+        //blocks on movers
+        spawn.bodyRect(-200, 950, 50, 50);
+        spawn.bodyRect(-1100, 925, 65, 75);
+        spawn.bodyRect(-2275, 975, 70, 25);
+        spawn.bodyRect(-3325, 925, 75, 75);
+        spawn.bodyRect(-2950, -1225, 90, 25);
+        spawn.bodyRect(-1425, -1275, 45, 75);
+        spawn.bodyRect(600, -1275, 70, 75);
+        spawn.bodyRect(1900, -1225, 90, 50);
+        spawn.bodyRect(4250, -2100, 115, 50);
+        spawn.bodyRect(2175, 900, 100, 65);
+        spawn.bodyRect(4075, -450, 75, 20);
+        spawn.bodyRect(8350, -1175, 90, 50);
+        spawn.bodyRect(6525, -525, 70, 100);
+        spawn.bodyRect(12025, -475, 130, 50);
+        spawn.bodyRect(625, 950, 55, 45);
+        spawn.bodyRect(6250, -450, 55, 25);
+        spawn.bodyRect(3950, -475, 46, 53);
+        //other blocks
+        spawn.bodyRect(3525, -1300, 100, 125, 0.6);
+        spawn.bodyRect(11550, -1150, 100, 200, 0.4);
+
+        spawn.randomMob(-1775, -1650, 0);
+        spawn.randomMob(950, -1775, 0);
+        spawn.randomMob(1550, 775, 0);
+        spawn.randomMob(4500, -1250, 0);
+        spawn.randomMob(11400, -1300, 0);
+        spawn.randomMob(-800, -1675, 0);
+        spawn.randomMob(-1325, 775, 0.1);
+        spawn.randomMob(2050, -1625, 0.1);
+        spawn.randomMob(3100, -1475, 0.2);
+        spawn.randomMob(5400, -900, 0.2);
+        spawn.randomMob(11950, -1025, 0.3);
+        spawn.randomMob(-925, -1700, 0.3);
+        spawn.randomMob(2025, -1725, 0.4);
+        spawn.randomMob(1575, 775, 0.4);
+        spawn.randomMob(-1350, 775, 0.6);
+        spawn.randomMob(11925, -1275, 0.6);
+        spawn.randomMob(4325, -1425, 0.6);
+        spawn.randomMob(5425, -950, 0.6);
+        spawn.randomMob(3575, 375, 0.6);
+        spawn.randomGroup(5300, -1400, 1.3);
+
+        spawn.randomLevelBoss(2025, -1825);
+        spawn.secondaryBossChance(-1900, -1800);
+        powerUps.spawnStartingPowerUps(11750, -1000);
+        powerUps.addResearchToLevel() //needs to run after mobs are spawned
     },
     testChamber() {
         level.setPosToSpawn(0, -50); //lower start
