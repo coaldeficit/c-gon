@@ -9,7 +9,7 @@ const level = {
     levelsCleared: 0,
     //see level.populateLevels:   (intro, ... , reservoir, reactor, ... , gauntlet, final)    added later
     playableLevels: ["labs", "rooftops", "skyscrapers", "warehouse", "highrise", "office", "aerie", "satellite", "sewers", "testChamber", "pavilion"],
-    modernPlayableLevels: ["lock", "towers", "flocculation", "gravitron", "substructure"],
+    modernPlayableLevels: ["lock", "towers", "flocculation", "gravitron", "substructure", "corridor"],
     cgonLevels: ["descent", "split", "bifurcate"],
     communityLevels: ["stronghold", "basement", "crossfire", "vats", "n-gon", "house", "perplex", "coliseum", "tunnel", "islands"],
     modernCommunityLevels: ["dripp", "fortress", "commandeer", "clock", "buttonbutton", "downpour", "LaunchSite", "shipwreck"],
