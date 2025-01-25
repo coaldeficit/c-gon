@@ -412,7 +412,9 @@ const m = {
         m.displayHealth();
 
         //randomize field
-        m.setField(Math.ceil(Math.random() * (m.fieldUpgrades.length - 1)))
+        let fieldPick = Math.ceil(Math.random() * (m.fieldUpgrades.length - 1))
+        if (fieldPick == 1 && tech.isCollisionRealitySwitch) fieldPick = Math.ceil(Math.random() * (m.fieldUpgrades.length - 1)) // if picked standing wave with non-unitary operator, reroll, but only once
+        m.setField(fieldPick)
 
 
         //removes guns and ammo  
@@ -436,7 +438,7 @@ const m = {
             //find what tech I could get
             let options = [];
             for (let i = 0, len = tech.tech.length; i < len; i++) {
-                if (tech.tech[i].count < tech.tech[i].maxCount && tech.tech[i].allowed() && !tech.tech[i].isBadRandomOption && !tech.tech[i].isLore && !tech.tech[i].isJunk && !tech.tech[i].isAltRealityTech) {
+                if (tech.tech[i].count < tech.tech[i].maxCount && tech.tech[i].allowed() && !tech.tech[i].isBadRandomOption && !tech.tech[i].isLore && !tech.tech[i].isJunk && !tech.tech[i].isAltRealityTech && ((tech.isQubit && (tech.tech[i].name == 'NAND gate' || tech.tech[i].name == 'transistor')) ? false : true)) {
                     for (let j = 0; j < tech.tech[i].frequency; j++) options.push(i);
                 }
             }

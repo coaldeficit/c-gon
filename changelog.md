@@ -1,3 +1,8 @@
+# agonizing realities (2025/01/25)
+- getting standing wave in an alternate reality from non-unitary operator is now far rarer
+- fixed being able to get NAND gate and transistor via alternate reality with qubit
+- - ever since its addition qubit made it so NAND gate and transistor dont get taken away in reality changes if you have it
+- - because of this, every alternate reality run with qubit would eventually converge into eventually having those 2 techs even if you didnt select them on your own
 # happy new year (2025/01/01)
 - ported corridor
 # porting Q (2024/11/13)
