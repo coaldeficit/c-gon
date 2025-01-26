@@ -1,3 +1,14 @@
+# play cambria sword right this instant (2025/01/26)
+- added a new gun: flank: uses energy to shoot 2 orbs at an angle that split into bullets going forwards and backwards
+- added 5 new tech:
+- - vector direction: flank shoots a 3rd orb forwards, but uses 30% more energy per shot
+- - antiparallel vector: flank orbs shoot an additional bullet going backwards, but flank uses 50% more energy per shot
+- - energy flux: flank orbs generate energy in contact with mobs, but flank's bullets deal less damage
+- - intersection: flank bullets can pierce through walls and mobs
+- - Newton–Raphson method: flank's crouch fire is replaced with a downwards tripwire that uses 90 energy and creates 3 powerful projectiles on contact with mobs
+- moved corridor to gimmick maps due to being unoptimized for c-gon
+- added unchartedCave to gimmick maps for the same reason as corridor after being left unused for basically as long as c-gon existed
+- WIMPs tech now gives 4 research per stack instead of 5, and WIMP particles now speed up with distance
 # agonizing realities (2025/01/25)
 - getting standing wave in an alternate reality from non-unitary operator is now far rarer
 - fixed being able to get NAND gate and transistor via alternate reality with qubit

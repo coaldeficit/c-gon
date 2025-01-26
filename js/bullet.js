@@ -4120,6 +4120,175 @@ const b = {
         }
         Matter.Body.setVelocity(bullet[me], effectivevelocity);
     },
+    flankOrb(mirror, angle = m.angle) {
+        const me = bullet.length;
+        const position = {
+            x: m.pos.x+(Math.cos(m.angle)*20),
+            y: m.pos.y+(Math.sin(m.angle)*20)
+        }
+        const velocity = {
+            x: Math.cos(m.angle+((Math.PI*mirror)/6))*12,
+            y: Math.sin(m.angle+((Math.PI*mirror)/6))*12,
+        }
+        bullet[me] = Bodies.polygon(position.x, position.y, 30, 11, {
+            density: 0.00001, //  0.001 is normal density
+            frictionAir: 0,
+            classType: "bullet",
+            collisionFilter: {
+                category: cat.bullet,
+                mask: 0
+            },
+            endCycle: simulation.cycle+11,
+            onEnd() {
+                b.flankBullet(this.position,angle,1)
+                b.flankBullet(this.position,angle+Math.PI,1.5)
+                if (tech.isFlankExtraBack) {
+                    b.flankBullet(this.position,angle+Math.PI+((Math.random()-0.5)*0.25),1.6)
+                }
+            },
+            do() {
+                const whom = Matter.Query.collides(this, mob)
+                if (whom.length) {
+                    this.endCycle -= 2
+                    if (tech.isFlankOrbEnergy) {
+                        m.energy += 0.027
+                        simulation.drawList.push({
+                            x: this.position.x,
+                            y: this.position.y,
+                            radius: Math.log(1.34) * 40 * 1 + 3,
+                            color: "#0cf",
+                            time: simulation.drawTime
+                        });
+                    }
+                }
+            }
+        });
+        Composite.add(engine.world, bullet[me]); //add bullet to world
+        Matter.Body.setVelocity(bullet[me], velocity);
+    },
+    flankBullet(pos, angle, dmg = 1) {
+        dmg *= (tech.isFlankOrbEnergy ? 0.67 : 1)
+        const me = bullet.length;
+        bullet[me] = Bodies.rectangle(pos.x, pos.y, 35, 10, b.fireAttributes(Math.atan2(Math.sin(angle), Math.cos(angle))));
+        Matter.Body.setVelocity(bullet[me], {x:Math.cos(angle)*52,y:Math.sin(angle)*52});
+        Composite.add(engine.world, bullet[me]); //add bullet to world
+        bullet[me].endCycle = simulation.cycle + 60
+        bullet[me].dmg = dmg
+        bullet[me].collisionFilter.mask = 0
+        bullet[me].beforeDmg = function(who) {};
+        bullet[me].do = function() {
+            const mapHit = Matter.Query.collides(this, map)
+            const blockHit = Matter.Query.collides(this, body)
+            if (mapHit.length || blockHit.length) {
+                if (!tech.isFlankPierce) {
+                    this.endCycle = -1
+                } else {
+                    this.endCycle -= 6
+                }
+            }
+            const whom = Matter.Query.collides(this, mob)
+            if (whom.length && this.endCycle != -1) {
+                who = whom[0].bodyA
+                if (who && who.mob && this.immune != who.id) {
+                    if (this.immune != null || !tech.isFlankPierce) {
+                        this.endCycle = -1
+                    } else {
+                        this.immune = who.id
+                    }
+                    who.damage(this.dmg, false);
+                    if (who.alive) who.foundPlayer();
+                    if (who.damageReduction) {
+                        simulation.drawList.push({ //add dmg to draw queue
+                            x: this.position.x,
+                            y: this.position.y,
+                            radius: Math.log(dmg + 1.1) * 40 * who.damageReduction + 3,
+                            color: simulation.playerDmgColor,
+                            time: simulation.drawTime
+                        });
+                    }
+                }
+            }
+        };
+    },
+    flankObliterator(angle) {
+        const me = bullet.length;
+        const velocity = {
+            x: Math.cos(angle)*34,
+            y: Math.sin(angle)*34,
+        }
+        bullet[me] = Bodies.polygon(m.pos.x, m.pos.y, 30, 30, {
+            density: 0.00001, //  0.001 is normal density
+            frictionAir: 0,
+            classType: "bullet",
+            collisionFilter: {
+                category: cat.bullet,
+                mask: 0
+            },
+            endCycle: simulation.cycle+120,
+            dontRender: true,
+            ignore: [],
+            history: [],
+            ignoreBosses: false,
+            onEnd() {},
+            do() {
+                let nearest = [null, Infinity]
+                for (let victim of mob) {
+                    if (!victim.isBadTarget && Vector.magnitude(Vector.sub(m.pos, victim.position)) < level.defaultZoom*1.7) {
+                        let distance = Vector.magnitude(Vector.sub(this.position, victim.position))
+                        if (victim.isBoss) distance *= this.ignoreBosses ? Infinity : 0.333
+                        if (distance < nearest[1]) nearest = [victim, distance]
+                    }
+                }
+                if (nearest[0] != null) {
+                    const sub = Vector.sub(nearest[0].position, this.position)
+                    const angle2 = Math.atan2(this.velocity.y,this.velocity.x)
+                    const targetAngle = angle2+Math.max(Math.min(this.angleDifference(angle2, Math.atan2(sub.y,sub.x)),0.3),-0.3)
+                    Matter.Body.setVelocity(this, {x:Math.cos(targetAngle)*34,y:Math.sin(targetAngle)*34})
+                }
+                
+                const whom = Matter.Query.collides(this, mob)
+                if (whom.length) {
+                    who = whom[0].bodyA
+                    if (who && who.mob && !this.ignore.includes(who.id) && (who.isBoss ? !this.ignoreBosses : true)) {
+                        if (who.isBoss) this.ignoreBosses = true
+                        who.damage(30, true);
+                        this.ignore.push(who.id)
+                    }
+                }
+                // visuals
+                this.history.push({x:this.position.x,y:this.position.y})
+                for (let i=0;i<16;i++) {
+                    if (this.history[this.history.length-(2+i)] != null) {
+                        ctx.beginPath()
+                        ctx.moveTo(this.history[this.history.length-(1+i)].x,this.history[this.history.length-(1+i)].y)
+                        ctx.lineTo(this.history[this.history.length-(2+i)].x,this.history[this.history.length-(2+i)].y)
+                        ctx.lineWidth = (66-(i*4))
+                        ctx.strokeStyle = "rgba(127,0,255,1)"
+                        ctx.stroke()
+                    }
+                }
+                for (let i=0;i<8;i++) {
+                    if (this.history[this.history.length-(2+i)] != null) {
+                        ctx.beginPath()
+                        ctx.moveTo(this.history[this.history.length-(1+i)].x,this.history[this.history.length-(1+i)].y)
+                        ctx.lineTo(this.history[this.history.length-(2+i)].x,this.history[this.history.length-(2+i)].y)
+                        ctx.lineWidth = (33-(i*4))
+                        ctx.strokeStyle = "rgba(255,255,255,1)"
+                        ctx.stroke()
+                    }
+                }
+            },
+            angleDifference(sourceA, targetA) {
+                let mod = function(a, n) {
+                    return (a % n + n) % n;
+                };
+                let a = targetA - sourceA;
+                return mod(a + Math.PI, 2*Math.PI) - Math.PI;
+            }
+        });
+        Composite.add(engine.world, bullet[me]); //add bullet to world
+        Matter.Body.setVelocity(bullet[me], velocity);
+    },
     needle(angle = m.angle) {
         const me = bullet.length;
         bullet[me] = Bodies.rectangle(m.pos.x + 40 * Math.cos(m.angle), m.pos.y + 40 * Math.sin(m.angle), 75 * tech.bulletSize, 0.75 * tech.bulletSize, b.fireAttributes(angle));
@@ -8046,6 +8215,68 @@ const b = {
                     m.fireCDcycle = m.cycle + Math.floor(60 * b.fireCDscale * (input.down?1.5:1) * (tech.isRebarEnergy?0.4:1)); // cool down
                 }
                 
+            }
+        }, {
+            name: "flank", // https://youtu.be/QIE3PROsn-o?&t=2631
+            description: "use <strong class='color-f'>energy</strong> to generate orbs that <strong>split</strong><br>into <strong>bullets</strong> going forwards and backwards",
+            ammo: 0,
+            ammoPack: Infinity,
+            defaultAmmoPack: Infinity,
+            have: false,
+            do() {
+                if (this.performingTheFunny) {
+                    ctx.beginPath()
+                    ctx.moveTo(m.pos.x, m.pos.y);
+                    ctx.lineTo(m.pos.x, m.pos.y+1330);
+                    ctx.lineWidth = "2";
+                    ctx.strokeStyle = "rgba(255,0,0,0.75)"
+                    ctx.stroke()
+                    if (m.fireCDcycle <= m.cycle+5) {
+                        this.performingTheFunny = false
+                    } else if (Matter.Query.ray(mob,m.pos,{x:m.pos.x,y:m.pos.y+1330}).length) {
+                        this.performingTheFunny = false
+                        m.fireCDcycle = -1
+                        simulation.ephemera.push({
+                            name: "Flank Immediate Fucking Obliteration" + m.cycle,
+                            time: 0,
+                            do() {
+                                this.time++
+                                switch (this.time) {
+                                    case 1:
+                                        b.flankObliterator(Math.PI/2)
+                                        break
+                                    case 9:
+                                        b.flankObliterator((Math.PI/2)+(Math.PI/4))
+                                        break
+                                    case 17:
+                                        b.flankObliterator((Math.PI/2)-(Math.PI/4))
+                                        break
+                                }
+                                if (this.time >= 17) {
+                                    simulation.removeEphemera(this.name);
+                                }
+                            },
+                        })
+                    }
+                }
+            },
+            performingTheFunny: false,
+            fire() {
+                let energyUsage = 0.02 * (tech.isFlank3Orb?1.3:1) * (tech.isFlankExtraBack?1.5:1)
+                if (m.energy > energyUsage+0.005) {
+                    if (!tech.isFlankCambriaSwordWeaponSevenChargeShot || !(input.down && m.energy > m.maxEnergy*0.8)) {
+                        let crouch = tech.isFlankCambriaSwordWeaponSevenChargeShot ? 0 : input.down 
+                        b.flankOrb(-1 + (crouch*0.667))
+                        b.flankOrb(1 - (crouch*0.667))
+                        if (tech.isFlank3Orb) b.flankOrb(0)
+                        m.fireCDcycle = m.cycle + Math.floor((7+(crouch*3)) * b.fireCDscale); // cool down
+                        m.energy -= energyUsage
+                    } else {
+                        this.performingTheFunny = true
+                        m.energy -= m.maxEnergy*0.75
+                        m.fireCDcycle = m.cycle + 240
+                    }
+                }
             }
         },
     ],

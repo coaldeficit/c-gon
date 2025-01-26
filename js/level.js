@@ -9,12 +9,12 @@ const level = {
     levelsCleared: 0,
     //see level.populateLevels:   (intro, ... , reservoir, reactor, ... , gauntlet, final)    added later
     playableLevels: ["labs", "rooftops", "skyscrapers", "warehouse", "highrise", "office", "aerie", "satellite", "sewers", "testChamber", "pavilion"],
-    modernPlayableLevels: ["lock", "towers", "flocculation", "gravitron", "substructure", "corridor"],
+    modernPlayableLevels: ["lock", "towers", "flocculation", "gravitron", "substructure"],
     cgonLevels: ["descent", "split", "bifurcate"],
     communityLevels: ["stronghold", "basement", "crossfire", "vats", "n-gon", "house", "perplex", "coliseum", "tunnel", "islands"],
     modernCommunityLevels: ["dripp", "fortress", "commandeer", "clock", "buttonbutton", "downpour", "LaunchSite", "shipwreck"],
     gimmickLevels: ["run", "temple", "biohazard", "stereoMadness", "yingYang", "staircase", "superNgonBros", "underpass", "cantilever", "tlinat", "ruins",
-    "dojo", "flappyGon", "rings", "trial"],
+    "dojo", "flappyGon", "rings", "trial", "unchartedCave", "corridor"],
     // ace is bugged, crimsonTowers is laggy and possibly infringes copyright
     // unchartedCave is laggy, arena uses non-existent matter functions
     // soft: soft-bodies dont despawn properly on level exit, causing buildup and lag
@@ -147,7 +147,7 @@ const level = {
         if (tech.isMACHO) spawn.MACHO()
         for (let i = 0; i < tech.wimpCount; i++) {
             spawn.WIMP()
-            for (let j = 0, len = 5; j < len; j++) powerUps.spawn(level.exit.x + 100 * (Math.random() - 0.5), level.exit.y - 100 + 100 * (Math.random() - 0.5), "research", false)
+            for (let j = 0, len = 4; j < len; j++) powerUps.spawn(level.exit.x + 100 * (Math.random() - 0.5), level.exit.y - 100 + 100 * (Math.random() - 0.5), "research", false)
         }
         for (let i = 0; i < tech.wimpExperiment; i++) spawn.WIMP()
         // if (tech.isFlipFlopLevelReset && !tech.isFlipFlopOn) {

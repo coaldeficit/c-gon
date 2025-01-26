@@ -7848,6 +7848,102 @@ const tech = {
                 tech.isHydrogenHeavy = false;
             }
         },
+        {
+            name: "vector direction",
+            description: "<strong>flank</strong> shoots a third <strong>orb</strong><br>but uses <strong>30%</strong> more <strong class='color-f'>energy</strong> per shot",
+            isGunTech: true,
+            maxCount: 1,
+            count: 0,
+            frequency: 2,
+            frequencyDefault: 2,
+            allowed() {
+                return tech.haveGunCheck("flank") && !tech.isFlankExtraBack
+            },
+            requires: "flank, not Archie's law",
+            effect() {
+                tech.isFlank3Orb = true;
+            },
+            remove() {
+                tech.isFlank3Orb = false;
+            }
+        },
+        {
+            name: "antiparallel vector",
+            description: "<strong>flank orbs</strong> shoot an extra <strong>bullet</strong> heading <strong>backwards</strong><br>but <strong>flank</strong> uses <strong>50%</strong> more <strong class='color-f'>energy</strong> per shot",
+            isGunTech: true,
+            maxCount: 1,
+            count: 0,
+            frequency: 2,
+            frequencyDefault: 2,
+            allowed() {
+                return tech.haveGunCheck("flank") && !tech.isFlank3Orb
+            },
+            requires: "flank, not Byerlee's law",
+            effect() {
+                tech.isFlankExtraBack = true;
+            },
+            remove() {
+                tech.isFlankExtraBack = false;
+            }
+        },
+        {
+            name: "energy flux",
+            description: "<strong>flank orbs</strong> generate <strong class='color-f'>energy</strong> on contact with <strong>mobs</strong><br>but <strong>flank</strong> bullets deal <strong>33%</strong> less <strong class='color-d'>damage</strong>",
+            isGunTech: true,
+            maxCount: 1,
+            count: 0,
+            frequency: 2,
+            frequencyDefault: 2,
+            allowed() {
+                return tech.haveGunCheck("flank") && !tech.isFlankPierce
+            },
+            requires: "flank, not ?",
+            effect() {
+                tech.isFlankOrbEnergy = true;
+            },
+            remove() {
+                tech.isFlankOrbEnergy = false;
+            }
+        },
+        {
+            name: "intersection",
+            link: `<a target="_blank" href='https://en.wikipedia.org/wiki/Intersection_(geometry)' class="link">intersection</a>`,
+            description: "<strong>flank</strong> bullets can pierce through <strong>walls</strong> and <strong>mobs</strong>",
+            isGunTech: true,
+            maxCount: 1,
+            count: 0,
+            frequency: 2,
+            frequencyDefault: 2,
+            allowed() {
+                return tech.haveGunCheck("flank") && !tech.isFlankOrbEnergy
+            },
+            requires: "flank, not energy flux",
+            effect() {
+                tech.isFlankPierce = true;
+            },
+            remove() {
+                tech.isFlankPierce = false;
+            }
+        },
+        {
+            name: "Newton–Raphson method",
+            description: "flank's <strong>crouch-shot</strong> is replaced by a <strong>line</strong><br>that uses <strong>75%</strong> of your <strong class='color-f'>energy</strong> and fires<br><strong class='color-d'>very damaging bullets</strong> on contact with <strong>mobs</strong>",
+            isGunTech: true,
+            maxCount: 1,
+            count: 0,
+            frequency: 2,
+            frequencyDefault: 2,
+            allowed() {
+                return tech.haveGunCheck("flank")
+            },
+            requires: "flank",
+            effect() {
+                tech.isFlankCambriaSwordWeaponSevenChargeShot = true;
+            },
+            remove() {
+                tech.isFlankCambriaSwordWeaponSevenChargeShot = false;
+            }
+        },
         //************************************************** 
         //************************************************** field
         //************************************************** tech
@@ -8997,7 +9093,7 @@ const tech = {
             effect: () => {
                 tech.wimpCount++
                 spawn.WIMP()
-                for (let j = 0, len = 1 + 5 * Math.random(); j < len; j++) powerUps.spawn(level.exit.x + 100 * (Math.random() - 0.5), level.exit.y - 100 + 100 * (Math.random() - 0.5), "research", false)
+                for (let j = 0, len = 1 + 4 * Math.random(); j < len; j++) powerUps.spawn(level.exit.x + 100 * (Math.random() - 0.5), level.exit.y - 100 + 100 * (Math.random() - 0.5), "research", false)
             },
             remove() {
                 tech.wimpCount = 0
@@ -11645,6 +11741,11 @@ const tech = {
     bulletSize: null,
     energySiphon: null,
     healthDrain: null,
+    isFlankCambriaSwordWeaponSevenChargeShot: null,
+    isFlankPierce: null,
+    isFlankOrbEnergy: null,
+    isFlankExtraBack: null,
+    isFlank3Orb: null,
     isPWBlockDecay: null,
     isPWTransferBlocks: null,
     isDeBroglie: null,

@@ -247,8 +247,8 @@ const spawn = {
         me.awake = function() {
             //chase player
             const sub = Vector.sub(player.position, this.position)
-            const where = Vector.add(this.position, Vector.mult(Vector.normalise(sub), this.chaseSpeed))
-
+            const mag = Vector.magnitude(sub)
+            const where = Vector.add(this.position, Vector.mult(Vector.normalise(sub), this.chaseSpeed*Math.max(1,mag/(325-(tech.wimpCount*3)))))
             Matter.Body.setPosition(this, { //hold position
                 x: where.x,
                 y: where.y
