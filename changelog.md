@@ -5,7 +5,7 @@
 - - antiparallel vector: flank orbs shoot an additional bullet going backwards, but flank uses 50% more energy per shot
 - - energy flux: flank orbs generate energy in contact with mobs, but flank's bullets deal less damage
 - - intersection: flank bullets can pierce through walls and mobs
-- - Newton–Raphson method: flank's crouch fire is replaced with a downwards tripwire that uses 90 energy and creates 3 powerful projectiles on contact with mobs
+- - Newton–Raphson method: flank's crouch fire is replaced with a downwards tripwire that uses 75% energy and creates 3 powerful homing projectiles on contact with mobs
 - moved corridor to gimmick maps due to being unoptimized for c-gon
 - added unchartedCave to gimmick maps for the same reason as corridor after being left unused for basically as long as c-gon existed
 - WIMPs tech now gives 4 research per stack instead of 5, and WIMP particles now speed up with distance
