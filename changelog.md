@@ -1,3 +1,9 @@
+# oops its busted (2025/01/27)
+- Newton–Raphson method changes:
+- - removes 75% of current energy alongside 75% of max energy on activation if above 160% energy
+- - reduced projectile homing range
+- - projectiles can now only home in on mobs you have a direct line of sight to
+- - detection line can no longer go through map geometry and is far shorter
 # play cambria sword right this instant (2025/01/26)
 - added a new gun: flank: uses energy to shoot 2 orbs at an angle that split into bullets going forwards and backwards
 - added 5 new tech:

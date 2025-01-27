@@ -4233,7 +4233,7 @@ const b = {
             do() {
                 let nearest = [null, Infinity]
                 for (let victim of mob) {
-                    if (!victim.isBadTarget && Vector.magnitude(Vector.sub(m.pos, victim.position)) < level.defaultZoom*1.7) {
+                    if (!victim.isBadTarget && Vector.magnitude(Vector.sub(m.pos, victim.position)) < level.defaultZoom*1.3 && !Matter.Query.ray(map,m.pos,victim.position).length) {
                         let distance = Vector.magnitude(Vector.sub(this.position, victim.position))
                         if (victim.isBoss) distance *= this.ignoreBosses ? Infinity : 0.333
                         if (distance < nearest[1]) nearest = [victim, distance]
@@ -8227,13 +8227,20 @@ const b = {
                 if (this.performingTheFunny) {
                     ctx.beginPath()
                     ctx.moveTo(m.pos.x, m.pos.y);
-                    ctx.lineTo(m.pos.x, m.pos.y+1330);
+                    let depth = 700
+                    for (let i=0;i<14;i++) {
+                        if (!Matter.Query.ray(map,m.pos,{x:m.pos.x,y:m.pos.y+(700-(i*50))}).length) {
+                            depth = Math.min(700-((i-1)*50),700)
+                            break
+                        }
+                    }
+                    ctx.lineTo(m.pos.x, m.pos.y+depth);
                     ctx.lineWidth = "2";
                     ctx.strokeStyle = "rgba(255,0,0,0.75)"
                     ctx.stroke()
                     if (m.fireCDcycle <= m.cycle+5) {
                         this.performingTheFunny = false
-                    } else if (Matter.Query.ray(mob,m.pos,{x:m.pos.x,y:m.pos.y+1330}).length) {
+                    } else if (Matter.Query.ray(mob,m.pos,{x:m.pos.x,y:m.pos.y+depth}).length) {
                         this.performingTheFunny = false
                         m.fireCDcycle = -1
                         simulation.ephemera.push({
@@ -8273,6 +8280,7 @@ const b = {
                         m.energy -= energyUsage
                     } else {
                         this.performingTheFunny = true
+                        if (m.energy > m.maxEnergy*1.6) m.energy -= m.energy*0.75
                         m.energy -= m.maxEnergy*0.75
                         m.fireCDcycle = m.cycle + 240
                     }
