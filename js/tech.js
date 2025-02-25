@@ -7781,7 +7781,7 @@ const tech = {
             frequency: 2,
             frequencyDefault: 2,
             allowed() {
-                return (tech.haveGunCheck("rebar") || tech.haveGunCheck("missiles")) && (tech.isHydrogenTrail || tech.isBlastHydrogen) && !tech.isHydrogenRadioactive
+                return (tech.haveGunCheck("rebar") || tech.haveGunCheck("missiles") || tech.haveGunCheck("blast") || tech.haveGunCheck("shotgun") || tech.missileBotCount) && (tech.isHydrogenTrail || tech.isBlastHydrogen) && !tech.isHydrogenRadioactive
             },
             requires: "hydrogen, not tritium",
             effect() {
@@ -7800,7 +7800,7 @@ const tech = {
             frequency: 2,
             frequencyDefault: 2,
             allowed() {
-                return (tech.haveGunCheck("rebar") || tech.haveGunCheck("missiles")) && (tech.isHydrogenTrail || tech.isBlastHydrogen) && !tech.isHydrogenRegression
+                return (tech.haveGunCheck("rebar") || tech.haveGunCheck("missiles") || tech.haveGunCheck("blast") || tech.haveGunCheck("shotgun") || tech.missileBotCount) && (tech.isHydrogenTrail || tech.isBlastHydrogen) && !tech.isHydrogenRegression
             },
             requires: "hydrogen, not hydrogen embrittlement",
             effect() {
@@ -7819,7 +7819,7 @@ const tech = {
             frequency: 2,
             frequencyDefault: 2,
             allowed() {
-                return (tech.haveGunCheck("rebar") || tech.haveGunCheck("missiles")) && (tech.isHydrogenTrail || tech.isBlastHydrogen) && !tech.isHydrogenHeavy
+                return (tech.haveGunCheck("rebar") || tech.haveGunCheck("missiles") || tech.haveGunCheck("blast") || tech.haveGunCheck("shotgun") || tech.missileBotCount) && (tech.isHydrogenTrail || tech.isBlastHydrogen) && !tech.isHydrogenHeavy
             },
             requires: "hydrogen, not deuterium",
             effect() {
@@ -7838,7 +7838,7 @@ const tech = {
             frequency: 2,
             frequencyDefault: 2,
             allowed() {
-                return (tech.haveGunCheck("rebar") || tech.haveGunCheck("missiles")) && (tech.isHydrogenTrail || tech.isBlastHydrogen) && !tech.isHydrogenCondense
+                return (tech.haveGunCheck("rebar") || tech.haveGunCheck("missiles") || tech.haveGunCheck("blast") || tech.haveGunCheck("shotgun") || tech.missileBotCount) && (tech.isHydrogenTrail || tech.isBlastHydrogen) && !tech.isHydrogenCondense
             },
             requires: "hydrogen, not cloud condensation nuclei",
             effect() {

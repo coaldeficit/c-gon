@@ -1480,7 +1480,7 @@ function setMaxLevelCountSetting() {
     document.getElementById("level-count").setAttribute("max",level.selectionAvailableMapCount.toString())
     if (simulation.mapSettings.levelCount > parseInt(document.getElementById("level-count").max)) {
         document.getElementById("level-count").value = parseInt(document.getElementById("level-count").max)
-        simulation.mapSettings.levelCount = document.getElementById("level-count").value
+        simulation.mapSettings.levelCount = parseInt(document.getElementById("level-count").value)
         localSettings.mapSettings.levelCount = simulation.mapSettings.levelCount
         if (localSettings.isAllowed) localStorage.setItem("localSettings", JSON.stringify(localSettings)); //update local storage
     }
@@ -1768,7 +1768,7 @@ document.getElementById("prefinal-map").addEventListener("input", () => {
     setMaxLevelCountSetting()
 });
 document.getElementById("level-count").addEventListener("input", () => {
-    simulation.mapSettings.levelCount = document.getElementById("level-count").value
+    simulation.mapSettings.levelCount = parseInt(document.getElementById("level-count").value)
     localSettings.mapSettings.levelCount = simulation.mapSettings.levelCount
     if (localSettings.isAllowed) localStorage.setItem("localSettings", JSON.stringify(localSettings)); //update local storage
     setMaxLevelCountSetting()

@@ -1,3 +1,6 @@
+# im being forced to learn kotlin help (2025/02/25)
+- fixed hydrogen guntech not being selectable with blast or shotgun with compressed gas
+- fixed level count in map settings not actually doing anything and just always being set to 15 at the start of every run
 # oops its busted (2025/01/27)
 - Newton–Raphson method changes:
 - - removes 75% of current energy alongside 75% of max energy on activation if above 160% energy
