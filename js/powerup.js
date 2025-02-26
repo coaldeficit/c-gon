@@ -236,7 +236,7 @@ const powerUps = {
     doDuplicatesVanish() { //draw power ups but give duplicates some electricity
         //remove power ups after 3 seconds
         for (let i = 0, len = powerUp.length; i < len; ++i) {
-            if (powerUp[i].isDuplicated && Math.random() < 0.004) { //  (1-0.004)^150 = chance to be removed after 3 seconds
+            if (powerUp[i].isDuplicated && Math.random() < 0.00230782347298) { //  (1-0.004)^300 = chance to be removed after 5 seconds
                 b.explosion(powerUp[i].position, 150 + (10 + 3 * Math.random()) * powerUp[i].size);
                 Matter.Composite.remove(engine.world, powerUp[i]);
                 powerUp.splice(i, 1);
@@ -355,7 +355,7 @@ const powerUps = {
                 tech.cancelCount++
                 tech.maxDuplicationEvent()
                 simulation.makeTextLog(`tech.duplicationChance() <span class='color-symbol'>+=</span> ${0.043}`)
-                simulation.circleFlare(0.043);
+                simulation.circleFlare(0.02);
             }
             if (tech.isCancelRerolls) {
                 for (let i = 0, len = 5 + 5 * Math.random(); i < len; i++) {
@@ -714,7 +714,7 @@ const powerUps = {
                 }
 
                 if (tech.isJunkResearch && powerUps.research.currentRerollCount < 3) {
-                    tech.junkResearchNumber = Math.floor(4 * Math.random())
+                    tech.junkResearchNumber = Math.floor(5 * Math.random())
                     text += `<div class="choose-grid-module" onclick="powerUps.research.use('field')"><div class="grid-title"> <span style="position:relative;">`
                     for (let i = 0; i < tech.junkResearchNumber; i++) text += `<div class="circle-grid junk" style="position:absolute; top:0; left:${15*i}px ;opacity:0.8; border: 1px #fff solid;"></div>`
                     text += `</span>&nbsp; <span class='research-select'>pseudoscience</span></div></div>`

@@ -1,3 +1,24 @@
+# unleash chernobyl (2025/02/26)
+- added 1 new tech:
+- - nuclear reactor meltdown: rebar shoots 2 less control rods + 1 extra control rod for each mob killed with rebar active before firing with it
+- higher explosion radius from techs now logarithmically decreases explosion damage
+- duplication chance now caps at 111%
+- nerfed futures exchange from 3% duplication chance per cancel to 2%
+- buffed stimulated emission from 15% duplication chance to 30% duplication chance
+- metastability changes:
+- - buffed duplication chance from 12% to 25%
+- - buffed duplicated powerup half life from 3 seconds to 5 seconds
+- born rule no longer deducts tech for having determinism and superdeterminism prior to picking it
+- determinism and superdeterminism now give 8 tech instead of 5
+- meta-analysis changes:
+- - now gives 4 research instead of 3
+- - now properly states how much research it gives in its description
+- Newton-Raphson method changes:
+- - projectiles now last 0.5 seconds shorter, but last an extra 0.1666 seconds longer for every enemy they hit
+- - projectiles are now worse at turning
+- - projectiles now ignore and dont collide with invulnerable enemies
+- - projectiles now prioritize mobs that drop powerups over those that dont
+- - projectiles now have a 50% larger hitbox and deal 50% more damage
 # im being forced to learn kotlin help (2025/02/25)
 - fixed hydrogen guntech not being selectable with blast or shotgun with compressed gas
 - fixed level count in map settings not actually doing anything and just always being set to 15 at the start of every run
