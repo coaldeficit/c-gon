@@ -130,6 +130,7 @@ const mobs = {
                         const w = who.radius * 2;
                         const x = who.position.x - w / 2;
                         const y = who.position.y - w * 0.7;
+                        ctx.beginPath();
                         ctx.fillStyle = "rgba(100, 100, 100, 0.3)";
                         ctx.fillRect(x, y, w, h);
                         ctx.fillStyle = `rgba(${Math.floor(255 * Math.random())},${Math.floor(255 * Math.random())},${Math.floor(255 * Math.random())},0.5)`
@@ -1201,10 +1202,11 @@ const mobs = {
                 this.alive = false; //triggers mob removal in mob[i].replace(i)
 
                 if (this.isDropPowerUp) {
+                    if (tech.isRebarControlRodSpam && b.guns[b.activeGun].name === 'rebar') tech.rebarControlRodSpamCount++
                     if (tech.iceIXOnDeath && this.isSlowed) {
                         for (let i = 0, len = 2 * Math.sqrt(Math.min(this.mass, 25)) * tech.iceIXOnDeath; i < len; i++) b.iceIX(3, Math.random() * 2 * Math.PI, this.position)
                     }
-                    if (tech.deathSpawnsFromBoss || (tech.deathSpawns && this.isDropPowerUp)) {
+                    if (tech.deathSpawnsFromBoss || tech.deathSpawns) {
                         const spawns = tech.deathSpawns + tech.deathSpawnsFromBoss
                         const len = Math.min(12, spawns * Math.ceil(Math.random() * simulation.difficulty * spawns))
                         for (let i = 0; i < len; i++) {

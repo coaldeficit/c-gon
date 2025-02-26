@@ -161,7 +161,7 @@ const tech = {
             if (tech.isMetaAnalysis && tech.tech[index].isJunk) {
                 simulation.makeTextLog(`//tech: meta-analysis replaced junk tech with random tech`);
                 tech.giveTech('random')
-                for (let i = 0; i < 3; i++) powerUps.spawn(m.pos.x + 40 * Math.random(), m.pos.y + 40 * Math.random(), "research");
+                for (let i = 0; i < 4; i++) powerUps.spawn(m.pos.x + 40 * Math.random(), m.pos.y + 40 * Math.random(), "research");
                 return
             }
 
@@ -270,11 +270,11 @@ const tech = {
         return dmg * tech.slowFire * tech.aimDamage
     },
     duplicationChance() {
-        return Math.max(0 + (tech.isPowerUpsVanish ? 0.12 : 0) + (tech.isStimulatedEmission ? 0.15 : 0) + tech.cancelCount * 0.03 + tech.duplicateChance + m.duplicateChance + tech.fieldDuplicate + tech.cloakDuplication + (tech.isAnthropicTech && tech.isDeathAvoidedThisLevel ? 0.5 : 0))
+        return Math.min(Math.max(0 + (tech.isPowerUpsVanish ? 0.25 : 0) + (tech.isStimulatedEmission ? 0.3 : 0) + tech.cancelCount * 0.02 + tech.duplicateChance + m.duplicateChance + tech.fieldDuplicate + tech.cloakDuplication + (tech.isAnthropicTech && tech.isDeathAvoidedThisLevel ? 0.5 : 0)),1.11)
     },
     isScaleMobsWithDuplication: false,
     maxDuplicationEvent() {
-        if (tech.is111Duplicate && tech.duplicationChance() > 1.11) {
+        if (tech.is111Duplicate && tech.duplicationChance() >= 1.11) {
             tech.is111Duplicate = false
             const range = 1300
             tech.isScaleMobsWithDuplication = true
@@ -1086,7 +1086,7 @@ const tech = {
             frequency: 2,
             frequencyDefault: 2,
             allowed() {
-                return tech.isStunField || tech.oneSuperBall || tech.isCloakStun || tech.orbitBotCount > 1 || tech.isExplosionStun || tech.haveGunCheck("blast")
+                return tech.isStunField || tech.oneSuperBall || tech.isCloakStun || tech.orbitBotCount > 1 || tech.isExplosionStun || tech.haveGunCheck("blast") || tech.isRebarStun
             },
             requires: "a stun effect",
             effect() {
@@ -3998,7 +3998,7 @@ const tech = {
         },
         {
             name: "determinism",
-            description: "spawn <strong>5</strong> <strong class='color-m'>tech</strong>, but you have only<br> <strong>1 choice</strong> for <strong class='color-m'>tech</strong>, <strong class='color-f'>fields</strong>, and <strong class='color-g'>guns</strong>",
+            description: "spawn <strong>8</strong> <strong class='color-m'>tech</strong>, but you have only<br> <strong>1 choice</strong> for <strong class='color-m'>tech</strong>, <strong class='color-f'>fields</strong>, and <strong class='color-g'>guns</strong>",
             maxCount: 1,
             count: 0,
             frequency: 1,
@@ -4011,8 +4011,7 @@ const tech = {
             requires: "NOT EXPERIMENT MODE, not emergence, cross disciplinary",
             effect: () => {
                 tech.isDeterminism = true;
-                //if you change the number spawned also change it in Born rule
-                for (let i = 0; i < 5; i++) powerUps.spawn(m.pos.x + 60 * (Math.random() - 0.5), m.pos.y + 60 * (Math.random() - 0.5), "tech");
+                for (let i = 0; i < 8; i++) powerUps.spawn(m.pos.x + 60 * (Math.random() - 0.5), m.pos.y + 60 * (Math.random() - 0.5), "tech");
             },
             remove() {
                 tech.isDeterminism = false;
@@ -4035,7 +4034,7 @@ const tech = {
         },
         {
             name: "superdeterminism",
-            description: `spawn <strong>5</strong> <strong class='color-m'>tech</strong>, but you have <strong>no cancel</strong><br>and ${powerUps.orb.research(1)}, no longer <strong>spawn</strong>`,
+            description: `spawn <strong>8</strong> <strong class='color-m'>tech</strong>, but you have <strong>no cancel</strong><br>and ${powerUps.orb.research(1)}, no longer <strong>spawn</strong>`,
             maxCount: 1,
             count: 0,
             frequency: 4,
@@ -4048,8 +4047,7 @@ const tech = {
             requires: "NOT EXPERIMENT MODE, determinism, not ansatz",
             effect: () => {
                 tech.isSuperDeterminism = true;
-                //if you change the number spawned also change it in Born rule
-                for (let i = 0; i < 5; i++) powerUps.spawn(m.pos.x + 60 * (Math.random() - 0.5), m.pos.y + 60 * (Math.random() - 0.5), "tech");
+                for (let i = 0; i < 8; i++) powerUps.spawn(m.pos.x + 60 * (Math.random() - 0.5), m.pos.y + 60 * (Math.random() - 0.5), "tech");
             },
             remove() {
                 tech.isSuperDeterminism = false;
@@ -4143,7 +4141,7 @@ const tech = {
         },
         {
             name: "meta-analysis",
-            description: `if you choose a <strong class='color-j'>JUNK</strong> <strong class='color-m'>tech</strong> you instead get a<br>random normal <strong class='color-m'>tech</strong> and ${powerUps.orb.research(1)}`,
+            description: `if you choose a <strong class='color-j'>JUNK</strong> <strong class='color-m'>tech</strong> you instead get a<br>random normal <strong class='color-m'>tech</strong> and ${powerUps.orb.research(4)}`,
             maxCount: 1,
             count: 0,
             frequency: 1,
@@ -4250,7 +4248,7 @@ const tech = {
         },
         {
             name: "futures exchange",
-            description: "clicking <strong style = 'font-size:150%;'>×</strong> to <strong>cancel</strong> a <strong class='color-f'>field</strong>, <strong class='color-m'>tech</strong>, or <strong class='color-g'>gun</strong><br>adds <strong>3%</strong> power up <strong class='color-dup'>duplication</strong> chance",
+            description: "clicking <strong style = 'font-size:150%;'>×</strong> to <strong>cancel</strong> a <strong class='color-f'>field</strong>, <strong class='color-m'>tech</strong>, or <strong class='color-g'>gun</strong><br>adds <strong>2%</strong> power up <strong class='color-dup'>duplication</strong> chance",
             maxCount: 1,
             count: 0,
             frequency: 1,
@@ -4316,7 +4314,7 @@ const tech = {
         },
         {
             name: "stimulated emission",
-            description: "<strong>15%</strong> chance to <strong class='color-dup'>duplicate</strong> spawned <strong>power ups</strong><br>but, after a <strong>collision</strong> eject <strong>1</strong> <strong class='color-m'>tech</strong>",
+            description: "<strong>30%</strong> chance to <strong class='color-dup'>duplicate</strong> spawned <strong>power ups</strong><br>but, after a <strong>collision</strong> eject <strong>1</strong> <strong class='color-m'>tech</strong>",
             maxCount: 1,
             count: 0,
             frequency: 1,
@@ -4328,7 +4326,7 @@ const tech = {
             effect: () => {
                 tech.isStimulatedEmission = true
                 powerUps.setDupChance(); //needed after adjusting duplication chance
-                if (!build.isExperimentSelection && !simulation.isTextLogOpen) simulation.circleFlare(0.15);
+                if (!build.isExperimentSelection && !simulation.isTextLogOpen) simulation.circleFlare(0.2);
             },
             remove() {
                 tech.isStimulatedEmission = false
@@ -4337,7 +4335,7 @@ const tech = {
         },
         {
             name: "metastability",
-            description: "<strong>12%</strong> chance to <strong class='color-dup'>duplicate</strong> spawned <strong>power ups</strong><br><strong class='color-dup'>duplicates</strong> <strong class='color-e'>explode</strong> with a <strong>3</strong> second <strong>half-life</strong>",
+            description: "<strong>25%</strong> chance to <strong class='color-dup'>duplicate</strong> spawned <strong>power ups</strong><br><strong class='color-dup'>duplicates</strong> <strong class='color-e'>explode</strong> with a <strong>5</strong> second <strong>half-life</strong>",
             maxCount: 1,
             count: 0,
             frequency: 1,
@@ -4433,8 +4431,6 @@ const tech = {
                 for (let i = 0, len = tech.tech.length; i < len; i++) { // spawn new tech power ups
                     if (!tech.tech[i].isNonRefundable) count += tech.tech[i].count
                 }
-                if (tech.isDeterminism) count -= 4 //remove the bonus tech 
-                if (tech.isSuperDeterminism) count -= 4 //remove the bonus tech 
 
                 tech.setupAllTech(); // remove all tech
                 if (simulation.isCheating) tech.setCheating();
@@ -7679,6 +7675,7 @@ const tech = {
         },
         {
             name: "control rod ejection",
+            link: `<a target="_blank" href='https://en.wikipedia.org/wiki/Control_rod' class="link">control rod ejection</a>`,
             description: "your <strong>rebar</strong> <strong class='color-g'>gun</strong> shoots <strong class='color-p'>radioactive</strong><br><strong>control rods</strong> alongside rebars",
             isGunTech: true,
             maxCount: 1,
@@ -7694,6 +7691,28 @@ const tech = {
             },
             remove() {
                 tech.isRebarControlRod = false;
+            }
+        },
+        {
+            name: "nuclear reactor meltdown",
+            link: `<a target="_blank" href='https://en.wikipedia.org/wiki/Nuclear_meltdown' class="link">nuclear reactor meltdown</a>`,
+            description: "<span style = 'font-size:85%;'><strong class='color-g'>rebar</strong> shoots 2 less <strong>control rod</strong>, but shoots an extra <strong>1</strong><br>per every mob you've <strong>killed</strong> with <strong class='color-g'>rebar</strong> active before firing</span>",
+            isGunTech: true,
+            maxCount: 1,
+            count: 0,
+            frequency: 2,
+            frequencyDefault: 2,
+            allowed() {
+                return tech.haveGunCheck("rebar") && tech.isRebarControlRod && !tech.haveGunCheck("drones") && m.fieldUpgrades[m.fieldMode].name !== "molecular assembler" && m.fieldUpgrades[m.fieldMode].name !== "plasma torch"
+            },
+            requires: "rebar gun, control rod ejection, not drones, molecular assembler, plasma torch",
+            effect() {
+                tech.isRebarControlRodSpam = true;
+                tech.rebarControlRodSpamCount = 0;
+            },
+            remove() {
+                tech.isRebarControlRodSpam = false;
+                tech.rebarControlRodSpamCount = 0;
             }
         },
         {
@@ -11741,6 +11760,8 @@ const tech = {
     bulletSize: null,
     energySiphon: null,
     healthDrain: null,
+    rebarControlRodSpamCount: 0,
+    isRebarControlRodSpam: null,
     isFlankCambriaSwordWeaponSevenChargeShot: null,
     isFlankPierce: null,
     isFlankOrbEnergy: null,

@@ -372,6 +372,7 @@ const b = {
 
         let dist, sub, knock;
         let dmg = radius * 0.019 * (tech.isExplosionStun ? 0.7 : 1); //* 0.013 * (tech.isExplosionStun ? 0.7 : 1);
+        dmg /= Math.log(Math.max(b.explosionRange(),1))+1 // shit is busted yo
         if (tech.isExplosionHarm) radius *= 1.8 //    1/sqrt(2) radius -> area
         if (tech.isSmallExplosion) {
             color = "rgba(255,0,30,0.7)"
@@ -4216,7 +4217,7 @@ const b = {
             x: Math.cos(angle)*34,
             y: Math.sin(angle)*34,
         }
-        bullet[me] = Bodies.polygon(m.pos.x, m.pos.y, 30, 30, {
+        bullet[me] = Bodies.polygon(m.pos.x, m.pos.y, 30, 45, {
             density: 0.00001, //  0.001 is normal density
             frictionAir: 0,
             classType: "bullet",
@@ -4224,7 +4225,7 @@ const b = {
                 category: cat.bullet,
                 mask: 0
             },
-            endCycle: simulation.cycle+120,
+            endCycle: simulation.cycle+90,
             dontRender: true,
             ignore: [],
             history: [],
@@ -4233,26 +4234,28 @@ const b = {
             do() {
                 let nearest = [null, Infinity]
                 for (let victim of mob) {
-                    if (!victim.isBadTarget && Vector.magnitude(Vector.sub(m.pos, victim.position)) < level.defaultZoom*1.3 && !Matter.Query.ray(map,m.pos,victim.position).length) {
+                    if (!victim.isBadTarget && Vector.magnitude(Vector.sub(m.pos, victim.position)) < level.defaultZoom*1.3 && !Matter.Query.ray(map,m.pos,victim.position).length && victim.damageReduction && !this.ignore.includes(victim.id)) {
                         let distance = Vector.magnitude(Vector.sub(this.position, victim.position))
                         if (victim.isBoss) distance *= this.ignoreBosses ? Infinity : 0.333
+                        if (!victim.isDropPowerUp) distance *= 2
                         if (distance < nearest[1]) nearest = [victim, distance]
                     }
                 }
                 if (nearest[0] != null) {
                     const sub = Vector.sub(nearest[0].position, this.position)
                     const angle2 = Math.atan2(this.velocity.y,this.velocity.x)
-                    const targetAngle = angle2+Math.max(Math.min(this.angleDifference(angle2, Math.atan2(sub.y,sub.x)),0.3),-0.3)
+                    const targetAngle = angle2+Math.max(Math.min(this.angleDifference(angle2, Math.atan2(sub.y,sub.x)),0.2),-0.2)
                     Matter.Body.setVelocity(this, {x:Math.cos(targetAngle)*34,y:Math.sin(targetAngle)*34})
                 }
                 
                 const whom = Matter.Query.collides(this, mob)
                 if (whom.length) {
                     who = whom[0].bodyA
-                    if (who && who.mob && !this.ignore.includes(who.id) && (who.isBoss ? !this.ignoreBosses : true)) {
+                    if (who && who.mob && !this.ignore.includes(who.id) && (who.isBoss ? !this.ignoreBosses : true) && who.damageReduction) {
                         if (who.isBoss) this.ignoreBosses = true
-                        who.damage(30, true);
+                        who.damage(45, true);
                         this.ignore.push(who.id)
+                        this.endCycle += 10
                     }
                 }
                 // visuals
@@ -8209,9 +8212,9 @@ const b = {
                     if (tech.isRebarEnergy) m.energy -= 0.2
                     if (tech.isRebarControlRod) {
                         let speed = 20 * (input.down?1.5:1)
-                        b.controlRod(player.position, {x:player.velocity.x+(Math.cos(m.angle+((Math.random()-0.5)*1))*speed),y:player.velocity.y+(Math.sin(m.angle+((Math.random()-0.5)*1))*speed)},Math.random()*Math.PI*2)
-                        b.controlRod(player.position, {x:player.velocity.x+(Math.cos(m.angle+((Math.random()-0.5)*1))*speed),y:player.velocity.y+(Math.sin(m.angle+((Math.random()-0.5)*1))*speed)},Math.random()*Math.PI*2)
+                        for (let i=0;i<(tech.isRebarControlRodSpam?tech.rebarControlRodSpamCount:2);i++) b.controlRod(player.position, {x:player.velocity.x+(Math.cos(m.angle+((Math.random()-0.5)*1))*speed),y:player.velocity.y+(Math.sin(m.angle+((Math.random()-0.5)*1))*speed)},Math.random()*Math.PI*2)
                     }
+                    tech.rebarControlRodSpamCount = 0
                     m.fireCDcycle = m.cycle + Math.floor(60 * b.fireCDscale * (input.down?1.5:1) * (tech.isRebarEnergy?0.4:1)); // cool down
                 }
                 
