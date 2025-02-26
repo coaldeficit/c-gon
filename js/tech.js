@@ -7696,7 +7696,7 @@ const tech = {
         {
             name: "nuclear reactor meltdown",
             link: `<a target="_blank" href='https://en.wikipedia.org/wiki/Nuclear_meltdown' class="link">nuclear reactor meltdown</a>`,
-            description: "<span style = 'font-size:85%;'><strong class='color-g'>rebar</strong> shoots 2 less <strong>control rod</strong>, but shoots an extra <strong>1</strong><br>per every mob you've <strong>killed</strong> with <strong class='color-g'>rebar</strong> active before firing</span>",
+            description: "<span style = 'font-size:85%;'><strong class='color-g'>rebar</strong> shoots 2 less <strong>control rods</strong>, but shoots an extra <strong>1</strong><br>per every mob you've <strong>killed</strong> with <strong class='color-g'>rebar</strong> active before firing</span>",
             isGunTech: true,
             maxCount: 1,
             count: 0,
