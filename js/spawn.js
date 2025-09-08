@@ -9632,6 +9632,16 @@ const spawn = {
     mapVertex(x, y, vector, properties) { //adds shape to map array
         map[map.length] = Matter.Bodies.fromVertices(x, y, Vertices.fromPath(vector), properties);
     },
+    mapRectCorner(x, y, w = 800, h = 400, c = 25, properties) {
+        w *= 0.5
+        h *= 0.5
+        const vector = `${w} -${h - c}  ${w} ${h - c}  ${w - c} ${h}  -${w - c} ${h}  -${w} ${h - c}  -${w} -${h - c}  -${w - c} -${h}  ${w - c} -${h}`
+        map[map.length] = Matter.Bodies.fromVertices(x, y, Vertices.fromPath(vector), properties);
+    },
+    bodyRectCorner(x, y, w = 800, h = 400, c = 25, properties) {
+        spawn.mapRectCorner(x,y,w,h,c,properties)
+        console.warn('Use spawn.mapRectCorner instead!!!!!!')
+    },
     //complex map templates
     spawnBuilding(x, y, w, h, leftDoor, rightDoor, walledSide) {
         this.mapRect(x, y, w, 25); //roof

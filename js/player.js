@@ -567,7 +567,7 @@ const m = {
             dmg *= m.fieldHarmReduction
             if (tech.isSupercapacitor && m.energy > m.maxEnergy*0.65) dmg *= 1.3
             if (tech.isBiggerField) dmg *= 1.2
-            if (tech.isZeno) dmg *= 0.15
+            if (tech.isZeno) dmg *= 0.3
             if (tech.isFieldHarmReduction) dmg *= 0.5
             if (tech.isHarmMACHO) dmg *= 0.33 / ((tech.isInvertMACHO ? 1.6 : 1) * (tech.isPullMACHO ? 1.2 : 1))
             if (tech.isImmortal) dmg *= 0.66
@@ -578,7 +578,7 @@ const m = {
             if (tech.isSpeedHarm) dmg *= 1 - Math.min(player.speed * 0.0165, 0.66)
             if (tech.isSlowFPS) dmg *= 0.8
             if (tech.isHarmReduce && input.field && m.fieldCDcycle < m.cycle) dmg *= 0.34
-            if (tech.isNeutronium && input.field && m.fieldCDcycle < m.cycle) dmg *= 0.1
+            if (tech.isNeutronium && input.field && m.fieldCDcycle < m.cycle) dmg *= 0.25
             if (tech.isBotArmor) dmg *= 0.94 ** b.totalBots()
             if (tech.isHarmArmor && m.lastHarmCycle + 600 > m.cycle) dmg *= 0.33;
             if (tech.isNoFireDefense && m.cycle > m.fireCDcycle + 120) dmg *= 0.3
@@ -594,6 +594,7 @@ const m = {
             if (tech.isPolariton && powerUps.boost.endCycle > simulation.cycle) dmg *= 0.4
             if (tech.isStability && m.health == m.maxHealth) dmg *= 0.33
             if (tech.isLowHealthDefense) dmg *= 0.2+((m.health/m.maxHealth)*0.8)
+            if (tech.isRemineralization) dmg *= 0.88 ** tech.mineralization
         } else {
             dmg = tech.armoredConfigDamageReduct
         }
@@ -726,7 +727,7 @@ const m = {
 
         if (tech.isEnergyHealth) {
             m.energy -= dmg
-            if (m.energy < 0 || isNaN(m.energy)) { //taking deadly damage
+            if ((m.energy < 0 || isNaN(m.energy)) && (!tech.isDeathCountdown || tech.deathCountdownTime < 0)) { //taking deadly damage
                 if (tech.isDeathAvoid && powerUps.research.count && !tech.isDeathAvoidedThisLevel) {
                     tech.isDeathAvoidedThisLevel = true
                     powerUps.research.changeRerolls(-1)
@@ -755,7 +756,7 @@ const m = {
             dmg *= m.harmReduction()
             m.health -= dmg;
             if (tech.isArmoredConfig) {tech.armoredConfigDamageReduct = Math.min(tech.armoredConfigDamageReduct+0.2, 1.5)}
-            if (m.health < 0 || isNaN(m.health)) {
+            if ((m.health < 0 || isNaN(m.health)) && (!tech.isDeathCountdown || tech.deathCountdownTime < 0)) {
                 if (tech.isDeathAvoid && powerUps.research.count > 0 && !tech.isDeathAvoidedThisLevel) { //&& Math.random() < 0.5
                     tech.isDeathAvoidedThisLevel = true
                     m.health = 0.05

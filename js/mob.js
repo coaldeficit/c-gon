@@ -1287,6 +1287,7 @@ const mobs = {
                           }
                         })
                     }
+                    if (tech.isRemineralization || tech.isDemineralization) tech.mineralization++
                     if (tech.removeMaxHealthOnKill) {
                         const amount = 0.002
                         if (tech.isEnergyHealth) {

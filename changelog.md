@@ -1,3 +1,12 @@
+# porting R (2025/09/08)
+- ported furnace and superstructure
+- - furnace has been made much less epileptic than in vanilla
+- ported quantum Zeno effect, quantum Darwinism, interest, peer review, clinical peer review, aerostat, remineralization and demineralization tech
+- - quantum Zeno effect allows survival under 0 health for 8 seconds instead of its vanilla effect
+- nerfed Zeno's paradox harm reduction from 85% to 70%
+- nerfed neutronium harm reduction from 90% to 75%
+- Zeno's paradox and neutronium are now mutually exclusive
+- nerfed induction brake duration from 17 seconds to 7 seconds
 # unleash chernobyl (2025/02/26)
 - added 1 new tech:
 - - nuclear reactor meltdown: rebar shoots 2 less control rods + 1 extra control rod for each mob killed with rebar active before firing with it
