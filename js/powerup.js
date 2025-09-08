@@ -433,6 +433,12 @@ const powerUps = {
                                 }
                             }
                         }
+                        if (tech.isPeerReview && amount < 0) {
+                            for (let i = 0, len = -amount; i < len; i++) tech.peerReviewDamage++
+                        }
+                        if (tech.isClinicalPeerReview && amount < 0) {
+                            for (let i = 0, len = -amount; i < len; i++) powerUps.spawn(m.pos.x, m.pos.y, "heal");
+                        }
                     }, delay);
                 }
                 // for (let i = 0, len = tech.tech.length; i < len; i++) {
@@ -444,6 +450,12 @@ const powerUps = {
             }
             if (tech.renormalization && Math.random() < 0.4 && amount < 0) {
                 for (let i = 0, len = -amount; i < len; i++) powerUps.spawn(m.pos.x, m.pos.y, "research");
+            }
+            if (tech.isPeerReview && amount < 0) {
+                for (let i = 0, len = -amount; i < len; i++) tech.peerReviewDamage++
+            }
+            if (tech.isClinicalPeerReview && amount < 0) {
+                for (let i = 0, len = -amount; i < len; i++) powerUps.spawn(m.pos.x, m.pos.y, "heal");
             }
             if (tech.isRerollHaste) {
                 if (powerUps.research.count === 0) {
@@ -512,7 +524,7 @@ const powerUps = {
             //     }
             // }
             if (!tech.isEnergyHealth && m.alive) {
-                const heal = powerUps.heal.calculateHeal(this.size) * (tech.isNoHeals ? 0.5 : 1) * (tech.isHealAttract ? 0.5 : 1)
+                const heal = powerUps.heal.calculateHeal(this.size) * (tech.isNoHeals ? 0.5 : 1) * (tech.isHealAttract ? 0.5 : 1) * (tech.isClinicalPeerReview ? 0.85 : 1)
                 if (heal > 0) {
                     const overHeal = m.health + heal * simulation.healScale - m.maxHealth //used with tech.isOverHeal
 
@@ -536,7 +548,7 @@ const powerUps = {
                         m.setMaxHealth();
                     }
                     if (tech.isHealBrake) { // induction brake
-                        const totalTime = 1020
+                        const totalTime = 420
                         //check if you already have this effect
                         let foundActiveEffect = false
                         for (let i = 0; i < simulation.ephemera.length; i++) {

@@ -1237,6 +1237,25 @@ const simulation = {
             m.death()
 	      }
         }
+        if (tech.isDeathCountdown) {
+            if (m.health < 0 || (tech.isEnergyHealth && m.energy < 0)) {
+                if (tech.isDeathCountdownReward && !tech.deathCountdownLevelRewarded) {
+                    tech.deathCountdownLevelRewarded = true
+                    powerUps.spawn(m.pos.x + 60 * (Math.random() - 0.5), m.pos.y + 60 * (Math.random() - 0.5), "tech");
+                }
+                tech.deathCountdownTime--
+                ctx.beginPath()
+                ctx.fillStyle = "#000"
+                ctx.lineWidth = "12";
+                if (tech.deathCountdownTime > 0) ctx.arc(m.pos.x,m.pos.y,120,-Math.PI/2,-Math.PI/2+(Math.PI*2*(1-(tech.deathCountdownTime/(tech.isDeathCountdownReward ? 360 : 480)))),true)
+                ctx.stroke()
+                if (tech.deathCountdownTime < 0) {
+                    m.damage(1)
+                }
+            } else {
+                tech.deathCountdownTime = tech.isDeathCountdownReward ? 360 : 480
+            }
+        }
         if (!(m.cycle % 60)) { //once a second
             //energy overfill 
             if (m.energy > m.maxEnergy) m.energy = m.maxEnergy + (m.energy - m.maxEnergy) * tech.overfillDrain //every second energy above max energy loses 25%
@@ -1302,6 +1321,10 @@ const simulation = {
         //} else {
         //    tech.ionizationEnergyBoost = 0
         //}
+        if (tech.isRemineralization || tech.isDemineralization) {
+            tech.mineralization *= 0.85
+            if (tech.mineralization < 0.5) tech.mineralization = 0
+        }
 	    if (!(m.cycle % 1800)) {
 	      if (tech.isFurnace) {
 		if (powerUps.research.count > 0) {

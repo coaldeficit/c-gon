@@ -267,6 +267,9 @@ const tech = {
         if (tech.isControlTheory && m.health == m.maxHealth) dmg *= 1.67
         if (tech.isPowerUpDamage) dmg *= 1 + 0.04 * powerUp.length
         if (tech.isGunChoice && tech.buffedGun === b.inventoryGun) dmg *= 1 + 0.3 * b.inventory.length
+        if (tech.isPeerReview) dmg *= 1 + 0.044 * tech.peerReviewDamage
+        if (tech.isFlyDamage && !m.onGround && m.cycle- m.lastOnGroundCycle > 60) dmg *= 2.11
+        if (tech.isDemineralization) dmg *= 1 + 0.08 * tech.mineralization
         return dmg * tech.slowFire * tech.aimDamage
     },
     duplicationChance() {
@@ -803,6 +806,24 @@ const tech = {
             }
         },
         {
+            name: "aerostat",
+            description: "increase <strong class='color-d'>damage</strong> by <strong>111%</strong> while off the <strong>ground</strong><br>for atleast <strong>1 second</strong>",
+            maxCount: 1,
+            count: 0,
+            frequency: 1,
+            frequencyDefault: 1,
+            allowed() {
+                return true
+            },
+            requires: "",
+            effect() {
+                tech.isFlyDamage = true
+            },
+            remove() {
+                tech.isFlyDamage = false;
+            }
+        },
+        {
             name: "Higgs mechanism",
             description: "while <strong>firing</strong> your <strong>position</strong> is locked<br><strong>50%</strong> decreased <strong><em>delay</em></strong> after firing",
             maxCount: 1,
@@ -1094,6 +1115,44 @@ const tech = {
             },
             remove() {
                 tech.isCrit = false;
+            }
+        },
+        {
+            name: "remineralization",
+            description: "after a mob <strong>dies</strong>, gain <strong>12%</strong> <strong class='color-harm'>harm reduction</strong><br>but lose <strong>15%</strong> of it per second",
+            maxCount: 1,
+            count: 0,
+            frequency: 1,
+            frequencyDefault: 1,
+            allowed() {
+                return !tech.isDemineralization
+            },
+            requires: "not demineralization",
+            effect() {
+                tech.isRemineralization = true;
+                tech.mineralization = 0
+            },
+            remove() {
+                tech.isRemineralization = false;
+            }
+        },
+        {
+            name: "demineralization",
+            description: "after a mob <strong>dies</strong>, gain <strong>8%</strong> <strong class='color-d'>damage</strong><br>but lose <strong>15%</strong> of it per second",
+            maxCount: 1,
+            count: 0,
+            frequency: 1,
+            frequencyDefault: 1,
+            allowed() {
+                return !tech.isRemineralization
+            },
+            requires: "not remineralization",
+            effect() {
+                tech.isDemineralization = true;
+                tech.mineralization = 0
+            },
+            remove() {
+                tech.isDemineralization = false;
             }
         },
         {
@@ -3218,7 +3277,24 @@ const tech = {
         },
         {
             name: "Zeno's paradox",
-            description: "reduce <strong class='color-harm'>harm</strong> by <strong>85%</strong>, but every <strong>5</strong> seconds<br>remove <strong>7%</strong> of your current <strong class='color-h'>health</strong>",
+            description: "reduce <strong class='color-harm'>harm</strong> by <strong>70%</strong>, but every <strong>5</strong> seconds<br>remove <strong>7%</strong> of your current <strong class='color-h'>health</strong>",
+            // description: "every <strong>5</strong> seconds remove <strong>1/10</strong> of your <strong class='color-h'>health</strong><br>reduce <strong class='color-harm'>harm</strong> by <strong>90%</strong>",
+            maxCount: 1,
+            count: 0,
+            frequency: 1,
+            frequencyDefault: 1,
+            allowed() { return !tech.isEnergyHealth && !tech.isNeutronium },
+            requires: "not mass-energy, neutronium",
+            effect() {
+                tech.isZeno = true;
+            },
+            remove() {
+                tech.isZeno = false;
+            }
+        },
+        {
+            name: "quantum Zeno effect",
+            description: "allows survival under 0 <strong class='color-h'>health</strong> for <strong>8 seconds</strong>",
             // description: "every <strong>5</strong> seconds remove <strong>1/10</strong> of your <strong class='color-h'>health</strong><br>reduce <strong class='color-harm'>harm</strong> by <strong>90%</strong>",
             maxCount: 1,
             count: 0,
@@ -3227,10 +3303,31 @@ const tech = {
             allowed() { return !tech.isEnergyHealth },
             requires: "not mass-energy",
             effect() {
-                tech.isZeno = true;
+                tech.isDeathCountdown = true;
+                tech.deathCountdownTime = 480
             },
             remove() {
-                tech.isZeno = false;
+                tech.isDeathCountdown = false;
+                if (m.health < 0) m.death();
+            }
+        },
+        {
+            name: "quantum Darwinism",
+            description: "once per level, spawn a <strong class='color-m'>tech</strong> when at 0 <strong class='color-h'>health</strong><br>but survive under 0 <strong class='color-h'>health</strong> for only <strong>6 seconds</strong>",
+            // description: "every <strong>5</strong> seconds remove <strong>1/10</strong> of your <strong class='color-h'>health</strong><br>reduce <strong class='color-harm'>harm</strong> by <strong>90%</strong>",
+            maxCount: 1,
+            count: 0,
+            frequency: 2,
+            frequencyDefault: 2,
+            allowed() { return tech.isDeathCountdown && !tech.isDeathAvoid },
+            requires: "quantum Zeno effect, not anthropic principle",
+            effect() {
+                tech.isDeathCountdownReward = true;
+                tech.deathCountdownLevelRewarded = false;
+                tech.deathCountdownTime = 360
+            },
+            remove() {
+                tech.isDeathCountdownReward = false;
             }
         },
         {
@@ -3309,7 +3406,7 @@ const tech = {
         {
             name: "induction brake",
             descriptionFunction() {
-                return `after using ${powerUps.orb.heal()}<br><strong class='color-s'>slow</strong> nearby mobs for <strong>17</strong> seconds`
+                return `after using ${powerUps.orb.heal()}<br><strong class='color-s'>slow</strong> nearby mobs for <strong>7</strong> seconds`
             },
             maxCount: 1,
             count: 0,
@@ -3317,9 +3414,9 @@ const tech = {
             frequencyDefault: 1,
             isHealTech: true,
             allowed() {
-                return !tech.isPerfectBrake && !tech.isOverHeal && !tech.isHealAttract
+                return !tech.isPerfectBrake && !tech.isOverHeal && !tech.isHealAttract && !tech.isClinicalPeerReview
             },
-            requires: "not eddy current brake, quenching, accretion",
+            requires: "not eddy current brake, quenching, accretion, clinical peer review",
             effect() {
                 tech.isHealBrake = true;
             },
@@ -3360,9 +3457,9 @@ const tech = {
             frequencyDefault: 1,
             isHealTech: true,
             allowed() {
-                return !tech.isEnergyHealth && !tech.isNoHeals && !tech.isExoticParts && !tech.isHealBrake && !tech.isHealAttract
+                return !tech.isEnergyHealth && !tech.isNoHeals && !tech.isExoticParts && !tech.isHealBrake && !tech.isHealAttract && !tech.isClinicalPeerReview
             },
-            requires: "not mass-energy equivalence, ergodicity, exotic particles, induction brake, accretion",
+            requires: "not mass-energy equivalence, ergodicity, exotic particles, induction brake, accretion, clinical peer review",
             effect() {
                 tech.isOverHeal = true;
                 level.difficultyIncrease(simulation.difficultyMode * 3)
@@ -3383,9 +3480,9 @@ const tech = {
             frequencyDefault: 1,
             isHealTech: true,
             allowed() {
-                return m.fieldMode !== 9 && !tech.isOverHeal && !tech.isHealBrake
+                return m.fieldMode !== 9 && !tech.isOverHeal && !tech.isHealBrake && !tech.isClinicalPeerReview
             },
-            requires: "not wormhole, quenching, induction brake",
+            requires: "not wormhole, quenching, induction brake, clinical peer review",
             effect() {
                 tech.isHealAttract = true
             },
@@ -3429,14 +3526,32 @@ const tech = {
             frequencyDefault: 1,
             isHealTech: true,
             allowed() {
-                return m.health > 0.1 && !tech.isNoHeals
+                return m.health > 0.1 && !tech.isNoHeals && tech.isInterest == 0
             },
-            requires: "has some health, not ergodicity",
+            requires: "has some health, not ergodicity, interest",
             effect() {
                 tech.isHealLowHealth = true;
             },
             remove() {
                 tech.isHealLowHealth = false;
+            }
+        },
+        {
+            name: "interest",
+            description: `at the start of each <strong>level</strong><br>gain an extra <strong>10%</strong> of your current ${powerUps.orb.research()}`,
+            maxCount: 3,
+            count: 0,
+            frequency: 1,
+            frequencyDefault: 1,
+            allowed() {
+                return (powerUps.research.count >= 1 || build.isExperimentSelection) && !tech.isHealLowHealth
+            },
+            requires: "atleast 1 research, not negative entropy",
+            effect() {
+                tech.isInterest += 1;
+            },
+            remove() {
+                tech.isInterest = 0;
             }
         },
         {
@@ -3502,9 +3617,9 @@ const tech = {
             frequencyDefault: 1,
             isHealTech: true,
             allowed() {
-                return powerUps.research.count > 0 || build.isExperimentSelection
+                return (powerUps.research.count > 0 || build.isExperimentSelection) && !tech.isDeathCountdownReward
             },
-            requires: "at least 1 research",
+            requires: "at least 1 research, not quantum Darwinism",
             effect() {
                 tech.isDeathAvoid = true;
                 tech.isDeathAvoidedThisLevel = false;
@@ -3900,14 +4015,53 @@ const tech = {
             frequency: 2,
             frequencyDefault: 2,
             allowed() {
-                return powerUps.research.count > 5 || build.isExperimentSelection
+                return (powerUps.research.count > 5 || build.isExperimentSelection) && !tech.isPeerReview
             },
-            requires: "at least 6 research",
+            requires: "at least 6 research, not peer review",
             effect() {
                 tech.isRerollDamage = true;
             },
             remove() {
                 tech.isRerollDamage = false;
+            }
+        },
+        {
+            name: "peer review",
+            description: `using ${powerUps.orb.research(1)} for <strong>any</strong> purpose<br>increases <strong class='color-d'>damage</strong> by <strong>4.4%</strong>`,
+            maxCount: 1,
+            count: 0,
+            frequency: 1,
+            frequencyDefault: 1,
+            allowed() {
+                return (powerUps.research.count > 0 || build.isExperimentSelection) && !tech.isSuperDeterminism && !tech.isRerollDamage && !tech.isClinicalPeerReview
+            },
+            requires: "at least 1 research, not superdeterminism, Bayesian statistics, clinical peer review",
+            effect() {
+                tech.isPeerReview = true;
+                tech.peerReviewDamage = 0
+            },
+            remove() {
+                tech.isPeerReview = false;
+                tech.peerReviewDamage = 0
+            }
+        },
+        {
+            name: "clinical peer review",
+            description: `using ${powerUps.orb.research(1)} for <strong>any</strong> purpose spawns a ${powerUps.orb.heal()}<br>${powerUps.orb.heal()} are <strong>15%</strong> less effective`,
+            maxCount: 1,
+            count: 0,
+            frequency: 1,
+            frequencyDefault: 1,
+            isHealTech: true,
+            allowed() {
+                return (powerUps.research.count > 0 || build.isExperimentSelection) && !tech.isPeerReview && !tech.isHealBrake && !tech.isOverHeal && !tech.isHealAttract
+            },
+            requires: "at least 1 research, not superdeterminism, peer review, quenching, accretion, induction brake",
+            effect() {
+                tech.isClinicalPeerReview = true;
+            },
+            remove() {
+                tech.isClinicalPeerReview = false;
             }
         },
         {
@@ -3918,7 +4072,7 @@ const tech = {
             frequency: 1,
             frequencyDefault: 1,
             allowed() {
-                return !tech.isResearchReality //tech.isResearchBoss || tech.isMetaAnalysis || tech.isRerollBots || tech.isDeathAvoid || tech.isRerollDamage || build.isExperimentSelection
+                return !tech.isResearchReality && !tech.isPeerReview //tech.isResearchBoss || tech.isMetaAnalysis || tech.isRerollBots || tech.isDeathAvoid || tech.isRerollDamage || build.isExperimentSelection
             },
             requires: "not Ψ(t) collapse", //"abiogenesis, meta-analysis, bot fabrication, anthropic principle, or Bayesian statistics, not Ψ(t) collapse",
             effect() {
@@ -8198,16 +8352,16 @@ const tech = {
         },
         {
             name: "neutronium",
-            description: `reduce <strong class='color-harm'>harm</strong> by <strong>90%</strong> when your <strong class='color-f'>field</strong> is active<br><strong>move</strong> and <strong>jump</strong> <strong>25%</strong> <strong>slower</strong>`,
+            description: `reduce <strong class='color-harm'>harm</strong> by <strong>75%</strong> when your <strong class='color-f'>field</strong> is active<br><strong>move</strong> and <strong>jump</strong> <strong>25%</strong> <strong>slower</strong>`,
             isFieldTech: true,
             maxCount: 1,
             count: 0,
             frequency: 2,
             frequencyDefault: 2,
             allowed() {
-                return m.fieldUpgrades[m.fieldMode].name === "negative mass" && !tech.isEnergyHealth
+                return m.fieldUpgrades[m.fieldMode].name === "negative mass" && !tech.isEnergyHealth && !tech.isZeno
             },
-            requires: "negative mass, not mass-energy",
+            requires: "negative mass, not mass-energy, zeno's paradox",
             effect() {
                 tech.isNeutronium = true
                 tech.baseFx *= 0.75
@@ -11760,6 +11914,18 @@ const tech = {
     bulletSize: null,
     energySiphon: null,
     healthDrain: null,
+    mineralization: 0,
+    isDemineralization: null,
+    isRemineralization: null,
+    isFlyDamage: null,
+    isClinicalPeerReview: null,
+    peerReviewDamage: 0,
+    isPeerReview: null,
+    isInterest: 0,
+    deathCountdownLevelRewarded: null,
+    isDeathCountdownReward: null,
+    deathCountdownTime: 480,
+    isDeathCountdown: null,
     rebarControlRodSpamCount: 0,
     isRebarControlRodSpam: null,
     isFlankCambriaSwordWeaponSevenChargeShot: null,
