@@ -1,3 +1,23 @@
+# actual flank guntech (2025/10/12)
+- added 2 new tech:
+- - jitterbug transformation: flank does more damage if you keep your mouse still
+- - stellation: flank is more energy efficient, but its bullets move slower and become slightly inaccurate
+- caliber now also affects flank
+- - projectile size is increased logarithmically instead of linearly to avoid unfortunate hitbox situations
+- anti-shear topology now also affects flank
+- nerfed intersection to only pierce through mobs, and deal marginally less damage
+- buffed heat pipe by making the heat only decay while firing, instead of decaying when any gun besides shotgun is equipped even when not firing it
+- buffed quantum Zeno effect duration from 8 seconds to 16 seconds
+- buffed quantum Darwinism effect duration from 6 seconds to 12 seconds
+- fixed typo in ICBM requirement list
+- heat pipe now requires not having time dilation
+- crossfire pulsarBosses are no longer blocked off and are now also less tanky
+- changed revolutionBoss to be less of a menace to society:
+- - only 1 invulnerability period instead of 3
+- - slows down by alot during invulnerability
+- - lasers spin at half speed instead of FOUR TIMES FASTER during invulnerability...
+- - ...but shift into a different bend arrangement during invulnerability instead
+- bosses can now spawn earlier on crossfire, house, vats and n-gon
 # porting R (2025/09/08)
 - ported furnace and superstructure
 - - furnace has been made much less epileptic than in vanilla
