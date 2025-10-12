@@ -270,6 +270,7 @@ const tech = {
         if (tech.isPeerReview) dmg *= 1 + 0.044 * tech.peerReviewDamage
         if (tech.isFlyDamage && !m.onGround && m.cycle- m.lastOnGroundCycle > 60) dmg *= 2.11
         if (tech.isDemineralization) dmg *= 1 + 0.08 * tech.mineralization
+        if (tech.isDoubleAmmoUse) dmg *= 2
         return dmg * tech.slowFire * tech.aimDamage
     },
     duplicationChance() {
@@ -686,7 +687,7 @@ const tech = {
             frequency: 1,
             frequencyDefault: 1,
             allowed() {
-                return !tech.isEnergyNoAmmo
+                return !tech.isEnergyNoAmmo && !tech.isDoubleAmmoUse
             },
             requires: "not non-renewables",
             effect() {
@@ -752,6 +753,24 @@ const tech = {
                 tech.isEnergyNoAmmo = false;
             }
         },
+        /*{
+            name: "waste compaction",
+            description: "increase <strong class='color-d'>damage</strong> by <strong>100%</strong><br>but <strong class='color-g'>guns</strong> use twice as much <strong class='color-ammo'>ammo</strong>",
+            maxCount: 1,
+            count: 0,
+            frequency: 1,
+            frequencyDefault: 1,
+            allowed() {
+                return tech.ammoCap === 0 && !tech.isEnergyNoAmmo
+            },
+            requires: "not cache, non-renewables",
+            effect: () => {
+                tech.isDoubleAmmoUse = true;
+            },
+            remove() {
+                tech.isDoubleAmmoUse = false;
+            }
+        },*/
         {
             name: "desublimated ammunition",
             link: `<a target="_blank" href='https://en.wikipedia.org/wiki/Deposition_(phase_transition)' class="link">desublimated ammunition</a>`,
@@ -3294,7 +3313,7 @@ const tech = {
         },
         {
             name: "quantum Zeno effect",
-            description: "allows survival under 0 <strong class='color-h'>health</strong> for <strong>8 seconds</strong>",
+            description: "allows survival under 0 <strong class='color-h'>health</strong> for <strong>16 seconds</strong>",
             // description: "every <strong>5</strong> seconds remove <strong>1/10</strong> of your <strong class='color-h'>health</strong><br>reduce <strong class='color-harm'>harm</strong> by <strong>90%</strong>",
             maxCount: 1,
             count: 0,
@@ -3304,7 +3323,7 @@ const tech = {
             requires: "not mass-energy",
             effect() {
                 tech.isDeathCountdown = true;
-                tech.deathCountdownTime = 480
+                tech.deathCountdownTime = 960
             },
             remove() {
                 tech.isDeathCountdown = false;
@@ -3313,7 +3332,7 @@ const tech = {
         },
         {
             name: "quantum Darwinism",
-            description: "once per level, spawn a <strong class='color-m'>tech</strong> when at 0 <strong class='color-h'>health</strong><br>but survive under 0 <strong class='color-h'>health</strong> for only <strong>6 seconds</strong>",
+            description: "once per level, spawn a <strong class='color-m'>tech</strong> when at 0 <strong class='color-h'>health</strong><br>but survive under 0 <strong class='color-h'>health</strong> for only <strong>12 seconds</strong>",
             // description: "every <strong>5</strong> seconds remove <strong>1/10</strong> of your <strong class='color-h'>health</strong><br>reduce <strong class='color-harm'>harm</strong> by <strong>90%</strong>",
             maxCount: 1,
             count: 0,
@@ -3324,7 +3343,7 @@ const tech = {
             effect() {
                 tech.isDeathCountdownReward = true;
                 tech.deathCountdownLevelRewarded = false;
-                tech.deathCountdownTime = 360
+                tech.deathCountdownTime = 720
             },
             remove() {
                 tech.isDeathCountdownReward = false;
@@ -5154,14 +5173,14 @@ const tech = {
         // },
         {
             name: "caliber",
-            description: `<strong>rivets</strong>, <strong>needles</strong>, <strong>super balls</strong>, and <strong>nails</strong><br>have <strong>16%</strong> increased mass and physical <strong class='color-d'>damage</strong>`,
+            description: `<strong>rivets</strong>, <strong>needles</strong>, <strong>super balls</strong>, <strong>nails</strong>, and <strong>flank bullets</strong><br>have <strong>16%</strong> increased mass and physical <strong class='color-d'>damage</strong>`,
             isGunTech: true,
             maxCount: 9,
             count: 0,
             frequency: 2,
             frequencyDefault: 2,
             allowed() {
-                return tech.isMineDrop + tech.nailBotCount + tech.fragments + tech.nailsDeathMob + (tech.haveGunCheck("super balls") + (tech.haveGunCheck("mine") && !tech.isLaserMine) + (tech.haveGunCheck("nail gun")) + tech.isNeedles + tech.isNailShot + tech.isRivets + tech.isShotgunFireEverything + (tech.haveGunCheck("rebar") && tech.isRebarBlockNails)) * 2 > 1
+                return tech.isMineDrop + tech.nailBotCount + tech.fragments + tech.nailsDeathMob + (tech.haveGunCheck("super balls") + (tech.haveGunCheck("mine") && !tech.isLaserMine) + (tech.haveGunCheck("nail gun")) + tech.isNeedles + tech.isNailShot + tech.isRivets + tech.isShotgunFireEverything + (tech.haveGunCheck("rebar") && tech.isRebarBlockNails) + tech.haveGunCheck("flank")) * 2 > 1
             },
             requires: "nails, nail gun, rivets, shotgun",
             effect() {
@@ -5470,9 +5489,9 @@ const tech = {
             frequency: 2,
             frequencyDefault: 2,
             allowed() {
-                return tech.haveGunCheck("shotgun", true) && !tech.isShotgunImmune
+                return tech.haveGunCheck("shotgun", true) && !tech.isShotgunImmune && m.fieldUpgrades[m.fieldMode].name !== "time dilation"
             },
-            requires: "shotgun, not spin-statistics",
+            requires: "shotgun, not spin-statistics, time dilation",
             effect() {
                 tech.isShotgunHeat = 1
                 if (!m.isShipMode) m.skin.heatPipe()
@@ -5857,7 +5876,7 @@ const tech = {
             allowed() {
                 return tech.haveGunCheck("missiles") && tech.isMissileBig //&& !tech.isSmartRadius && !tech.isImmuneExplosion
             },
-            requires: "missiles, cruse missile", //, not electric reactive armor, controlled explosions",
+            requires: "missiles, cruise missile", //, not electric reactive armor, controlled explosions",
             effect() {
                 tech.isMissileBiggest = true
             },
@@ -6513,16 +6532,16 @@ const tech = {
         {
             name: "anti-shear topology",
             link: `<a target="_blank" href='https://en.wikipedia.org/wiki/Topology' class="link">anti-shear topology</a>`,
-            description: "some <strong>projectiles</strong> last <strong>30% longer</strong><br><em style = 'font-size: 83%'>drone, spore, worm, missile, foam, wave, neutron, ice</em>",
+            description: "some <strong>projectiles</strong> last <strong>30% longer</strong><br><em style = 'font-size: 80%'>drone, spore, worm, missile, foam, wave, neutron, ice, flank</em>",
             isGunTech: true,
             maxCount: 3,
             count: 0,
             frequency: 2,
             frequencyDefault: 2,
             allowed() {
-                return m.fieldUpgrades[m.fieldMode].name === "molecular assembler" || tech.haveGunCheck("spores") || tech.haveGunCheck("drones") || tech.haveGunCheck("missiles") || tech.haveGunCheck("foam") || tech.haveGunCheck("matter wave") || tech.isNeutronBomb || tech.isIceField || tech.isIceShot || tech.relayIce || tech.isNeedleIce || tech.blockingIce > 1 || tech.isSporeWorm || tech.foamBotCount > 1 || tech.isShotgunFireEverything
+                return m.fieldUpgrades[m.fieldMode].name === "molecular assembler" || tech.haveGunCheck("spores") || tech.haveGunCheck("drones") || tech.haveGunCheck("missiles") || tech.haveGunCheck("foam") || tech.haveGunCheck("matter wave") || tech.isNeutronBomb || tech.isIceField || tech.isIceShot || tech.relayIce || tech.isNeedleIce || tech.blockingIce > 1 || tech.isSporeWorm || tech.foamBotCount > 1 || tech.isShotgunFireEverything || tech.haveGunCheck("flank")
             },
-            requires: "drones, spores, missiles, foam, matter wave, neutron bomb, ice IX",
+            requires: "drones, spores, missiles, foam, matter wave, neutron bomb, ice IX, flank",
             effect() {
                 tech.isBulletsLastLonger += 0.3
             },
@@ -8070,7 +8089,7 @@ const tech = {
             allowed() {
                 return tech.haveGunCheck("flank") && !tech.isFlankPierce
             },
-            requires: "flank, not ?",
+            requires: "flank, not intersection",
             effect() {
                 tech.isFlankOrbEnergy = true;
             },
@@ -8081,7 +8100,7 @@ const tech = {
         {
             name: "intersection",
             link: `<a target="_blank" href='https://en.wikipedia.org/wiki/Intersection_(geometry)' class="link">intersection</a>`,
-            description: "<strong>flank</strong> bullets can pierce through <strong>walls</strong> and <strong>mobs</strong>",
+            description: "<strong>flank</strong> bullets can pierce through a single <strong>mob</strong><br>but deal <strong>18%</strong> less <strong class='color-d'>damage</strong>",
             isGunTech: true,
             maxCount: 1,
             count: 0,
@@ -8115,6 +8134,45 @@ const tech = {
             },
             remove() {
                 tech.isFlankCambriaSwordWeaponSevenChargeShot = false;
+            }
+        },
+        {
+            name: "jitterbug transformation",
+            description: "<strong>flank</strong> bullets deal up to <strong>67%</strong> more <strong class='color-d'>damage</strong><br>based on how still you keep your mouse cursor",
+            isGunTech: true,
+            maxCount: 1,
+            count: 0,
+            frequency: 2,
+            frequencyDefault: 2,
+            allowed() {
+                return tech.haveGunCheck("flank") && !tech.isFlankStellation
+            },
+            requires: "flank, not stellation",
+            effect() {
+                tech.isFlankJitterbug = true;
+            },
+            remove() {
+                tech.isFlankJitterbug = false;
+                tech.jitterbugDamageBoost = 0
+            }
+        },
+        {
+            name: "stellation",
+            description: "<strong>flank</strong> uses <strong>12%</strong> less <strong class='color-f'>energy</strong><br>but move <strong>15%</strong> slower and become slightly inaccurate",
+            isGunTech: true,
+            maxCount: 9,
+            count: 0,
+            frequency: 2,
+            frequencyDefault: 2,
+            allowed() {
+                return tech.haveGunCheck("flank")
+            },
+            requires: "flank, not jitterbug transformation",
+            effect() {
+                tech.isFlankStellation++
+            },
+            remove() {
+                tech.isFlankStellation = 0
             }
         },
         //************************************************** 
@@ -11914,6 +11972,10 @@ const tech = {
     bulletSize: null,
     energySiphon: null,
     healthDrain: null,
+    isFlankStellation: 0,
+    jitterbugDamageBoost: 0,
+    jitterbugLastMousePos: {x:0,y:0},
+    isFlankJitterbug: null,
     mineralization: 0,
     isDemineralization: null,
     isRemineralization: null,
@@ -11924,12 +11986,12 @@ const tech = {
     isInterest: 0,
     deathCountdownLevelRewarded: null,
     isDeathCountdownReward: null,
-    deathCountdownTime: 480,
+    deathCountdownTime: 960,
     isDeathCountdown: null,
     rebarControlRodSpamCount: 0,
     isRebarControlRodSpam: null,
     isFlankCambriaSwordWeaponSevenChargeShot: null,
-    isFlankPierce: null,
+    isFlankPierce: false,
     isFlankOrbEnergy: null,
     isFlankExtraBack: null,
     isFlank3Orb: null,

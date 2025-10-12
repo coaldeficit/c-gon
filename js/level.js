@@ -12623,7 +12623,7 @@ const level = {
         spawn.randomMob(4630, -425, 0.1);
         spawn.randomGroup(630, -1300, -0.1);
         spawn.randomGroup(3450, -2880, -0.2)
-        if (simulation.difficulty > 3) {
+        if (simulation.difficulty > 1) {
             spawn.secondaryBossChance(3380, -1775)
             if (Math.random() < 0.16) {
                 spawn.tetherBoss(3380, -1775, { x: 3775, y: -1775 })
@@ -12974,7 +12974,7 @@ const level = {
         simulation.makeTextLog(`<strong>crossfire</strong> by <span class='color-var'>iNoobBoi</span>`);
         //*1.5
         //Level Setup
-        const slimePitOne = level.hazard(0, 850, 3800, 120);
+        const slimePitOne = level.hazard(0, 850, 2700, 120);
         const slimePitTwo = level.hazard(4600, 430, 2000, 120);
         const slimePitThree = level.hazard(6500, 200, 1000, 170);
 
@@ -13004,17 +13004,17 @@ const level = {
         spawn.mapRect(-800, -600, 800, 200);
         spawn.mapRect(-200, -600, 200, 800);
         spawn.mapRect(-800, -600, 200, 800);
-        spawn.mapRect(-1000, 0, 1000, 200);
+        spawn.mapRect(-1000, 0, 400, 200);
         spawn.mapRect(-1000, 0, 200, 800);
         spawn.mapRect(-1000, 600, 1400, 200);
         spawn.mapRect(0, 600, 200, 400);
-        spawn.mapRect(0, 950, 4000, 100);
+        spawn.mapRect(0, 950, 3100, 200);
         spawn.mapRect(800, 800, 600, 200);
         spawn.mapRect(1700, 700, 500, 300);
         spawn.mapRect(2500, 600, 400, 400);
         spawn.mapRect(3200, 600, 1200, 200);
-        spawn.mapRect(3800, 600, 200, 800); //
-        spawn.mapRect(3800, 1200, 800, 200);
+        spawn.mapRect(2900, 1200, 1700, 200);//
+        spawn.mapRect(2900, 950, 200, 450);
         spawn.mapRect(4400, 400, 300, 1000);
         spawn.mapRect(4400, 500, 2000, 100);
         spawn.mapRect(6500, 300, 1000, 100);
@@ -13030,15 +13030,15 @@ const level = {
         spawn.mapRect(7400, -1400, 3400, 200);
         spawn.mapRect(7400, -1600, 200, 800);
         spawn.mapRect(5400, -1600, 2200, 200);
-        spawn.mapRect(6000, -1600, 200, 800);
         spawn.mapRect(5400, -1600, 200, 800);
-        spawn.mapRect(4800, -1000, 1400, 200);
+        spawn.mapRect(4800, -1000, 800, 200);
         spawn.mapRect(4800, -1000, 200, 600);
         spawn.mapRect(3800, -600, 1200, 200);
         spawn.mapRect(3200, -800, 800, 200);
         spawn.mapRect(3200, -800, 200, 800);
         spawn.mapRect(3800, -800, 200, 800);
-        spawn.mapRect(-200, -200, 4200, 200);
+        spawn.mapRect(-200, -200, 3600, 200);
+        
 
         //Boss Room Platforms
         spawn.mapRect(7700, 100, 300, 40);
@@ -13077,28 +13077,34 @@ const level = {
         // spawn.randomGroup(7700, -1100, 0.5);
         spawn.randomGroup(9800, -1100, 0.5);
 
-        if (simulation.difficulty > 3) spawn.randomLevelBoss(8600, -600, ["powerUpBoss", "bomberBoss", "dragonFlyBoss", "spiderBoss", "historyBoss"])
+        if (simulation.difficulty > 1) spawn.randomLevelBoss(8600, -600, ["powerUpBoss", "bomberBoss", "dragonFlyBoss", "spiderBoss", "historyBoss"])
         spawn.secondaryBossChance(7900, -400)
+    
+        function crossfirePulsarBoss(x,y) {
+            spawn.pulsarBoss(x,y,90,false,true)
+            let pulsarBoss = mob[mob.length-1]
+            pulsarBoss.damageReduction *= 3
+        }
 
         //Boss Spawning
         if (simulation.difficulty > 10) {
-            spawn.pulsarBoss(3600, -400);
+            crossfirePulsarBoss(3600, -400);
             powerUps.chooseRandomPowerUp(4006, 400);
             powerUps.chooseRandomPowerUp(4407, 400);
             powerUps.spawnStartingPowerUps(4400, 400);
             if (simulation.difficulty > 30) {
                 powerUps.chooseRandomPowerUp(4002, 400);
                 powerUps.chooseRandomPowerUp(4004, 400);
-                spawn.pulsarBoss(4200, 1000);
+                crossfirePulsarBoss(4200, 1000);
                 if (simulation.difficulty > 60) {
                     powerUps.chooseRandomPowerUp(4409, 400);
-                    spawn.pulsarBoss(5800, -1200);
+                    crossfirePulsarBoss(5800, -1200);
                     if (simulation.difficulty > 80) {
-                        spawn.pulsarBoss(-400, -200);
+                        crossfirePulsarBoss(-400, -200);
                         if (simulation.difficulty > 100) {
-                            spawn.pulsarBoss(3600, -400);
+                            crossfirePulsarBoss(3600, -400);
                             if (simulation.difficulty > 120) {
-                                spawn.pulsarBoss(-400, -200);
+                                crossfirePulsarBoss(-400, -200);
                             }
                         }
                     }
@@ -13314,7 +13320,7 @@ const level = {
         spawn.randomGroup(-1200, -1300, -0.3)
         powerUps.addResearchToLevel()
 
-        if (simulation.difficulty > 3) {
+        if (simulation.difficulty > 1) {
             spawn.randomLevelBoss(1900, 400, ["shieldingBoss", "shooterBoss", "launcherBoss", "streamBoss"])
         } else {
             exitDoor.isClosing = false;
@@ -13821,7 +13827,7 @@ const level = {
         powerUps.addResearchToLevel() //needs to run after mobs are spawned
         let bosses = ["shooterBoss", "launcherBoss", "laserTargetingBoss", "streamBoss", "pulsarBoss", "spawnerBossCulture", "laserBoss", "growBossCulture"];
         let abc = Math.random();
-        if (simulation.difficulty > 3) {
+        if (simulation.difficulty > 1) {
             if (abc < 0.6) {
                 spawn.randomLevelBoss(-1500 + Math.random() * 250, -1100 + Math.random() * 200, bosses);
             } else if (abc < 0.85) {

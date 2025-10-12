@@ -1217,12 +1217,20 @@ const simulation = {
     checks() {
         if (localSettings.isMobile && m.cycle > 960) document.getElementById("mobileHideOnLevel1").style.opacity -= 0.0012;
         if (tech.isShotgunHeat && tech.isShotgunHeat > 1) {
-            if (m.fireCDcycle >= m.cycle || b.guns[b.activeGun].name != 'shotgun' || input.fire) tech.isShotgunHeat -= 0.00667
+            if (m.fireCDcycle >= m.cycle || input.fire) tech.isShotgunHeat -= 0.00667
             if (tech.isShotgunHeat < 1) tech.isShotgunHeat = 1
             if (tech.isShotgunHeat > 1.85) tech.isShotgunHeat = 1.85
             b.setFireCD()
         }
         if (tech.isDupEnergy && m.energy > m.maxEnergy) m.energy = m.maxEnergy
+        if (tech.isFlankJitterbug) {
+          if (Vector.magnitude(Vector.sub(simulation.mouse,tech.jitterbugLastMousePos))>1) {
+            tech.jitterbugDamageBoost = Math.max(0,tech.jitterbugDamageBoost-Vector.magnitude(Vector.sub(simulation.mouse,tech.jitterbugLastMousePos))*0.02)
+          } else {
+            tech.jitterbugDamageBoost = Math.min(1,tech.jitterbugDamageBoost+0.0167)
+          }
+          tech.jitterbugLastMousePos = {x:simulation.mouse.x,y:simulation.mouse.y}
+        }
 	    if (!(m.cycle % 5)) {
 	      if (tech.isCarBomb) {
             m.setMovement()
@@ -1247,13 +1255,13 @@ const simulation = {
                 ctx.beginPath()
                 ctx.fillStyle = "#000"
                 ctx.lineWidth = "12";
-                if (tech.deathCountdownTime > 0) ctx.arc(m.pos.x,m.pos.y,120,-Math.PI/2,-Math.PI/2+(Math.PI*2*(1-(tech.deathCountdownTime/(tech.isDeathCountdownReward ? 360 : 480)))),true)
+                if (tech.deathCountdownTime > 0) ctx.arc(m.pos.x,m.pos.y,120,-Math.PI/2,-Math.PI/2+(Math.PI*2*(1-(tech.deathCountdownTime/(tech.isDeathCountdownReward ? 720 : 960)))),true)
                 ctx.stroke()
                 if (tech.deathCountdownTime < 0) {
                     m.damage(1)
                 }
             } else {
-                tech.deathCountdownTime = tech.isDeathCountdownReward ? 360 : 480
+                tech.deathCountdownTime = tech.isDeathCountdownReward ? 720 : 960
             }
         }
         if (!(m.cycle % 60)) { //once a second

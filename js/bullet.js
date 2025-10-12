@@ -4131,7 +4131,7 @@ const b = {
             x: Math.cos(m.angle+((Math.PI*mirror)/6))*12,
             y: Math.sin(m.angle+((Math.PI*mirror)/6))*12,
         }
-        bullet[me] = Bodies.polygon(position.x, position.y, 30, 11, {
+        bullet[me] = Bodies.polygon(position.x, position.y, 30, 11*Math.sqrt(tech.bulletSize), {
             density: 0.00001, //  0.001 is normal density
             frictionAir: 0,
             classType: "bullet",
@@ -4141,10 +4141,14 @@ const b = {
             },
             endCycle: simulation.cycle+11,
             onEnd() {
+                if (tech.isFlankStellation) {
+                    let crouch = tech.isFlankCambriaSwordWeaponSevenChargeShot ? 0 : input.down
+                    angle += (Math.random()-0.5)*0.08*tech.isFlankStellation*(crouch?0.5:1)
+                }
                 b.flankBullet(this.position,angle,1)
                 b.flankBullet(this.position,angle+Math.PI,1.5)
                 if (tech.isFlankExtraBack) {
-                    b.flankBullet(this.position,angle+Math.PI+((Math.random()-0.5)*0.25),1.6)
+                    b.flankBullet(this.position,angle+Math.PI+((Math.random()-0.5)*0.25),1)
                 }
             },
             do() {
@@ -4168,12 +4172,12 @@ const b = {
         Matter.Body.setVelocity(bullet[me], velocity);
     },
     flankBullet(pos, angle, dmg = 1) {
-        dmg *= (tech.isFlankOrbEnergy ? 0.67 : 1)
+        dmg *= (tech.isFlankOrbEnergy ? 0.67 : 1) * (tech.jitterbugDamageBoost*0.67+1) * tech.bulletSize * (tech.isFlankPierce ? 0.82 : 1)
         const me = bullet.length;
-        bullet[me] = Bodies.rectangle(pos.x, pos.y, 35, 10, b.fireAttributes(Math.atan2(Math.sin(angle), Math.cos(angle))));
-        Matter.Body.setVelocity(bullet[me], {x:Math.cos(angle)*52,y:Math.sin(angle)*52});
+        bullet[me] = Bodies.rectangle(pos.x, pos.y, 35*Math.sqrt(tech.bulletSize), 10*Math.sqrt(tech.bulletSize), b.fireAttributes(Math.atan2(Math.sin(angle), Math.cos(angle))));
+        Matter.Body.setVelocity(bullet[me], {x:Math.cos(angle)*52*(tech.isFlankStellation ? 0.85**tech.isFlankStellation : 1),y:Math.sin(angle)*52*(tech.isFlankStellation ? 0.85**tech.isFlankStellation : 1)});
         Composite.add(engine.world, bullet[me]); //add bullet to world
-        bullet[me].endCycle = simulation.cycle + 60
+        bullet[me].endCycle = simulation.cycle + 90*tech.isBulletsLastLonger
         bullet[me].dmg = dmg
         bullet[me].collisionFilter.mask = 0
         bullet[me].beforeDmg = function(who) {};
@@ -4181,11 +4185,7 @@ const b = {
             const mapHit = Matter.Query.collides(this, map)
             const blockHit = Matter.Query.collides(this, body)
             if (mapHit.length || blockHit.length) {
-                if (!tech.isFlankPierce) {
-                    this.endCycle = -1
-                } else {
-                    this.endCycle -= 6
-                }
+                this.endCycle = -1
             }
             const whom = Matter.Query.collides(this, mob)
             if (whom.length && this.endCycle != -1) {
@@ -8272,7 +8272,7 @@ const b = {
             },
             performingTheFunny: false,
             fire() {
-                let energyUsage = 0.02 * (tech.isFlank3Orb?1.3:1) * (tech.isFlankExtraBack?1.5:1)
+                let energyUsage = 0.02 * (tech.isFlank3Orb?1.3:1) * (tech.isFlankExtraBack?1.5:1) * (tech.isFlankStellation?0.88**tech.isFlankStellation:1)
                 if (m.energy > energyUsage+0.005) {
                     if (!tech.isFlankCambriaSwordWeaponSevenChargeShot || !(input.down && m.energy > m.maxEnergy*0.8)) {
                         let crouch = tech.isFlankCambriaSwordWeaponSevenChargeShot ? 0 : input.down 

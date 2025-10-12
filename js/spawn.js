@@ -2916,7 +2916,7 @@ const spawn = {
             this.checkStatus();
         };
     },
-    pulsarBoss(x, y, radius = 90, isNonCollide = false) {
+    pulsarBoss(x, y, radius = 90, isNonCollide = false, isSpawnBossPowerUp = true) {
         mobs.spawn(x, y, 3, radius, "#a0f");
         let me = mob[mob.length - 1];
         if (isNonCollide) me.collisionFilter.mask = cat.bullet | cat.player
@@ -2950,7 +2950,7 @@ const spawn = {
         spawn.shield(me, x, y, 1);
         spawn.spawnOrbitals(me, radius + 200 + 300 * Math.random(), 1)
         me.onDeath = function() {
-            powerUps.spawnBossPowerUp(this.position.x, this.position.y)
+            if (isSpawnBossPowerUp) powerUps.spawnBossPowerUp(this.position.x, this.position.y)
         };
         me.onHit = function() {};
         me.do = function() {
@@ -3459,8 +3459,6 @@ const spawn = {
     },
     revolutionBoss(x, y, radius = 70) {
         const sides = 9 + Math.floor(Math.min(12, 0.2 * simulation.difficulty))
-        const coolBends = [-1.8, 0, 0, 0.9, 1.2]
-        const bendFactor = coolBends[Math.floor(Math.random() * coolBends.length)];
         mobs.spawn(x, y, sides, radius, "rgb(201,202,225)");
         let me = mob[mob.length - 1];
         Matter.Body.rotate(me, 2 * Math.PI * Math.random());
@@ -3469,6 +3467,9 @@ const spawn = {
         me.swordRadiusMax = 550 + 10 * simulation.difficulty;
         me.laserAngle = 0;
         me.swordDamage = 0.0025 * simulation.dmgScale
+        me.coolBends = [-1.8, 0, 0, 0.9, 1.2]
+        me.bendFactor = me.coolBends[Math.floor(Math.random() * me.coolBends.length)];
+        me.targetBend = me.bendFactor
 
         // spawn.shield(me, x, y, 1);
         Matter.Body.setDensity(me, 0.005); //extra dense //normal is 0.001 //makes effective life much larger
@@ -3482,19 +3483,29 @@ const spawn = {
         //invulnerability every 1/4 fraction of life lost
         //required setup for invulnerable
         me.isInvulnerable = false
-        me.isNextInvulnerability = 0.75
+        me.isNextInvulnerability = 0.5
         me.invulnerabilityCountDown = 0
         me.invulnerable = function() {
             if (this.health < this.isNextInvulnerability) {
-                this.isNextInvulnerability = Math.floor(this.health * 4) / 4 //0.75,0.5,0.25
+                this.isNextInvulnerability = Math.floor(this.health * 2) / 2 //0.75,0.5,0.25
                 this.isInvulnerable = true
                 this.startingDamageReduction = this.damageReduction
                 this.damageReduction = 0
                 this.invulnerabilityCountDown = 106
+                while (this.targetBend == this.bendFactor) {
+                    this.targetBend = this.coolBends[Math.floor(Math.random() * this.coolBends.length)]
+                }
+                this.targetBend -= this.bendFactor
+                this.targetBend /= 106
             }
             if (this.isInvulnerable) {
                 if (this.invulnerabilityCountDown > 0) {
                     this.invulnerabilityCountDown--
+                    this.bendFactor += this.targetBend
+                    Matter.Body.setVelocity(this, {
+                        x: this.velocity.x * 0.975,
+                        y: this.velocity.y * 0.975
+                    });
                     //graphics //draw a super shield?
                     ctx.beginPath();
                     let vertices = this.vertices;
@@ -3543,10 +3554,10 @@ const spawn = {
             this.seePlayerByHistory(60);
             this.attraction();
             //traveling laser
-            this.laserAngle += this.isInvulnerable ? 0.06 : 0.015
+            this.laserAngle += this.isInvulnerable ? 0.0075 : 0.015
             for (let i = 0, len = this.vertices.length; i < len; i++) {
                 // this.laserSword(this.vertices[1], this.angle + laserAngle);
-                const bend = bendFactor * Math.cos(this.laserAngle + 2 * Math.PI * i / len)
+                const bend = this.bendFactor * Math.cos(this.laserAngle + 2 * Math.PI * i / len)
                 const long = this.swordRadiusMax * Math.sin(this.laserAngle + 2 * Math.PI * i / len)
                 if (long > 0) this.laserSword(this.vertices[i], bend + this.angle + (i + 0.5) / sides * 2 * Math.PI, Math.abs(long));
             }
@@ -7888,6 +7899,7 @@ const spawn = {
         me.hasRunDeathScript = false
         me.locatePlayer();
         me.intendedVelocity = {x:0,y:0}
+        me.foamUnstopped = true // should not be slowed by foam lmao
         
         me.cycle = 0
         me.attack = 0
