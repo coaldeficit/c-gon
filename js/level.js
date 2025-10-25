@@ -31311,9 +31311,10 @@ const level = {
             if (curSection < 5 && curSection) {
                 spawn.setSpawnList()
                 if (spawn.pickList[1] == 'ghoster') spawn.pickList[1] = 'grower' // goes through walls + literally invisible half the time
-                if (spawn.pickList[1] == 'sucker') spawn.pickList[1] = 'rainer' // goes through walls
+                if (spawn.pickList[1] == 'sucker') spawn.pickList[1] = 'launcher' // goes through walls
+                if (spawn.pickList[1] == 'rainer') spawn.pickList[1] = 'launcherOne' // goes through walls
                 if (spawn.pickList[1] == 'boidCulture') spawn.pickList[1] = 'stabber' // capable of spawning out of bounds due to limited space
-                if (['hopper','hopMother','striker'].includes(spawn.pickList[1])) spawn.pickList[1] = 'focuser' // gravity affected
+                if (['hopper','hopMother','hopsploder','striker'].includes(spawn.pickList[1])) spawn.pickList[1] = 'focuser' // gravity affected
                 level.announceMobTypes()
             }
             sections[curSection]()
@@ -31352,7 +31353,7 @@ const level = {
         loadNextSection()
         let curColor = [270+((Math.random()-0.5)*120), 45, 64]
         let targetColor = curColor
-        let mHealthCap = m.health // do not permit healing even with tech that directly increase health
+        let mHealthCap = Infinity // do not permit healing even with tech that directly increase health
         let mHealthAtCheckpoint = m.health // heal by 33% of damage taken inbetween buttons
         level.custom = () => {
             if (curSection >= 7) level.exit.drawAndCheck();

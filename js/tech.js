@@ -11802,7 +11802,7 @@ const tech = {
             allowed() { return true },
             requires: "",
             effect() {
-                const urls = ["https://scratch.mit.edu/projects/14005697/fullscreen/", "https://scratch.mit.edu/projects/41429974/fullscreen/", "https://scratch.mit.edu/projects/43690666/fullscreen/", "https://codepen.io/lilgreenland/full/ozXNWZ", "https://codepen.io/lilgreenland/full/wzARJY", "https://landgreen.github.io/sidescroller/classic/7-1-2017/", "https://landgreen.github.io/sidescroller/classic/4-15-2018/", "https://landgreen.github.io/sidescroller/classic/7-11-2019/", "https://landgreen.github.io/sidescroller/classic/9-8-2019/", "https://landgreen.github.io/sidescroller/classic/7-15-2020/", "https://landgreen.github.io/sidescroller/classic/6-1-2021/", "https://therealivyx.github.io/j-gon"]
+                const urls = ["https://scratch.mit.edu/projects/14005697/fullscreen/", "https://scratch.mit.edu/projects/41429974/fullscreen/", "https://scratch.mit.edu/projects/43690666/fullscreen/", "https://codepen.io/lilgreenland/full/ozXNWZ", "https://codepen.io/lilgreenland/full/wzARJY", "https://landgreen.github.io/n-gon/classic/7-1-2017/", "https://landgreen.github.io/n-gon/classic/4-15-2018/", "https://landgreen.github.io/n-gon/classic/7-11-2019/", "https://landgreen.github.io/n-gon/classic/9-8-2019/", "https://landgreen.github.io/n-gon/classic/7-15-2020/", "https://landgreen.github.io/n-gon/classic/6-1-2021/", "https://therealivyx.github.io/j-gon"]
                 const choose = urls[Math.floor(Math.random() * urls.length)]
                 console.log(`opening new tab" ${choose}`)
                 let tab = window.open(choose, "_blank");

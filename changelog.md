@@ -1,3 +1,12 @@
+# porting S (2025/10/??)
+- ported the following enemies:
+- - hopsploder
+- - slasher5 (as slasher4)
+- - pitcher
+- - pitcher4 (as pitcher2)
+- rainer can no longer spawn on boundary
+- hopMother is now significantly less annoying
+- fixed cosmogonic myth sending you to outdated urls
 # actual flank guntech (2025/10/12)
 - added 2 new tech:
 - - jitterbug transformation: flank does more damage if you keep your mouse still
