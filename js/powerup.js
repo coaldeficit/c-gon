@@ -288,8 +288,54 @@ const powerUps = {
                 document.getElementById("mobileHideOnOneGun").style.display = "";
             }
             simulation.makeTextLog(text);
+            if (tech.isExtraGunTech && b.inventory.length) {
+                //find guntech that matches most recent gun in inventory
+                const gunIndex = b.inventory.length - 1
+                const gunTechPool = []
+                for (let j = 0, len = tech.tech.length; j < len; j++) {
+                    const originalActiveGunIndex = b.activeGun //set current gun to active so allowed works
+                    b.activeGun = b.inventory[gunIndex] //to make the .allowed work for guns that aren't active
+                    if (tech.tech[j].isGunTech && tech.tech[j].allowed() && !tech.tech[j].isJunk && !tech.tech[j].isBadRandomOption && tech.tech[j].count < tech.tech[j].maxCount) {
+                        const regex = tech.tech[j].requires.search(b.guns[b.inventory[gunIndex]].name) //get string index of gun name
+                        const not = tech.tech[j].requires.search(' not ') //get string index of ' not '
+                        if (regex !== -1 && (not === -1 || not > regex)) gunTechPool.push(j) //look for the gun name in the requirements, but the gun name needs to show up before the word ' not '                        
+                    }
+                    b.activeGun = originalActiveGunIndex
+                    if (!b.guns[b.activeGun].have) {
+                        if (b.inventory.length === 0) {
+                            b.activeGun = null
+                        } else {
+                            b.activeGun = b.inventory[0]
+                        }
+                        b.inventoryGun = 0;
+                    }
+                }
+                //give the tech that was found for this gun
+                if (gunTechPool.length) {
+                    const index = Math.floor(Math.random() * gunTechPool.length)
+                    simulation.makeTextLog(`<span class='color-var'>tech</span>.giveTech("<strong class='color-text'>${tech.tech[gunTechPool[index]].name}</strong>")`)
+                    tech.giveTech(gunTechPool[index]) // choose from the gun pool
+                    simulation.boldActiveGunHUD();
+                }
+            }
         } else if (type === "field") {
             m.setField(index)
+            if (tech.isExtraGunTech) {
+                //find tech that matches field
+                const techPool = []
+                for (let j = 0, len = tech.tech.length; j < len; j++) {
+                    if (tech.tech[j].isFieldTech && tech.tech[j].allowed() && !tech.tech[j].isJunk && !tech.tech[j].isBadRandomOption && tech.tech[j].count < tech.tech[j].maxCount) {
+                        techPool.push(j) //look for the gun name in the requirements, but the gun name needs to show up before the word ' not '                        
+                    }
+                }
+                //give the tech that was found for this gun
+                if (techPool.length) {
+                    const index = Math.floor(Math.random() * techPool.length)
+                    simulation.makeTextLog(`<span class='color-var'>tech</span>.giveTech("<strong class='color-text'>${tech.tech[techPool[index]].name}</strong>")`)
+                    tech.giveTech(techPool[index]) // choose from the gun pool
+                    simulation.boldActiveGunHUD();
+                }
+            }
         } else if (type === "tech") {
             setTimeout(() => {
                 powerUps.lastTechIndex = index
@@ -1282,9 +1328,9 @@ const powerUps = {
     },
     pauseEjectTech(index) {
         if ((tech.isPauseEjectTech || simulation.testing) && !simulation.isChoosing) {
-            if (Math.random() < 0.1 || tech.tech[index].isFromAppliedScience) {
+            if (Math.random() < 0.1 || tech.tech[index].isFromAppliedScience || tech.tech[index].isRemoveTech) {
                 tech.removeTech(index)
-                powerUps.spawn(m.pos.x + 40 * (Math.random() - 0.5), m.pos.y + 40 * (Math.random() - 0.5), "research", false);
+                if (!tech.tech[index].isRemoveTech) powerUps.spawn(m.pos.x + 40 * (Math.random() - 0.5), m.pos.y + 40 * (Math.random() - 0.5), "research", false);
             } else {
                 powerUps.ejectTech(index)
             }
