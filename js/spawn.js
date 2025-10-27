@@ -19,8 +19,8 @@ const spawn = {
     },
     pickList: ["starter", "starter"],
     fullPickList: [
-        "slasher", "slasher", "slasher2", "slasher3",
-        "hopper", "hopper", "hopMother", "hopMother",
+        "slasher", "slasher", "slasher2", "slasher3", "slasher4",
+        "hopper", "hopper", "hopMother", "hopsploder",
         "stabber", "stabber", "stabber",
         "springer", "springer", "springer",
         "stinger", "stinger",
@@ -32,6 +32,7 @@ const spawn = {
         "laser", "laser",
         "laserLayer", "laserLayer",
         "drifter", "drifter",
+        "pitcher", "pitcher2",
         "launcher", "launcherOne", "exploder", "sneaker", "sucker", "sniper", "spinner", "grower", "beamer", "focuser", "spawner", "ghoster", "rainer", "boidCulture"
     ],
     mobTypeSpawnOrder: [], //preset list of mob names calculated at the start of a run by the randomSeed
@@ -1587,7 +1588,7 @@ const spawn = {
             if (this.cd < simulation.cycle && (Matter.Query.collides(this, map).length || Matter.Query.collides(this, body).length)) {
                 this.cd = simulation.cycle + this.delay;
                 //spawn hopBullets after each jump
-                for (let i = 0, len = 1 + 0.05 * simulation.difficulty; i < len; ++i) spawn.hopBullet(this.position.x + 100 * (Math.random() - 0.5), this.position.y + 100 * (Math.random() - 0.5))
+                for (let i = 0, len = 0 + 0.05 * simulation.difficulty; i < len; ++i) spawn.hopBullet(this.position.x + 100 * (Math.random() - 0.5), this.position.y + 100 * (Math.random() - 0.5))
 
                 this.force.x += (0.02 + 0.06 * Math.random()) * this.mass * (player.position.x > this.position.x ? 1 : -1);
                 this.force.y -= (0.08 + 0.08 * Math.random()) * this.mass
@@ -5285,7 +5286,7 @@ const spawn = {
                     if (Matter.Query.point(map, where).length > 0 || Matter.Query.point(body, where).length > 0) break
                     where.y += 1
                 }
-                spawn.hopEgg(where.x, where.y - 10)
+                if (Math.random() < 0.5) spawn.hopEgg(where.x, where.y - 10)
             }
         }
         me.do = function () {
@@ -5382,7 +5383,7 @@ const spawn = {
         // me.isBadTarget = true;
         me.isMobBullet = true;
         me.showHealthBar = false;
-        me.timeLeft = 1020 + Math.floor(480 * Math.random());
+        me.timeLeft = 480 + Math.floor(120 * Math.random());
 
         me.isRandomMove = Math.random() < 0.3 //most chase player, some don't
         me.accelMag = 0.01; //jump height
@@ -9193,6 +9194,342 @@ const spawn = {
             }
         }
         me.fire = function() {}
+    },
+    hopsploder(x, y, radius = 20 + Math.ceil(Math.random() * 20)) {
+        mobs.spawn(x, y, 5, radius, "rgb(219, 242, 85)");
+        let me = mob[mob.length - 1];
+        Matter.Body.setDensity(me, 0.0008); //normal is 0.001
+        me.accelMag = 0.05;
+        me.g = 0.0032; //required if using this.gravity
+        me.frictionAir = 0.01;
+        me.friction = 1
+        me.frictionStatic = 1
+        me.restitution = 0;
+        me.delay = 120 + 110 * simulation.CDScale;
+        me.randomHopFrequency = 300 + Math.floor(Math.random() * 150);
+        me.randomHopCD = simulation.cycle + me.randomHopFrequency;
+        Matter.Body.rotate(me, Math.random());
+        spawn.shield(me, x, y);
+        me.onDeath = function () {
+            // for (let i = 0; i < 3; i++) {
+            //     spawn.hopBullet(this.position.x + i * 20, this.position.y, this.tier)
+            // }
+        };
+        me.do = function () {
+            if (this.seePlayer.recall) this.healthBar()
+            this.gravity();
+            this.seePlayerCheck();
+            this.checkStatus();
+            if (this.seePlayer.recall) {
+                if (this.cd < simulation.cycle && (Matter.Query.collides(this, map).length || Matter.Query.collides(this, body).length)) {
+                    this.cd = simulation.cycle + this.delay;
+                    const forceMag = (this.accelMag + this.accelMag * Math.random()) * this.mass;
+                    const angle = Math.atan2(this.seePlayer.position.y - this.position.y, this.seePlayer.position.x - this.position.x);
+                    this.force.x += forceMag * Math.cos(angle);
+                    this.force.y += forceMag * Math.sin(angle) - (Math.random() * 0.06 + 0.1) * this.mass; //antigravity
+
+                    //    grenade(x, y, tier, lifeSpan = 90 + Math.ceil(60 / simulation.accelScale), pulseRadius = Math.min(550, 250 + simulation.difficulty * 3), size = 3) {
+                    spawn.grenade(this.position.x, this.position.y + radius, 75 * (1-((1-simulation.CDScale)**2.32)), 300*(Math.log(Math.max(0.5,simulation.dmgScale)+1)/Math.log(4)), 6);
+                }
+            } else {
+                //randomly hob if not aware of player
+                if (this.randomHopCD < simulation.cycle && (Matter.Query.collides(this, map).length || Matter.Query.collides(this, body).length)) {
+                    this.randomHopCD = simulation.cycle + this.randomHopFrequency;
+                    //slowly change randomHopFrequency after each hop
+                    this.randomHopFrequency = Math.max(100, this.randomHopFrequency + (0.5 - Math.random()) * 200);
+                    const forceMag = (this.accelMag + this.accelMag * Math.random()) * this.mass * (0.1 + Math.random() * 0.3);
+                    const angle = -Math.PI / 2 + (Math.random() - 0.5) * Math.PI;
+                    this.force.x += forceMag * Math.cos(angle);
+                    this.force.y += forceMag * Math.sin(angle) - 0.07 * this.mass; //antigravity
+                }
+            }
+        };
+    },
+    slasher4(x, y, radius = 45) {
+        const sides = 6
+        mobs.spawn(x, y, sides, radius, "rgb(255, 255, 255)");
+        let me = mob[mob.length - 1];
+        Matter.Body.setDensity(me, 0.0016); //normal is 0.001
+        Matter.Body.rotate(me, 2 * Math.PI * Math.random());
+        me.accelMag = 0.0004 * simulation.accelScale
+        me.frictionStatic = 0;
+        me.friction = 0;
+        me.frictionAir = 0.04;
+        me.swordDamage = 0.03 * simulation.dmgScale
+        spawn.shield(me, x, y);
+        me.onDamage = function () { };
+        me.swords = [
+            { index: Math.floor(3*Math.random()), long: 0, cycle: 262 },
+            // { index: 2, long: 0, cycle: 157 },
+            { index: 3+Math.floor(3*Math.random()), long: 0, cycle: 52 },
+        ]
+        if (me.swords[0].index == 2 && me.swords[1].index == 3) me.swords[0].index--
+        me.do = function () {
+            if (this.seePlayer.recall) this.healthBar()
+            this.checkStatus();
+            if (!this.isStunned) {
+                this.seePlayerByHistory(40);
+                this.attraction()
+                this.torque = 0.0000004 * this.inertia
+                const mag = 335 + 1.8 * simulation.difficulty
+                for (let i = 0, len = this.swords.length; i < len; i++) {
+                    this.swords[i].cycle++
+                    this.swords[i].long = mag * Math.sin(this.swords[i].cycle * 0.007)
+                    if (this.swords[i].long < 1) {
+                        this.swords[i].cycle = 0
+                        this.swords[i].index++
+                        if (this.swords[i].index > sides - 1) this.swords[i].index = 0
+                    }
+                    // this.laserSpear(this.vertices[this.swords[i].index], this.angle + this.swords[i].index / sides * 2 * Math.PI + Math.PI / sides, Math.max(10, this.swords[i].long));
+                    this.laserSpear(this.vertices[this.swords[i].index], this.angle + this.swords[i].index / sides * 2 * Math.PI + Math.PI / sides, Math.max(10, this.swords[i].long));
+                }
+            }
+
+        };
+        me.laserSpear = function (where, angle, radius) {
+            best = { x: null, y: null, dist2: Infinity, who: null, v1: null, v2: null };
+            const look = { x: where.x + radius * Math.cos(angle), y: where.y + radius * Math.sin(angle) };
+            best = vertexCollisionNew(where, look, [map, body, [playerBody, playerHead]]);
+
+            if (best.who && (best.who === playerBody || best.who === playerHead)) {
+                if (m.immuneCycle < m.cycle) {
+                    m.immuneCycle = m.cycle + tech.collisionImmuneCycles + 60; //player is immune to damage for an extra second
+                    m.damage(this.swordDamage);
+                    simulation.drawList.push({ //add dmg to draw queue
+                        x: best.x,
+                        y: best.y,
+                        radius: this.swordDamage * 1500,
+                        color: "rgba(255,255,255,0.9)",
+                        time: 20
+                    });
+                }
+            }
+            if (best.dist2 === Infinity) best = look;
+            ctx.beginPath(); //draw beam
+            ctx.moveTo(where.x, where.y);
+            ctx.lineTo(best.x, best.y);
+            ctx.strokeStyle = "rgba(255, 255, 255, 0.2)"; // Purple path
+            ctx.lineWidth = 25;
+            ctx.stroke();
+            ctx.strokeStyle = "rgba(255, 255, 255, 1)"; // Purple path
+            ctx.lineWidth = 3;
+            ctx.setLineDash([70 + 300 * Math.random(), 55 * Math.random()]);
+            ctx.stroke(); // Draw it
+            ctx.setLineDash([]);
+        }
+    },
+    pitcher(x, y, radius = 35 + Math.ceil(Math.random() * 25)) {
+        mobs.spawn(x, y, 3, radius, "#28b");
+        let me = mob[mob.length - 1];
+        me.revolutions = 0;
+        me.isDotNeg = false
+        me.cd = 0
+        me.fireDir = { x: 0, y: 0 };
+        me.frictionAir = 0.02;
+        me.accelMag = 0.00017 * simulation.accelScale;
+        me.lookTorque = 0.0000014;
+        me.restitution = 0;
+        me.myBall = null
+        spawn.shield(me, x, y);
+        me.onDeath = function () {
+            if (this.myBall) {
+                this.myBall.timeLeft = 0
+                powerUps.directSpawn(this.vertices[1].x, this.vertices[1].y, "boost");
+            }
+        };
+        me.look = function () {
+            this.attraction();
+            if (this.seePlayer.recall) this.healthBar()
+            this.seePlayerByLookingAt();
+            this.checkStatus();
+            if (this.seePlayer.recall && this.cd < simulation.cycle) {
+                this.fireDir = Vector.normalise(Vector.sub(this.seePlayer.position, this.position));
+                this.revolutions = 0
+                this.do = this.spin
+
+                spawn.pitcherBall(this.vertices[1].x, this.vertices[1].y, 8);
+                this.myBall = mob[mob.length - 1]
+                this.myBall.drawOutline = false
+            }
+        }
+        me.do = me.look
+        me.spin = function () {
+            if (this.seePlayer.recall) this.healthBar()
+            this.checkStatus();
+            this.torque += 0.000017 * this.inertia;
+
+            //track revolutions so that the throw timing matches mob momentum direction
+            const dot = Vector.dot({
+                x: Math.cos(this.angle),
+                y: Math.sin(this.angle)
+            }, this.fireDir);
+            if (dot > 0) {
+                this.isDotNeg = false
+            } else if (!this.isDotNeg) {
+                this.isDotNeg = true
+                this.revolutions++
+            }
+
+            Matter.Body.setPosition(this.myBall, this.vertices[1])
+            if (this.revolutions > 3) {
+                this.cd = simulation.cycle + 300 * simulation.CDScale
+                this.do = this.look
+
+                this.fireDir = Vector.normalise(Vector.sub(this.seePlayer.position, this.position));
+                this.force.x -= 0.005 * this.fireDir.x * this.mass;
+                this.force.y -= 0.005 * this.fireDir.y * this.mass;
+                if (this.myBall) {
+                    const v = 11
+                    Matter.Body.setVelocity(this.myBall, {
+                        x: this.velocity.x + this.fireDir.x * v + 5 * (Math.random() - 0.5),
+                        y: this.velocity.y + this.fireDir.y * v + 5 * (Math.random() - 0.5)
+                    });
+                    this.myBall.drawOutline = true
+                    this.myBall = null
+                }
+            }
+        }
+    },
+    pitcher2(x, y, radius = 35 + Math.ceil(Math.random() * 25)) {
+        mobs.spawn(x, y, 3, radius, "#28b");
+        let me = mob[mob.length - 1];
+        me.revolutions = 0;
+        me.vertexAngleCount = -1 //offsets angle used in dot product to account for different vertexes of balls
+        me.isDotNeg = false
+        me.cd = 0
+        me.fireDir = { x: 0, y: 0 };
+        me.frictionAir = 0.02;
+        me.accelMag = 0.00017 * simulation.accelScale;
+        me.lookTorque = 0.0000017;
+        me.restitution = 0;
+        me.myBall = [null, null, null]
+        spawn.shield(me, x, y);
+        me.onDeath = function () {
+            for (let i = 0; i < 3; i++) {
+                if (this.myBall[i] !== null) {
+                    this.myBall[i].timeLeft = 0
+                    powerUps.directSpawn(this.vertices[i].x, this.vertices[i].y, "boost");
+                }
+            }
+        };
+        me.look = function () {
+            this.attraction();
+            if (this.seePlayer.recall) this.healthBar()
+            this.seePlayerByLookingAt();
+            this.checkStatus();
+            if (this.seePlayer.recall && this.cd < simulation.cycle) {
+                this.fireDir = Vector.normalise(Vector.sub(this.seePlayer.position, this.position));
+                this.revolutions = 0
+                this.vertexAngleCount = -1
+                this.do = this.spin
+
+                for (let i = 0; i < 3; i++) {
+                    spawn.pitcherBall(this.vertices[i].x, this.vertices[i].y, 12, 540 + 420);
+                    this.myBall[i] = mob[mob.length - 1]
+                    this.myBall[i].drawOutline = false
+                }
+            }
+        }
+        me.do = me.look
+        me.spin = function () {
+            if (this.seePlayer.recall) this.healthBar()
+            this.checkStatus();
+            this.torque += 0.000017 * this.inertia;
+
+            //track revolutions so that the throw timing matches mob momentum direction
+            const a = this.angle + 2 / 3 * Math.PI * this.vertexAngleCount
+            const dot = Vector.dot({
+                x: Math.cos(a),
+                y: Math.sin(a)
+            }, this.fireDir);
+            if (dot > 0) {
+                this.isDotNeg = false
+            } else if (!this.isDotNeg) {
+                this.isDotNeg = true
+                this.revolutions++
+            }
+
+            for (let i = 0; i < 3; i++) {
+
+                if (this.myBall[i] !== null) {
+                    Matter.Body.setPosition(this.myBall[i], this.vertices[i])
+
+                    if (this.revolutions > i + 1) {
+                        this.fireDir = Vector.normalise(Vector.sub(this.seePlayer.position, this.position));
+                        this.force.x -= 0.003 * this.fireDir.x * this.mass;
+                        this.force.y -= 0.003 * this.fireDir.y * this.mass;
+
+                        if (this.myBall) {
+                            const v = 7 + Math.floor(5 * Math.random())
+                            Matter.Body.setVelocity(this.myBall[i], {
+                                x: this.velocity.x + this.fireDir.x * v + 6 * (Math.random() - 0.5),
+                                y: this.velocity.y + this.fireDir.y * v + 6 * (Math.random() - 0.5)
+                            });
+                            this.myBall[i].drawOutline = true
+                            this.myBall[i] = null
+                            this.vertexAngleCount++
+                        }
+                    }
+                }
+            }
+
+            if (this.revolutions > 3) {
+                this.cd = simulation.cycle + 900 * simulation.CDScale
+                this.do = this.look
+            }
+        }
+    },
+    pitcherBall(x, y, radius = 20, time = 660) { //bullets
+        mobs.spawn(x, y, 7, radius, "#f55");
+        let me = mob[mob.length - 1];
+        me.stroke = "transparent";
+        me.onHit = function () {
+            this.explode(this.mass * 20);
+        };
+        // me.onDamage = function () {
+        //     this.timeLeft = 0
+        // };
+        Matter.Body.setDensity(me, 0.00005); //normal is 0.001
+        me.timeLeft = time;
+        me.frictionAir = 0;
+        me.friction = 0
+        me.frictionStatic = 0
+        me.restitution = 1.01;
+        me.leaveBody = false;
+        me.isDropPowerUp = false;
+        me.isBadTarget = true;
+        me.isMobBullet = true;
+        me.showHealthBar = false;
+        me.collisionFilter.category = cat.mobBullet;
+        me.collisionFilter.mask = cat.player | cat.map | cat.body | cat.bullet;
+        me.velocitySmooth = { x: 0, y: 0 }
+        me.do = function () {
+            this.timeLimit();
+
+            if (this.leaveBody && this.speed < 0.1) {
+                this.timeLeft -= 20
+                // console.log(this.timeLeft)
+                // Matter.Body.setVelocity(this, { x: this.velocity.x * 1.03, y: this.velocity.y * 1.03 });
+            }
+
+            if (this.drawOutline) {//draw outline
+                ctx.save();
+                ctx.translate(this.position.x, this.position.y);
+                this.velocitySmooth = Vector.add(Vector.mult(this.velocitySmooth, 0.8), Vector.mult(this.velocity, 0.2))
+                ctx.rotate(Math.atan2(this.velocitySmooth.y, this.velocitySmooth.x))
+                ctx.beginPath();
+                const r = 15 + radius
+                const mag = r * 4
+                ctx.arc(0, 0, r, -Math.PI / 2, Math.PI / 2);
+                ctx.bezierCurveTo(-r, r, -r, 0, -mag, 0); // bezierCurveTo(cp1x, cp1y, cp2x, cp2y, x, y)
+                ctx.bezierCurveTo(-r, 0, -r, -r, 0, -r);
+
+                const time = Math.min(60, this.timeLeft) / 60
+                ctx.fillStyle = `rgba(255,0,200,${0.04 + 0.3 * time})`
+                ctx.fill()
+                ctx.restore();
+            }
+        };
     },
     //complex constrained mob templates**********************************************************************
     //*******************************************************************************************************

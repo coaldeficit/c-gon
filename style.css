@@ -668,6 +668,15 @@ summary {
     }
 }
 
+.color-remove {
+    text-decoration: line-through;
+    /* letter-spacing: 2px; */
+    border-radius: 3px;
+    padding: 0px 3px;
+    background-color: hsl(255, 40%, 71%);
+    color: #fff;
+}
+
 .color-stun {
     animation: stun 0.2s linear infinite normal;
 }

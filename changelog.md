@@ -1,3 +1,18 @@
+# porting S (2025/10/27)
+- ported the following enemies:
+- - hopsploder
+- - slasher5 (as slasher4)
+- - pitcher
+- - pitcher4 (as pitcher2)
+- ported contact explosive, a priori, junk DNA, strange loop, null hypothesis, martingale, arms trade, externality, ectomy, deprecated and planned obsolescence tech
+- - oh my god i can finally start on porting guntech the next time i do one of these updates
+- rainer can no longer spawn on boundary
+- hopMother is now significantly less annoying
+- fixed cosmogonic myth sending you to outdated urls
+- bosses can now spawn earlier on coliseum
+- tech, gun and field removal now has a special css text style
+- fixed unified field theory not reducing fieldtech frequency on removal
+- fixed WIMPs wrongly stating it spawns 5 research at the exit instead of 4
 # actual flank guntech (2025/10/12)
 - added 2 new tech:
 - - jitterbug transformation: flank does more damage if you keep your mouse still

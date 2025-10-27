@@ -167,6 +167,21 @@ const level = {
             powerUps.research.changeRerolls(Math.ceil(powerUps.research.count*0.1*tech.isInterest))
             simulation.makeTextLog(`<span class='color-var'>m</span>.<span class='color-r'>research</span> <span class='color-symbol'>+=</span> ${Math.ceil(powerUps.research.count*0.1*tech.isInterest)}<br>${powerUps.research.count}`)
         }
+        if (tech.isEjectHighestTech) {
+            let index = null //find oldest tech that you have
+            for (let i = 0; i < tech.tech.length; i++) {
+                if (tech.tech[i].count > 0 && !tech.tech[i].isInstant) {
+                    index = i
+                    break
+                }
+            }
+            if (index !== null) { //eject it
+                const effect = Math.pow(1.1, tech.tech[index].count)
+                simulation.makeTextLog(`<strong>${Math.round((effect-1)*100)}%</strong> extra <strong class='color-d'>damage</strong> <em>//from obsolescence</em>`, 360)
+                tech.removeTechDamage *= effect
+                powerUps.ejectTech(index)
+            }
+        }
             
         //level.setConstraints()
     },
@@ -12940,7 +12955,7 @@ const level = {
 
 
         //Boss Spawning 
-        if (simulation.difficulty > 3) {
+        if (simulation.difficulty > 1) {
             spawn.randomLevelBoss(6000, 700, ["pulsarBoss", "laserTargetingBoss", "powerUpBoss", "bomberBoss", "historyBoss", "orbitalBoss"]);
             // if (simulation.difficulty > 10) spawn.shieldingBoss(7200, 500);
             // if (simulation.difficulty > 20) spawn.randomLevelBoss(2000, 300, ["historyBoss", "shooterBoss"]);
@@ -31311,9 +31326,10 @@ const level = {
             if (curSection < 5 && curSection) {
                 spawn.setSpawnList()
                 if (spawn.pickList[1] == 'ghoster') spawn.pickList[1] = 'grower' // goes through walls + literally invisible half the time
-                if (spawn.pickList[1] == 'sucker') spawn.pickList[1] = 'rainer' // goes through walls
+                if (spawn.pickList[1] == 'sucker') spawn.pickList[1] = 'launcher' // goes through walls
+                if (spawn.pickList[1] == 'rainer') spawn.pickList[1] = 'launcherOne' // goes through walls
                 if (spawn.pickList[1] == 'boidCulture') spawn.pickList[1] = 'stabber' // capable of spawning out of bounds due to limited space
-                if (['hopper','hopMother','striker'].includes(spawn.pickList[1])) spawn.pickList[1] = 'focuser' // gravity affected
+                if (['hopper','hopMother','hopsploder','striker'].includes(spawn.pickList[1])) spawn.pickList[1] = 'focuser' // gravity affected
                 level.announceMobTypes()
             }
             sections[curSection]()
@@ -31352,7 +31368,7 @@ const level = {
         loadNextSection()
         let curColor = [270+((Math.random()-0.5)*120), 45, 64]
         let targetColor = curColor
-        let mHealthCap = m.health // do not permit healing even with tech that directly increase health
+        let mHealthCap = Infinity // do not permit healing even with tech that directly increase health
         let mHealthAtCheckpoint = m.health // heal by 33% of damage taken inbetween buttons
         level.custom = () => {
             if (curSection >= 7) level.exit.drawAndCheck();

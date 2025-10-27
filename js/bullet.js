@@ -393,7 +393,7 @@ const b = {
             });
 
             //player damage
-            if (Vector.magnitude(Vector.sub(where, player.position)) < radius) {
+            if (Vector.magnitude(Vector.sub(where, player.position)) < radius && !(tech.isExplodeContact && where.x == m.pos.x && where.y == m.pos.y)) {
                 const DRAIN = (tech.isExplosionHarm ? 0.9 : 0.45) * (tech.isRadioactiveResistance ? 0.25 : 1)
                 // * (tech.isImmuneExplosion ? Math.min(1, Math.max(1 - m.energy * 0.7, 0)) : 1) 
                 if (m.immuneCycle < m.cycle) m.energy -= DRAIN
@@ -438,7 +438,7 @@ const b = {
             });
 
             //player damage and knock back
-            if (m.immuneCycle < m.cycle) {
+            if (m.immuneCycle < m.cycle && !(tech.isExplodeContact && where.x == m.pos.x && where.y == m.pos.y)) {
                 sub = Vector.sub(where, player.position);
                 dist = Vector.magnitude(sub);
 
