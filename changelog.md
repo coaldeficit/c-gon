@@ -1,3 +1,8 @@
+# whatever (2025/12/17)
+- removed mantisBoss's invulnerability
+- temporarily made tripwireBoss unable to spawn due to being bugged and unbalanced
+- made constraintBoss have a delay before constraining you
+- nerfed futures exchange from 2% duplication chance per cancel to 1.2%
 # porting S (2025/10/27)
 - ported the following enemies:
 - - hopsploder
