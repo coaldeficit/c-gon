@@ -5,7 +5,7 @@ const spawn = {
     randomBossList: ["shieldingBoss", "orbitalBoss", "historyBoss", "shooterBoss", "cellBossCulture", "bomberBoss", "spiderBoss", "launcherBoss", "laserTargetingBoss",
         "powerUpBoss", "powerUpBossBaby", "dragonFlyBoss", "streamBoss", "pulsarBoss", "spawnerBossCulture", "grenadierBoss", "growBossCulture", "blinkBoss",
         "snakeSpitBoss", "laserBombingBoss", "blockBoss", "revolutionBoss", "slashBoss", "healBoss", "constraintBoss", "beetleBoss", "timeSkipBoss", "sneakBoss",
-        "laserLayerBoss", "mantisBoss", "snakeBoss", "tripwireBoss", //"springBoss"
+        "laserLayerBoss", "mantisBoss", "snakeBoss", //"tripwireBoss", "springBoss"
     ],
     bossTypeSpawnOrder: [], //preset list of boss names calculated at the start of a run by the randomSeed
     bossTypeSpawnIndex: 0, //increases as the boss type cycles
@@ -2063,8 +2063,6 @@ const spawn = {
         me.cons2 = cons[len2];
 
         me.startingDamageReduction = me.damageReduction
-        me.isInvulnerable = false
-        me.invulnerabilityCountDown = 0
 
         me.do = function() {
             this.checkStatus();
@@ -2077,37 +2075,6 @@ const spawn = {
             ctx.fill();
 
             this.seePlayerCheck()
-            // this.seePlayerByHistory()
-            if (this.isInvulnerable) {
-                ctx.beginPath();
-                let vertices = this.vertices;
-                ctx.moveTo(vertices[0].x, vertices[0].y);
-                for (let j = 1; j < vertices.length; j++) ctx.lineTo(vertices[j].x, vertices[j].y);
-                ctx.lineTo(vertices[0].x, vertices[0].y);
-                for (let i = 0; i < this.babyList.length; i++) {
-                    if (this.babyList[i].alive) {
-                        let vertices = this.babyList[i].vertices;
-                        ctx.moveTo(vertices[0].x, vertices[0].y);
-                        for (let j = 1; j < vertices.length; j++) ctx.lineTo(vertices[j].x, vertices[j].y);
-                        ctx.lineTo(vertices[0].x, vertices[0].y);
-                    }
-                }
-                ctx.lineWidth = 13 + 5 * Math.random();
-                ctx.strokeStyle = `rgba(255,255,255,${0.5+0.2*Math.random()})`;
-                ctx.stroke();
-            } else if (this.invulnerabilityCountDown > 0) {
-                this.invulnerabilityCountDown--
-            } else {
-                this.isInvulnerable = true
-                if (this.damageReduction) this.startingDamageReduction = this.damageReduction
-                this.damageReduction = 0
-                for (let i = 0; i < this.babyList.length; i++) {
-                    if (this.babyList[i].alive) {
-                        this.babyList[i].isInvulnerable = true
-                        this.babyList[i].damageReduction = 0
-                    }
-                }
-            }
             // set new values of the ends of the spring constraints
             const stepRange = 1200
             if (this.seePlayer.recall && Matter.Query.ray(map, this.position, this.seePlayer.position).length === 0) {
@@ -2125,17 +2092,6 @@ const spawn = {
                     this.springTarget2.y = goal.y;
                     this.cons.length = 100 + 1.5 * this.radius;
                     this.cons2.length = -200;
-                }
-                if (!(simulation.cycle % 300)) {
-                    this.damageReduction = this.startingDamageReduction
-                    this.isInvulnerable = false
-                    this.invulnerabilityCountDown = 80 + Math.max(0, 70 - simulation.difficulty)
-                    for (let i = 0; i < this.babyList.length; i++) {
-                        if (this.babyList[i].alive) {
-                            this.babyList[i].isInvulnerable = false
-                            this.babyList[i].damageReduction = this.startingDamageReduction
-                        }
-                    }
                 }
             } else {
                 this.torque = this.lookTorque * this.inertia;
@@ -7488,12 +7444,13 @@ const spawn = {
     constraintBoss(x, y, radius = 90) {
         mobs.spawn(x, y, 3, radius, "#b0f");
         let me = mob[mob.length - 1];
-	me.isBoss = true;
+    	me.isBoss = true;
         me.accelMag = 0.0002
-	me.damageReduction = 0 // invincible until attacking
+    	me.damageReduction = 0 // invincible until attacking
         me.memory = 240;
         me.seeAtDistance2 = 2000000 //1400 vision range
         me.randombsgo = 0
+        me.lineofsighttimer = 0
         me.startCycle = -1
         Matter.Body.setDensity(me, 0.0017 + 0.0002 * Math.sqrt(simulation.difficulty))
         me.onDeath = function() {
@@ -7504,33 +7461,46 @@ const spawn = {
             this.seePlayerCheckByDistance();
             this.attraction();
             this.checkStatus();
-	    if (me.randombsgo == 0) {
-          ctx.beginPath();
-          let vertices = this.vertices;
-          ctx.moveTo(vertices[0].x, vertices[0].y);
-          for (let j = 1; j < vertices.length; j++) ctx.lineTo(vertices[j].x, vertices[j].y);
-          ctx.lineTo(vertices[0].x, vertices[0].y);
-          ctx.lineWidth = 13 + 5 * Math.random();
-          ctx.strokeStyle = `rgba(255,255,255,${0.5+0.2*Math.random()})`;
-          ctx.stroke();
-	      if (Vector.magnitude(Vector.sub(player.position, this.position)) <= 666 &&
-            Matter.Query.ray(map, this.position, player.position).length === 0
-          ) { // attach constraint to player if too close and in sight
-            this.damageReduction = 0.17 / (tech.isScaleMobsWithDuplication ? 1 + tech.duplicationChance() : 1)
-	        this.randombsgo = 1
-            this.startCycle = m.cycle
-	        consBB[consBB.length] = Constraint.create({
-	            bodyA: me,
-	            bodyB: player,
-	            stiffness: 0.001
-	        });
-	        Composite.add(engine.world, consBB[consBB.length - 1]);
-	      }
-	    }
-	    if (this.randombsgo == 1) {
-	      if (!(((m.cycle-this.startCycle)+1) % 120)) m.damage(0.08 * simulation.dmgScale)
-	      Matter.Body.setAngularVelocity(this, 0.1)
-	    }
+	        if (this.randombsgo == 0) {
+                ctx.beginPath();
+                let vertices = this.vertices;
+                ctx.moveTo(vertices[0].x, vertices[0].y);
+                for (let j = 1; j < vertices.length; j++) ctx.lineTo(vertices[j].x, vertices[j].y);
+                ctx.lineTo(vertices[0].x, vertices[0].y);
+                ctx.lineWidth = 13 + 5 * Math.random();
+                ctx.strokeStyle = `rgba(255,255,255,${0.5+0.2*Math.random()})`;
+	            if (Vector.magnitude(Vector.sub(player.position, this.position)) <= 720 &&
+                    Matter.Query.ray(map, this.position, player.position).length === 0
+                ) { // attach constraint to player if too close and in sight
+                    if (this.lineofsighttimer > 150 / Math.max(simulation.difficulty,1)**(1/10)) {
+                        this.damageReduction = 0.17 / (tech.isScaleMobsWithDuplication ? 1 + tech.duplicationChance() : 1)
+	                    this.randombsgo = 1
+                        this.startCycle = m.cycle
+	                    consBB[consBB.length] = Constraint.create({
+	                        bodyA: me,
+	                        bodyB: player,
+	                        stiffness: 0.0004
+	                    });
+	                    Composite.add(engine.world, consBB[consBB.length - 1]);
+                    } else {
+                        this.lineofsighttimer++
+                        let colorreduction = (this.lineofsighttimer / 150 / Math.max(simulation.difficulty,1)**(1/10))*255
+	                    Matter.Body.setAngularVelocity(this, 0.05 * (colorreduction/255))
+                        if (Math.random() < 0.333) {
+                            ctx.strokeStyle = `rgba(255,${255-colorreduction},${255-colorreduction},${0.5+0.2*Math.random()})`
+                        } else if (Math.random() < 0.5) {
+                            ctx.strokeStyle = `rgba(${255-colorreduction},255,${255-colorreduction},${0.5+0.2*Math.random()})`
+                        } else {
+                            ctx.strokeStyle = `rgba(${255-colorreduction},${255-colorreduction},255,${0.5+0.2*Math.random()})`
+                        }
+                    }
+	            } else {
+                    this.lineofsighttimer = Math.max(this.lineofsighttimer-5,0)
+                }
+                ctx.stroke();
+	        } else {
+	            Matter.Body.setAngularVelocity(this, 0.1)
+	        }
         };
     },
     tripwireBoss(x, y, radius = 60) {
