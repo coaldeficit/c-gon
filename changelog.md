@@ -1,3 +1,16 @@
+# scope creep (2026/??/??)
+- completely reworked flank and removed its previous tech
+- added 1 new field:
+- - metascience: you have no field, but mobs sometimes drop research powerups
+- added 1 new tech:
+- - scalar product: gives flank a crouch-shot that shoots a single projectile upwards
+- rebar pierce damage multiplier increased from 50% to 80%
+- fixed rebar being unable to hit mobs that spawned after the projectile was shot
+- BLEVE now deals half as much self-harm, damage increase buffed from 250% to 275%
+- negative mass harm reduction decreased from 55% to 15%
+- ported field-based energy bar colors
+- added custom field energy bar colors for standing wave, pilot wave and wormhole
+- supercapacitor now increases harm taken by 20% above 90% energy, instead of by 30% above 65% energy
 # whatever (2025/12/17)
 - removed mantisBoss's invulnerability
 - temporarily made tripwireBoss unable to spawn due to being bugged and unbalanced
@@ -281,7 +294,7 @@
 - - rainer: flies above you and rains down bullets
 - stingers are now slightly less common
 # porting K (2024/10/02)
-- Hilbert space alternate reality count now properly resets on death
+- Hilbert space alternate reality tech count now properly resets on death
 - fixed typo in Verlet integration description
 - ported ternary, pigeonhole principle, marginal utility and Pareto efficiency tech
 - renamed exciton to non-renewables and buffed damage increase from 88% -> 100%

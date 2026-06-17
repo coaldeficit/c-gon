@@ -565,7 +565,7 @@ const m = {
         let dmg = 1
         if ((ignoreArmorConfig == true && tech.isArmoredConfig) || !tech.isArmoredConfig) {
             dmg *= m.fieldHarmReduction
-            if (tech.isSupercapacitor && m.energy > m.maxEnergy*0.65) dmg *= 1.3
+            if (tech.isSupercapacitor && m.energy > m.maxEnergy*0.9) dmg *= 1.2
             if (tech.isBiggerField) dmg *= 1.2
             if (tech.isZeno) dmg *= 0.3
             if (tech.isFieldHarmReduction) dmg *= 0.5
@@ -3283,6 +3283,7 @@ const m = {
                 m.blockingRecoil = 2 //4 is normal
                 m.fieldRange = 175
                 m.fieldShieldingScale = (tech.isStandingWaveExpand ? 0.9 : 1.3) * Math.pow(0.6, (tech.harmonics - 2))
+                m.fieldMeterColor = "#00f"
 
                 m.harmonic3Phase = () => { //normal standard 3 different 2-d circles
                     const fieldRange1 = (0.75 + 0.3 * Math.sin(m.cycle / 23)) * m.fieldRange * m.harmonicRadius
@@ -3385,6 +3386,7 @@ const m = {
                 m.fieldShieldingScale = 0;
                 m.fieldBlockCD = 3;
                 m.grabPowerUpRange2 = 10000000
+                m.fieldMeterColor = "#48f"
                 m.fieldPosition = { x: m.pos.x, y: m.pos.y }
                 m.fieldAngle = m.angle
                 m.perfectPush = (isFree = false) => {
@@ -3560,14 +3562,14 @@ const m = {
         },
         {
             name: "negative mass",
-            description: "use <strong class='color-f'>energy</strong> to nullify &nbsp;<strong style='letter-spacing: 7px;'>gravity</strong><br>reduce <strong class='color-harm'>harm</strong> by <strong>55%</strong><br>hold <strong class='color-block'>blocks</strong> as if they have a lower <strong>mass</strong>",
+            description: "use <strong class='color-f'>energy</strong> to nullify &nbsp;<strong style='letter-spacing: 7px;'>gravity</strong><br>reduce <strong class='color-harm'>harm</strong> by <strong>15%</strong><br>hold <strong class='color-block'>blocks</strong> as if they have a lower <strong>mass</strong>",
             fieldDrawRadius: 0,
             effect: () => {
                 m.fieldFire = true;
                 m.holdingMassScale = 0.01; //can hold heavier blocks with lower cost to jumping
                 m.fieldMeterColor = "#333"
                 m.eyeFillColor = m.fieldMeterColor
-                m.fieldHarmReduction = 0.45; //55% reduction
+                m.fieldHarmReduction = 0.85; //15% reduction
                 m.fieldDrawRadius = 0;
 
                 m.hold = function() {
@@ -3712,6 +3714,7 @@ const m = {
             name: "molecular assembler",
             description: "excess <strong class='color-f'>energy</strong> used to build <strong>drones</strong><br>use <strong class='color-f'>energy</strong> to <strong>deflect</strong> mobs<br><strong>double</strong> your default <strong class='color-f'>energy</strong> regeneration",
             effect: () => {
+                m.fieldMeterColor = "#ff0"
                 // m.fieldMeterColor = "#0c5"
                 // m.eyeFillColor = m.fieldMeterColor
                 m.hold = function() {
@@ -4244,6 +4247,7 @@ const m = {
             // description: "use <strong class='color-f'>energy</strong> to <strong style='letter-spacing: 1px;'>stop time</strong><br>while time is stopped you can <strong>move</strong> and <strong>fire</strong><br>and <strong>collisions</strong> do <strong>50%</strong> less <strong class='color-harm'>harm</strong>",
             description: "use <strong class='color-f'>energy</strong> to <strong style='letter-spacing: 1px;'>stop time</strong><br><strong>move</strong> and <strong>fire</strong> while time is stopped<br>but, <strong>collisions</strong> still do <strong class='color-harm'>harm</strong>",
             set() {
+                m.fieldMeterColor = "#3fe"
                 if (tech.isRewindField) {
                     this.rewindCount = 0
                     m.grabPowerUpRange2 = 300000
@@ -4811,6 +4815,7 @@ const m = {
                 }
                 m.fieldOn = false;
                 m.fieldRadius = 0;
+                m.fieldMeterColor = "#ff8800"
                 m.drop();
                 m.hold = function() {
                     if (tech.isPrinter) {
@@ -5034,6 +5039,7 @@ const m = {
                 m.duplicateChance = 0.05
                 m.fieldRange = 0
                 powerUps.setDupChance(); //needed after adjusting duplication chance
+                m.fieldMeterColor = "#bbf";
 
                 m.hold = function() {
                     // m.hole = {  //this is reset with each new field, but I'm leaving it here for reference
@@ -5538,6 +5544,44 @@ const m = {
             //     }
             //     m.drawFieldMeter()
             // },
+        },
+        {
+            name: "metascience",
+            description: "<strong>mobs</strong> occasionally drop <strong class='color-r'>research</strong> <strong>power ups</strong><br>but you cannot <strong>deflect</strong> with your <strong class='color-f'>field</strong>",
+            // description: "use <strong class='color-f'>energy</strong> to <strong>deflect</strong> mobs,<br><strong>grab</strong> power ups, and <strong>throw</strong> <strong class='color-block'>blocks</strong><br>regen <strong>6</strong> <strong class='color-f'>energy</strong>/s, when not immune to <strong class='color-harm'>harm</strong>",
+            effect: () => {
+                m.hold = function() {
+                    if (m.isHolding) {
+                        m.drawHold(m.holdingTarget);
+                        m.holding();
+                        m.throwBlock();
+                        if (tech.isPrinter && m.holdingTarget.isPrinted && input.field) {
+                            // if (Math.random() < 0.004 && m.holdingTarget.vertices.length < 12) m.holdingTarget.vertices.push({ x: 0, y: 0 }) //small chance to increase the number of vertices
+                            m.holdingTarget.radius += Math.min(1.1, 1.3 / m.holdingTarget.mass) //grow up to a limit
+                            const r1 = m.holdingTarget.radius * (1 + 0.12 * Math.sin(m.cycle * 0.11))
+                            const r2 = m.holdingTarget.radius * (1 + 0.12 * Math.cos(m.cycle * 0.11))
+                            let angle = (m.cycle * 0.01) % (2 * Math.PI) //rotate the object 
+                            let vertices = []
+                            for (let i = 0, len = m.holdingTarget.vertices.length; i < len; i++) {
+                                angle += 2 * Math.PI / len
+                                vertices.push({ x: m.holdingTarget.position.x + r1 * Math.cos(angle), y: m.holdingTarget.position.y + r2 * Math.sin(angle) })
+                            }
+                            Matter.Body.setVertices(m.holdingTarget, vertices)
+                            m.definePlayerMass(m.defaultMass + m.holdingTarget.mass * m.holdingMassScale)
+                        }
+                    } else if ((input.field && m.fieldCDcycle < m.cycle)) { //not hold but field button is pressed
+                        m.grabPowerUp();
+                        m.lookForPickUp();
+                        if (tech.isPrinter && input.down) {
+                            m.printBlock();
+                        }
+                    } else if (m.holdingTarget && m.fieldCDcycle < m.cycle) { //holding, but field button is released
+                        m.pickUp();
+                    } else {
+                        m.holdingTarget = null; //clears holding target (this is so you only pick up right after the field button is released and a hold target exists)
+                    }
+                }
+            }
         },
     ],
     //************************************************************************************

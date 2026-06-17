@@ -3772,7 +3772,7 @@ const b = {
         let dmg = 2
         dmg *= tech.isAcetylene
         if (tech.isDeflagration) dmg *= 0.7
-        if (tech.isBLEVE) dmg *= 3.5
+        if (tech.isBLEVE) dmg *= 3.75
         if (tech.isHeavyShell) dmg *= 1.22
         return dmg
     },
@@ -3835,7 +3835,7 @@ const b = {
         }
         sub = Vector.sub(pos, player.position);
         dist = Vector.magnitude(sub);
-        if (dist < range && tech.isBLEVE) m.damage(0.067 * simulation.dmgScale)
+        if (dist < range && tech.isBLEVE) m.damage(0.033 * simulation.dmgScale)
     },
     rebar(angle = m.angle) {
         const me = bullet.length;
@@ -3852,6 +3852,7 @@ const b = {
             if (whom.length) { //if touching a mob 
                 for (let i = 0, len = whom.length; i < len; i++) {
                     who = whom[i].bodyA
+                    if (who == this) who = whom[i].bodyB
                     if (who && who.mob) {
                         let immune = false
                         for (let i = 0; i < this.immuneList.length; i++) { //check if this needle has hit this mob already
@@ -3867,7 +3868,7 @@ const b = {
                             let dmg = this.dmg * m.dmgScale
                             if (tech.isRebarStun) who.rebarStunProtected = true
                             who.damage(dmg, true);
-                            this.dmg /= 2
+                            this.dmg *= 0.8
                             if (who.alive) who.foundPlayer();
                             if (tech.isRebarStun) {
                                 mobs.statusStun(who, 60)
@@ -4121,95 +4122,104 @@ const b = {
         }
         Matter.Body.setVelocity(bullet[me], effectivevelocity);
     },
-    flankOrb(mirror, angle = m.angle) {
+    flankBullet(angle,turnSpeedMult=1,damageMult=1,speedMult=1,lifeMult=1,flankDeco=0) {
         const me = bullet.length;
-        const position = {
-            x: m.pos.x+(Math.cos(m.angle)*20),
-            y: m.pos.y+(Math.sin(m.angle)*20)
-        }
         const velocity = {
-            x: Math.cos(m.angle+((Math.PI*mirror)/6))*12,
-            y: Math.sin(m.angle+((Math.PI*mirror)/6))*12,
+            x: Math.cos(angle)*20*speedMult,
+            y: Math.sin(angle)*20*speedMult,
         }
-        bullet[me] = Bodies.polygon(position.x, position.y, 30, 11*Math.sqrt(tech.bulletSize), {
+        bullet[me] = Bodies.polygon(m.pos.x, m.pos.y, 30, flankDeco & 1 ? 45 : 20, {
             density: 0.00001, //  0.001 is normal density
             frictionAir: 0,
             classType: "bullet",
             collisionFilter: {
                 category: cat.bullet,
-                mask: 0
+                mask: cat.map
             },
-            endCycle: simulation.cycle+11,
-            onEnd() {
-                if (tech.isFlankStellation) {
-                    let crouch = tech.isFlankCambriaSwordWeaponSevenChargeShot ? 0 : input.down
-                    angle += (Math.random()-0.5)*0.08*tech.isFlankStellation*(crouch?0.5:1)
-                }
-                b.flankBullet(this.position,angle,1)
-                b.flankBullet(this.position,angle+Math.PI,1.5)
-                if (tech.isFlankExtraBack) {
-                    b.flankBullet(this.position,angle+Math.PI+((Math.random()-0.5)*0.25),1)
-                }
-            },
+            endCycle: simulation.cycle+240*lifeMult,
+            dontRender: true,
+            ignore: [],
+            history: [],
+            ignoreBosses: false,
+            turnSpeedMult: turnSpeedMult,
+            damageMult: damageMult,
+            flankDeco: flankDeco,
+            speedMult: speedMult,
+            onEnd() {},
             do() {
-                const whom = Matter.Query.collides(this, mob)
-                if (whom.length) {
-                    this.endCycle -= 2
-                    if (tech.isFlankOrbEnergy) {
-                        m.energy += 0.027
-                        simulation.drawList.push({
-                            x: this.position.x,
-                            y: this.position.y,
-                            radius: Math.log(1.34) * 40 * 1 + 3,
-                            color: "#0cf",
-                            time: simulation.drawTime
-                        });
+                let nearest = [null, Infinity]
+                for (let victim of mob) {
+                    if (!victim.isBadTarget && Vector.magnitude(Vector.sub(m.pos, victim.position)) < level.defaultZoom*1.3 && (!Matter.Query.ray(map,m.pos,victim.position).length || !Matter.Query.ray(map,this.position,victim.position).length) && victim.damageReduction && !this.ignore.includes(victim.id)) {
+                        let distance = Vector.magnitude(Vector.sub(this.position, victim.position))
+                        if (victim.isBoss) distance *= this.ignoreBosses ? Infinity : 0.333
+                        if (!victim.isDropPowerUp) distance *= 2
+                        if (distance < nearest[1]) nearest = [victim, distance]
                     }
                 }
+                if (nearest[0] != null) {
+                    const sub = Vector.sub(nearest[0].position, this.position)
+                    const angle2 = Math.atan2(this.velocity.y,this.velocity.x)
+                    const targetAngle = angle2+Math.max(Math.min(this.angleDifference(angle2, Math.atan2(sub.y,sub.x)),0.3*this.turnSpeedMult),-0.3*this.turnSpeedMult)
+                    Matter.Body.setVelocity(this, {x:Math.cos(targetAngle)*20*this.speedMult,y:Math.sin(targetAngle)*20*this.speedMult})
+                }
+                
+                const whom = Matter.Query.collides(this, mob)
+                if (whom.length) {
+                    who = whom[0].bodyA
+                    if (who == this) who = whom[0].bodyB
+                    if (who && who.mob && !this.ignore.includes(who.id) && (who.isBoss ? !this.ignoreBosses : true) && who.damageReduction) {
+                        //if (who.isBoss) this.ignoreBosses = true
+                        who.damage(45*this.damageMult, true);
+                        this.ignore.push(who.id)
+                        this.endCycle += 20
+                    }
+                }
+                // visuals
+                this.history.push({x:this.position.x,y:this.position.y})
+                if (this.flankDeco & 1) {
+                    for (let i=0;i<16;i++) {
+                        if (this.history[this.history.length-(2+i)] != null) {
+                            ctx.beginPath()
+                            ctx.moveTo(this.history[this.history.length-(1+i)].x,this.history[this.history.length-(1+i)].y)
+                            ctx.lineTo(this.history[this.history.length-(2+i)].x,this.history[this.history.length-(2+i)].y)
+                            ctx.lineWidth = (66-(i*4))
+                            ctx.strokeStyle = "rgba(127,0,255,1)"
+                            ctx.stroke()
+                        }
+                    }
+                    for (let i=0;i<8;i++) {
+                        if (this.history[this.history.length-(2+i)] != null) {
+                            ctx.beginPath()
+                            ctx.moveTo(this.history[this.history.length-(1+i)].x,this.history[this.history.length-(1+i)].y)
+                            ctx.lineTo(this.history[this.history.length-(2+i)].x,this.history[this.history.length-(2+i)].y)
+                            ctx.lineWidth = (33-(i*4))
+                            ctx.strokeStyle = "rgba(255,255,255,1)"
+                            ctx.stroke()
+                        }
+                    }
+                } else {
+                    for (let i=0;i<8;i++) {
+                        if (this.history[this.history.length-(2+i)] != null) {
+                            ctx.beginPath()
+                            ctx.moveTo(this.history[this.history.length-(1+i)].x,this.history[this.history.length-(1+i)].y)
+                            ctx.lineTo(this.history[this.history.length-(2+i)].x,this.history[this.history.length-(2+i)].y)
+                            ctx.lineWidth = (33-(i*4))
+                            ctx.strokeStyle = "rgba(127,0,255,1)"
+                            ctx.stroke()
+                        }
+                    }
+                }
+            },
+            angleDifference(sourceA, targetA) {
+                let mod = function(a, n) {
+                    return (a % n + n) % n;
+                };
+                let a = targetA - sourceA;
+                return mod(a + Math.PI, 2*Math.PI) - Math.PI;
             }
         });
         Composite.add(engine.world, bullet[me]); //add bullet to world
         Matter.Body.setVelocity(bullet[me], velocity);
-    },
-    flankBullet(pos, angle, dmg = 1) {
-        dmg *= (tech.isFlankOrbEnergy ? 0.67 : 1) * (tech.jitterbugDamageBoost*0.67+1) * tech.bulletSize * (tech.isFlankPierce ? 0.82 : 1)
-        const me = bullet.length;
-        bullet[me] = Bodies.rectangle(pos.x, pos.y, 35*Math.sqrt(tech.bulletSize), 10*Math.sqrt(tech.bulletSize), b.fireAttributes(Math.atan2(Math.sin(angle), Math.cos(angle))));
-        Matter.Body.setVelocity(bullet[me], {x:Math.cos(angle)*52*(tech.isFlankStellation ? 0.85**tech.isFlankStellation : 1),y:Math.sin(angle)*52*(tech.isFlankStellation ? 0.85**tech.isFlankStellation : 1)});
-        Composite.add(engine.world, bullet[me]); //add bullet to world
-        bullet[me].endCycle = simulation.cycle + 90*tech.isBulletsLastLonger
-        bullet[me].dmg = dmg
-        bullet[me].collisionFilter.mask = 0
-        bullet[me].beforeDmg = function(who) {};
-        bullet[me].do = function() {
-            const mapHit = Matter.Query.collides(this, map)
-            const blockHit = Matter.Query.collides(this, body)
-            if (mapHit.length || blockHit.length) {
-                this.endCycle = -1
-            }
-            const whom = Matter.Query.collides(this, mob)
-            if (whom.length && this.endCycle != -1) {
-                who = whom[0].bodyA
-                if (who && who.mob && this.immune != who.id) {
-                    if (this.immune != null || !tech.isFlankPierce) {
-                        this.endCycle = -1
-                    } else {
-                        this.immune = who.id
-                    }
-                    who.damage(this.dmg, false);
-                    if (who.alive) who.foundPlayer();
-                    if (who.damageReduction) {
-                        simulation.drawList.push({ //add dmg to draw queue
-                            x: this.position.x,
-                            y: this.position.y,
-                            radius: Math.log(dmg + 1.1) * 40 * who.damageReduction + 3,
-                            color: simulation.playerDmgColor,
-                            time: simulation.drawTime
-                        });
-                    }
-                }
-            }
-        };
     },
     flankObliterator(angle) {
         const me = bullet.length;
@@ -8221,7 +8231,7 @@ const b = {
             }
         }, {
             name: "flank", // https://youtu.be/QIE3PROsn-o?&t=2631
-            description: "use <strong class='color-f'>energy</strong> to generate orbs that <strong>split</strong><br>into <strong>bullets</strong> going forwards and backwards",
+            description: "use <strong class='color-f'>energy</strong> to generate <strong>tripwires</strong><br>that spawn homing <strong>plasma</strong>",
             ammo: 0,
             ammoPack: Infinity,
             defaultAmmoPack: Infinity,
@@ -8230,62 +8240,56 @@ const b = {
                 if (this.performingTheFunny) {
                     ctx.beginPath()
                     ctx.moveTo(m.pos.x, m.pos.y);
-                    let depth = 700
-                    for (let i=0;i<14;i++) {
-                        if (!Matter.Query.ray(map,m.pos,{x:m.pos.x,y:m.pos.y+(700-(i*50))}).length) {
-                            depth = Math.min(700-((i-1)*50),700)
+                    let angle = Math.PI/2
+                    if (this.aimCrouch && tech.isFlankCrouchAim) {
+                        angle = Math.atan2(this.aimCrouchPos[1]-m.pos.y,this.aimCrouchPos[0]-m.pos.x)
+                    }
+                    const depthInc = 800
+                    let depth = 100
+                    for (let i=0;i<70;i++) {
+                        if (!Matter.Query.ray(map,m.pos,{x:m.pos.x+Math.cos(angle)*(depthInc-(i*10)),y:m.pos.y+Math.sin(angle)*(depthInc-(i*10))}).length) {
+                            depth = Math.min(depthInc-((i-1)*10),depthInc)
                             break
                         }
                     }
-                    ctx.lineTo(m.pos.x, m.pos.y+depth);
+                    ctx.lineTo(m.pos.x+Math.cos(angle)*depth, m.pos.y+Math.sin(angle)*depth);
                     ctx.lineWidth = "2";
                     ctx.strokeStyle = "rgba(255,0,0,0.75)"
                     ctx.stroke()
                     if (m.fireCDcycle <= m.cycle+5) {
                         this.performingTheFunny = false
-                    } else if (Matter.Query.ray(mob,m.pos,{x:m.pos.x,y:m.pos.y+depth}).length) {
+                        this.aimCrouch = false
+                    } else if (Matter.Query.ray(mob,m.pos,{x:m.pos.x+Math.cos(angle)*depth,y:m.pos.y+Math.sin(angle)*depth}).length) {
+                        const damageMult = 1 * (this.aimCrouch && tech.isFlankCrouchAim ? 0.66 : 1) * (tech.isFlankBig ? 2 : 1)
+                        const turnMult = 1 * (tech.isFlankBig ? 1.7 : 1)
+                        const speedMult = 1 * (tech.isFlankBig ? 1.7 : 1)
+                        const lifeMult = 1 * (tech.isFlankBig ? 1/1.7 : 1)
+                        const deco = (tech.isFlankBig * 1) // use bitwise or
                         this.performingTheFunny = false
-                        m.fireCDcycle = -1
-                        simulation.ephemera.push({
-                            name: "Flank Immediate Fucking Obliteration" + m.cycle,
-                            time: 0,
-                            do() {
-                                this.time++
-                                switch (this.time) {
-                                    case 1:
-                                        b.flankObliterator(Math.PI/2)
-                                        break
-                                    case 9:
-                                        b.flankObliterator((Math.PI/2)+(Math.PI/4))
-                                        break
-                                    case 17:
-                                        b.flankObliterator((Math.PI/2)-(Math.PI/4))
-                                        break
-                                }
-                                if (this.time >= 17) {
-                                    simulation.removeEphemera(this.name);
-                                }
-                            },
-                        })
+                        this.aimCrouch = false
+                        m.fireCDcycle = m.cycle + 60 * b.fireCDscale
+                        b.flankBullet(angle,turnMult,damageMult,speedMult,lifeMult,deco)
                     }
                 }
             },
             performingTheFunny: false,
+            aimCrouch: false,
+            aimCrouchPos: [0,0],
             fire() {
-                let energyUsage = 0.02 * (tech.isFlank3Orb?1.3:1) * (tech.isFlankExtraBack?1.5:1) * (tech.isFlankStellation?0.88**tech.isFlankStellation:1)
+                let energyUsage = 0.2 * (this.aimCrouch && tech.isFlankCrouchAim ? 1.5 : 1) * (tech.isFlankBig && (!input.down || !tech.isFlankCrouchUp) ? 2.75 : 1)
                 if (m.energy > energyUsage+0.005) {
-                    if (!tech.isFlankCambriaSwordWeaponSevenChargeShot || !(input.down && m.energy > m.maxEnergy*0.8)) {
-                        let crouch = tech.isFlankCambriaSwordWeaponSevenChargeShot ? 0 : input.down 
-                        b.flankOrb(-1 + (crouch*0.667))
-                        b.flankOrb(1 - (crouch*0.667))
-                        if (tech.isFlank3Orb) b.flankOrb(0)
-                        m.fireCDcycle = m.cycle + Math.floor((7+(crouch*3)) * b.fireCDscale); // cool down
-                        m.energy -= energyUsage
-                    } else {
+                    if (!input.down || !tech.isFlankCrouchUp) {
+                        if (input.down && tech.isFlankCrouchAim) {
+                            this.aimCrouch = true
+                            this.aimCrouchPos = [m.pos.x,m.pos.y+240]
+                        }
                         this.performingTheFunny = true
-                        if (m.energy > m.maxEnergy*1.6) m.energy -= m.energy*0.75
-                        m.energy -= m.maxEnergy*0.75
+                        m.energy -= energyUsage
                         m.fireCDcycle = m.cycle + 240
+                    } else {
+                        b.flankBullet(-Math.PI/2,0.14)
+                        m.energy -= energyUsage
+                        m.fireCDcycle = m.cycle + 240 * b.fireCDscale
                     }
                 }
             }

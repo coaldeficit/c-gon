@@ -3033,7 +3033,7 @@ const tech = {
         },
         {
             name: "supercapacitor",
-            description: "increase your <strong>maximum</strong> <strong class='color-f'>energy</strong> by <strong>220</strong><br>take <strong>30%</strong> more <strong class='color-harm'>harm</strong> above 65% of your maximum <strong class='color-f'>energy</strong>",
+            description: "increase your <strong>maximum</strong> <strong class='color-f'>energy</strong> by <strong>220</strong><br>take <strong>20%</strong> more <strong class='color-harm'>harm</strong> above 90% of your maximum <strong class='color-f'>energy</strong>",
             maxCount: 1,
             count: 0,
             frequency: 1,
@@ -5466,14 +5466,14 @@ const tech = {
         // },
         {
             name: "caliber",
-            description: `<strong>rivets</strong>, <strong>needles</strong>, <strong>super balls</strong>, <strong>nails</strong>, and <strong>flank bullets</strong><br>have <strong>16%</strong> increased mass and physical <strong class='color-d'>damage</strong>`,
+            description: `<strong>rivets</strong>, <strong>needles</strong>, <strong>super balls</strong>, and <strong>nails</strong><br>have <strong>16%</strong> increased mass and physical <strong class='color-d'>damage</strong>`,
             isGunTech: true,
             maxCount: 9,
             count: 0,
             frequency: 2,
             frequencyDefault: 2,
             allowed() {
-                return tech.isMineDrop + tech.nailBotCount + tech.fragments + tech.nailsDeathMob + (tech.haveGunCheck("super balls") + (tech.haveGunCheck("mine") && !tech.isLaserMine) + (tech.haveGunCheck("nail gun")) + tech.isNeedles + tech.isNailShot + tech.isRivets + tech.isShotgunFireEverything + (tech.haveGunCheck("rebar") && tech.isRebarBlockNails) + tech.haveGunCheck("flank")) * 2 > 1
+                return tech.isMineDrop + tech.nailBotCount + tech.fragments + tech.nailsDeathMob + (tech.haveGunCheck("super balls") + (tech.haveGunCheck("mine") && !tech.isLaserMine) + (tech.haveGunCheck("nail gun")) + tech.isNeedles + tech.isNailShot + tech.isRivets + tech.isShotgunFireEverything + (tech.haveGunCheck("rebar") && tech.isRebarBlockNails)) * 2 > 1
             },
             requires: "nails, nail gun, rivets, shotgun",
             effect() {
@@ -6825,14 +6825,14 @@ const tech = {
         {
             name: "anti-shear topology",
             link: `<a target="_blank" href='https://en.wikipedia.org/wiki/Topology' class="link">anti-shear topology</a>`,
-            description: "some <strong>projectiles</strong> last <strong>30% longer</strong><br><em style = 'font-size: 80%'>drone, spore, worm, missile, foam, wave, neutron, ice, flank</em>",
+            description: "some <strong>projectiles</strong> last <strong>30% longer</strong><br><em style = 'font-size: 80%'>drone, spore, worm, missile, foam, wave, neutron, ice</em>",
             isGunTech: true,
             maxCount: 3,
             count: 0,
             frequency: 2,
             frequencyDefault: 2,
             allowed() {
-                return m.fieldUpgrades[m.fieldMode].name === "molecular assembler" || tech.haveGunCheck("spores") || tech.haveGunCheck("drones") || tech.haveGunCheck("missiles") || tech.haveGunCheck("foam") || tech.haveGunCheck("matter wave") || tech.isNeutronBomb || tech.isIceField || tech.isIceShot || tech.relayIce || tech.isNeedleIce || tech.blockingIce > 1 || tech.isSporeWorm || tech.foamBotCount > 1 || tech.isShotgunFireEverything || tech.haveGunCheck("flank")
+                return m.fieldUpgrades[m.fieldMode].name === "molecular assembler" || tech.haveGunCheck("spores") || tech.haveGunCheck("drones") || tech.haveGunCheck("missiles") || tech.haveGunCheck("foam") || tech.haveGunCheck("matter wave") || tech.isNeutronBomb || tech.isIceField || tech.isIceShot || tech.relayIce || tech.isNeedleIce || tech.blockingIce > 1 || tech.isSporeWorm || tech.foamBotCount > 1 || tech.isShotgunFireEverything
             },
             requires: "drones, spores, missiles, foam, matter wave, neutron bomb, ice IX, flank",
             effect() {
@@ -8007,7 +8007,7 @@ const tech = {
         },
         {
             name: "BLEVE",
-            description: "increase <strong class='color-blast'>detonation</strong> <strong class='color-d'>damage</strong> by <strong>250%</strong><br><strong class='color-blast'>detonations</strong> cause you <strong class='color-harm'>harm</strong>",
+            description: "increase <strong class='color-blast'>detonation</strong> <strong class='color-d'>damage</strong> by <strong>275%</strong><br><strong class='color-blast'>detonations</strong> cause you <strong class='color-harm'>harm</strong>",
             isGunTech: true,
             maxCount: 1,
             count: 0,
@@ -8334,60 +8334,60 @@ const tech = {
             }
         },
         {
-            name: "vector direction",
-            description: "<strong>flank</strong> shoots a third <strong>orb</strong><br>but uses <strong>30%</strong> more <strong class='color-f'>energy</strong> per shot",
+            name: "scalar product",
+            description: "<strong>flank</strong> has a <strong>crouch-shot</strong><br>that shoots 1 plasma <strong>upward</strong>",
             isGunTech: true,
             maxCount: 1,
             count: 0,
             frequency: 2,
             frequencyDefault: 2,
             allowed() {
-                return tech.haveGunCheck("flank") && !tech.isFlankExtraBack
+                return tech.haveGunCheck("flank") && !tech.isFlankCrouchAim
             },
-            requires: "flank, not Archie's law",
+            requires: "flank, not antiparallel vector",
             effect() {
-                tech.isFlank3Orb = true;
+                tech.isFlankCrouchUp = true;
             },
             remove() {
-                tech.isFlank3Orb = false;
+                tech.isFlankCrouchUp = false;
             }
         },
         {
             name: "antiparallel vector",
-            description: "<strong>flank orbs</strong> shoot an extra <strong>bullet</strong> heading <strong>backwards</strong><br>but <strong>flank</strong> uses <strong>50%</strong> more <strong class='color-f'>energy</strong> per shot",
+            description: "<span style = 'font-size:85%;'><strong>flank</strong> has a <strong>crouch-shot</strong> that can be <strong>aimed</strong> by <strong>moving</strong><br>but deals <strong>50%</strong> less <strong class='color-d'>damage</strong> and uses <strong>50%</strong> more <strong class='color-f'>energy</strong></span>",
             isGunTech: true,
             maxCount: 1,
             count: 0,
             frequency: 2,
             frequencyDefault: 2,
             allowed() {
-                return tech.haveGunCheck("flank") && !tech.isFlank3Orb
+                return tech.haveGunCheck("flank") && !tech.isFlankCrouchUp
             },
-            requires: "flank, not Byerlee's law",
+            requires: "flank, not scalar product",
             effect() {
-                tech.isFlankExtraBack = true;
+                tech.isFlankCrouchAim = true;
             },
             remove() {
-                tech.isFlankExtraBack = false;
+                tech.isFlankCrouchAim = false;
             }
         },
         {
-            name: "energy flux",
-            description: "<strong>flank orbs</strong> generate <strong class='color-f'>energy</strong> on contact with <strong>mobs</strong><br>but <strong>flank</strong> bullets deal <strong>33%</strong> less <strong class='color-d'>damage</strong>",
+            name: "jitterbug transformation",
+            description: "<strong>flank</strong> uses <strong>175%</strong> more <strong class='color-f'>energy</strong><br>but deals <strong>100%</strong> more <strong class='color-d'>damage</strong>",
             isGunTech: true,
             maxCount: 1,
             count: 0,
             frequency: 2,
             frequencyDefault: 2,
             allowed() {
-                return tech.haveGunCheck("flank") && !tech.isFlankPierce
+                return tech.haveGunCheck("flank")
             },
-            requires: "flank, not intersection",
+            requires: "flank, not stellation, energy flux",
             effect() {
-                tech.isFlankOrbEnergy = true;
+                tech.isFlankBig = true;
             },
             remove() {
-                tech.isFlankOrbEnergy = false;
+                tech.isFlankBig = false;
             }
         },
         {
@@ -8408,64 +8408,6 @@ const tech = {
             },
             remove() {
                 tech.isFlankPierce = false;
-            }
-        },
-        {
-            name: "Newton–Raphson method",
-            description: "flank's <strong>crouch-shot</strong> is replaced by a <strong>line</strong><br>that uses <strong>75%</strong> of your <strong class='color-f'>energy</strong> and fires<br><strong class='color-d'>very damaging bullets</strong> on contact with <strong>mobs</strong>",
-            isGunTech: true,
-            maxCount: 1,
-            count: 0,
-            frequency: 2,
-            frequencyDefault: 2,
-            allowed() {
-                return tech.haveGunCheck("flank")
-            },
-            requires: "flank",
-            effect() {
-                tech.isFlankCambriaSwordWeaponSevenChargeShot = true;
-            },
-            remove() {
-                tech.isFlankCambriaSwordWeaponSevenChargeShot = false;
-            }
-        },
-        {
-            name: "jitterbug transformation",
-            description: "<strong>flank</strong> bullets deal up to <strong>67%</strong> more <strong class='color-d'>damage</strong><br>based on how still you keep your mouse cursor",
-            isGunTech: true,
-            maxCount: 1,
-            count: 0,
-            frequency: 2,
-            frequencyDefault: 2,
-            allowed() {
-                return tech.haveGunCheck("flank") && !tech.isFlankStellation
-            },
-            requires: "flank, not stellation",
-            effect() {
-                tech.isFlankJitterbug = true;
-            },
-            remove() {
-                tech.isFlankJitterbug = false;
-                tech.jitterbugDamageBoost = 0
-            }
-        },
-        {
-            name: "stellation",
-            description: "<strong>flank</strong> uses <strong>12%</strong> less <strong class='color-f'>energy</strong><br>but move <strong>15%</strong> slower and become slightly inaccurate",
-            isGunTech: true,
-            maxCount: 9,
-            count: 0,
-            frequency: 2,
-            frequencyDefault: 2,
-            allowed() {
-                return tech.haveGunCheck("flank")
-            },
-            requires: "flank, not jitterbug transformation",
-            effect() {
-                tech.isFlankStellation++
-            },
-            remove() {
-                tech.isFlankStellation = 0
             }
         },
         //************************************************** 
@@ -12267,6 +12209,9 @@ const tech = {
     bulletSize: null,
     energySiphon: null,
     healthDrain: null,
+    isFlankBig: null,
+    isFlankCrouchAim: null,
+    isFlankCrouchUp: null,
     isEjectHighestTech: null,
     martingaleDamage: 0.1,
     isMartingale: null,
@@ -12274,10 +12219,6 @@ const tech = {
     isJunkDNA: null,
     isExtraGunTech: null,
     isExplodeContact: null,
-    isFlankStellation: 0,
-    jitterbugDamageBoost: 0,
-    jitterbugLastMousePos: {x:0,y:0},
-    isFlankJitterbug: null,
     mineralization: 0,
     isDemineralization: null,
     isRemineralization: null,
@@ -12292,11 +12233,6 @@ const tech = {
     isDeathCountdown: null,
     rebarControlRodSpamCount: 0,
     isRebarControlRodSpam: null,
-    isFlankCambriaSwordWeaponSevenChargeShot: null,
-    isFlankPierce: false,
-    isFlankOrbEnergy: null,
-    isFlankExtraBack: null,
-    isFlank3Orb: null,
     isPWBlockDecay: null,
     isPWTransferBlocks: null,
     isDeBroglie: null,
