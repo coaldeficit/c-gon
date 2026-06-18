@@ -2,15 +2,23 @@
 - completely reworked flank and removed its previous tech
 - added 1 new field:
 - - metascience: you have no field, but mobs sometimes drop research powerups
-- added 1 new tech:
+- added 6 new tech:
 - - scalar product: gives flank a crouch-shot that shoots a single projectile upwards
+- - antiparallel vector: gives flank a crouch-shot that uses more energy and deals less damage, but can be aimed by moving
+- - jitterbug transformation: flank fires larger, stronger, faster projectiles but uses far more energy
+- - stellation: initial flank projectiles split into 3 weaker ones instead of piercing
+- - energy flux: flank does much less damage, but increases damage to everything for each enemy it hits
+- - cloning vector: flank does much less damage, energy flux instead permanently increases duplication chance
 - rebar pierce damage multiplier increased from 50% to 80%
 - fixed rebar being unable to hit mobs that spawned after the projectile was shot
 - BLEVE now deals half as much self-harm, damage increase buffed from 250% to 275%
 - negative mass harm reduction decreased from 55% to 15%
 - ported field-based energy bar colors
 - added custom field energy bar colors for standing wave, pilot wave and wormhole
-- supercapacitor now increases harm taken by 20% above 90% energy, instead of by 30% above 65% energy
+- supercapacitor now increases harm taken by 20% above 90% energy, instead of by 30% above 65% energy, but energy increase reduced from 220 to 100
+- furnace tech now deals slightly less self-harm when out of research
+- metamaterial cloaking no longer gives 50% harm reduction to collisions
+- powerUpBoss and powerUpBossBaby no longer steal tech, but deal 30% more colliision damage instead
 # whatever (2025/12/17)
 - removed mantisBoss's invulnerability
 - temporarily made tripwireBoss unable to spawn due to being bugged and unbalanced

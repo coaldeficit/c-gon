@@ -1257,13 +1257,7 @@ const spawn = {
         me.damageReduction = 0
         me.invulnerabilityCountDown = 30 + simulation.difficulty
         me.onHit = function() { //run this function on hitting player
-	   if ((m.health < m.maxHealth*0.35 && !tech.isEnergyHealth) || (m.energy < m.maxEnergy*0.35 && tech.isEnergyHealth)) {
-              if (powerUps.ejectTech()) {
-                   powerUps.ejectGraphic("150, 138, 255");
-                   powerUps.spawn(m.pos.x + 60 * (Math.random() - 0.5), m.pos.y + 60 * (Math.random() - 0.5), "ammo");
-                   powerUps.spawn(m.pos.x + 60 * (Math.random() - 0.5), m.pos.y + 60 * (Math.random() - 0.5), "research");
-              }
-	   }
+            m.damage(Math.min(Math.max(0.025 * Math.sqrt(me.mass), 0.05), 0.3) * simulation.dmgScale * 0.3)
         };
         me.onDeath = function() {
             this.leaveBody = false;
@@ -1339,13 +1333,7 @@ const spawn = {
         // me.invulnerabilityCountDown = 60 + simulation.difficulty * 2
 
         me.onHit = function() { //run this function on hitting player
-	   if ((m.health < m.maxHealth*0.7 && !tech.isEnergyHealth) || (m.energy < m.maxEnergy*0.7 && tech.isEnergyHealth)) {
-              if (powerUps.ejectTech()) {
-                   powerUps.ejectGraphic("150, 138, 255");
-                   powerUps.spawn(m.pos.x + 60 * (Math.random() - 0.5), m.pos.y + 60 * (Math.random() - 0.5), "ammo");
-                   powerUps.spawn(m.pos.x + 60 * (Math.random() - 0.5), m.pos.y + 60 * (Math.random() - 0.5), "research");
-              }
-	   }
+            m.damage(Math.min(Math.max(0.025 * Math.sqrt(me.mass), 0.05), 0.3) * simulation.dmgScale * 0.3)
         };
         me.onDeath = function() {
             this.leaveBody = false;

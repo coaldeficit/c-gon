@@ -1329,7 +1329,7 @@ const simulation = {
         //} else {
         //    tech.ionizationEnergyBoost = 0
         //}
-        if (tech.isRemineralization || tech.isDemineralization) {
+        if (tech.isRemineralization || tech.isDemineralization || tech.isFlankMineralization) {
             tech.mineralization *= 0.85
             if (tech.mineralization < 0.5) tech.mineralization = 0
         }
@@ -1338,7 +1338,7 @@ const simulation = {
 		if (powerUps.research.count > 0) {
 		  powerUps.research.changeRerolls(-1)
 		} else {
-		  m.damage(0.35)
+		  m.damage(0.3)
 		  m.damage(m.maxHealth*0.03)
 		}
 	      }

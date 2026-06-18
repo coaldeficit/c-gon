@@ -2681,7 +2681,7 @@ const m = {
         }
     },
     setMaxEnergy() {
-        m.maxEnergy = (tech.isMaxEnergyTech ? 0.5 : 1) + tech.bonusEnergy + (tech.isSupercapacitor*2.2) + tech.healMaxEnergyBonus + tech.harmonicEnergy + 2 * tech.isGroundState + 3 * tech.isRelay * tech.isFlipFlopOn * tech.isRelayEnergy + 0.6 * (m.fieldUpgrades[m.fieldMode].name === "standing wave")
+        m.maxEnergy = (tech.isMaxEnergyTech ? 0.5 : 1) + tech.bonusEnergy + tech.isSupercapacitor + tech.healMaxEnergyBonus + tech.harmonicEnergy + 2 * tech.isGroundState + 3 * tech.isRelay * tech.isFlipFlopOn * tech.isRelayEnergy + 0.6 * (m.fieldUpgrades[m.fieldMode].name === "standing wave")
         simulation.makeTextLog(`<span class='color-var'>m</span>.<span class='color-f'>maxEnergy</span> <span class='color-symbol'>=</span> ${(m.maxEnergy.toFixed(2))}`)
     },
     fieldMeterColor: "#0cf",
@@ -4504,7 +4504,7 @@ const m = {
         },
         {
             name: "metamaterial cloaking", //"weak photonic coupling" "electromagnetically induced transparency" "optical non-coupling" "slow light field" "electro-optic transparency"
-            description: "when not firing activate a <strong class='color-cloaked'>cloaking</strong> effect<br><strong>+333%</strong> <strong class='color-d'>damage</strong> if a mob hasn't recently <strong>died</strong><br><strong>collisions</strong> do <strong>50%</strong> less <strong class='color-harm'>harm</strong> when <strong class='color-cloaked'>cloaked</strong>",
+            description: "when not firing activate a <strong class='color-cloaked'>cloaking</strong> effect<br><strong>+333%</strong> <strong class='color-d'>damage</strong> if a mob hasn't recently <strong>died</strong>",
             effect: () => {
                 m.fieldFire = true;
                 m.fieldMeterColor = "#333";
@@ -5550,6 +5550,7 @@ const m = {
             description: "<strong>mobs</strong> occasionally drop <strong class='color-r'>research</strong> <strong>power ups</strong><br>but you cannot <strong>deflect</strong> with your <strong class='color-f'>field</strong>",
             // description: "use <strong class='color-f'>energy</strong> to <strong>deflect</strong> mobs,<br><strong>grab</strong> power ups, and <strong>throw</strong> <strong class='color-block'>blocks</strong><br>regen <strong>6</strong> <strong class='color-f'>energy</strong>/s, when not immune to <strong class='color-harm'>harm</strong>",
             effect: () => {
+                m.fieldMeterColor = "#f7b"
                 m.hold = function() {
                     if (m.isHolding) {
                         m.drawHold(m.holdingTarget);

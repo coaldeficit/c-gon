@@ -4122,13 +4122,13 @@ const b = {
         }
         Matter.Body.setVelocity(bullet[me], effectivevelocity);
     },
-    flankBullet(angle,turnSpeedMult=1,damageMult=1,speedMult=1,lifeMult=1,flankDeco=0) {
+    flankBullet(angle,turnSpeedMult=1,damageMult=1,speedMult=1,lifeMult=1,flankDeco=0,flankPosition=m.pos) {
         const me = bullet.length;
         const velocity = {
             x: Math.cos(angle)*20*speedMult,
             y: Math.sin(angle)*20*speedMult,
         }
-        bullet[me] = Bodies.polygon(m.pos.x, m.pos.y, 30, flankDeco & 1 ? 45 : 20, {
+        bullet[me] = Bodies.polygon(flankPosition.x, flankPosition.y, 30, flankDeco & 1 ? 45 : (flankDeco & 2) ? 15 : 20, {
             density: 0.00001, //  0.001 is normal density
             frictionAir: 0,
             classType: "bullet",
@@ -4171,7 +4171,21 @@ const b = {
                         //if (who.isBoss) this.ignoreBosses = true
                         who.damage(45*this.damageMult, true);
                         this.ignore.push(who.id)
-                        this.endCycle += 20
+                        if (!(this.flankDeco & 4)) {
+                            if (tech.isFlankMineralization && !tech.isFlankDuplication) tech.mineralization++
+                            if (tech.isFlankDuplication) tech.flankDuplication++
+                        }
+                        if (!tech.isFlankSplit || this.flankDeco & 6) {
+                            this.endCycle += 20
+                        } else if (this.endCycle > 0) {
+                            this.endCycle = 0
+                            b.flankBullet(Math.PI/2,0.25,this.damageMult/2,0.75,1,2,this.position)
+                            b.flankBullet(-Math.PI/6,0.25,this.damageMult/2,0.75,1,2,this.position)
+                            b.flankBullet(Math.PI+Math.PI/6,0.25,this.damageMult/2,0.75,1,2,this.position)
+                            for (let i=0;i<3;i++) {
+                                bullet[bullet.length-(i+1)].ignore.push(who.id)
+                            }
+                        }
                     }
                 }
                 // visuals
@@ -4194,6 +4208,17 @@ const b = {
                             ctx.lineTo(this.history[this.history.length-(2+i)].x,this.history[this.history.length-(2+i)].y)
                             ctx.lineWidth = (33-(i*4))
                             ctx.strokeStyle = "rgba(255,255,255,1)"
+                            ctx.stroke()
+                        }
+                    }
+                } else if (this.flankDeco & 2) {
+                    for (let i=0;i<6;i++) {
+                        if (this.history[this.history.length-(2+i)] != null) {
+                            ctx.beginPath()
+                            ctx.moveTo(this.history[this.history.length-(1+i)].x,this.history[this.history.length-(1+i)].y)
+                            ctx.lineTo(this.history[this.history.length-(2+i)].x,this.history[this.history.length-(2+i)].y)
+                            ctx.lineWidth = (24.75-(i*4))
+                            ctx.strokeStyle = "rgba(127,0,255,1)"
                             ctx.stroke()
                         }
                     }
@@ -8260,11 +8285,11 @@ const b = {
                         this.performingTheFunny = false
                         this.aimCrouch = false
                     } else if (Matter.Query.ray(mob,m.pos,{x:m.pos.x+Math.cos(angle)*depth,y:m.pos.y+Math.sin(angle)*depth}).length) {
-                        const damageMult = 1 * (this.aimCrouch && tech.isFlankCrouchAim ? 0.66 : 1) * (tech.isFlankBig ? 2 : 1)
+                        const damageMult = 1 * (this.aimCrouch && tech.isFlankCrouchAim ? 0.66 : 1) * (tech.isFlankBig ? 2 : 1) * (tech.isFlankMineralization ? 0.6 : 1) * (tech.isFlankDuplication ? 0.6 : 1)
                         const turnMult = 1 * (tech.isFlankBig ? 1.7 : 1)
                         const speedMult = 1 * (tech.isFlankBig ? 1.7 : 1)
                         const lifeMult = 1 * (tech.isFlankBig ? 1/1.7 : 1)
-                        const deco = (tech.isFlankBig * 1) // use bitwise or
+                        const deco = (tech.isFlankBig * 1) | (0 * 2) // use bitwise or
                         this.performingTheFunny = false
                         this.aimCrouch = false
                         m.fireCDcycle = m.cycle + 60 * b.fireCDscale
@@ -8287,7 +8312,7 @@ const b = {
                         m.energy -= energyUsage
                         m.fireCDcycle = m.cycle + 240
                     } else {
-                        b.flankBullet(-Math.PI/2,0.14)
+                        b.flankBullet(-Math.PI/2,0.14,1,1,1,4)
                         m.energy -= energyUsage
                         m.fireCDcycle = m.cycle + 240 * b.fireCDscale
                     }

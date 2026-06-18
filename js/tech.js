@@ -282,7 +282,7 @@ const tech = {
         if (tech.isGunChoice && tech.buffedGun === b.inventoryGun) dmg *= 1 + 0.3 * b.inventory.length
         if (tech.isPeerReview) dmg *= 1 + 0.044 * tech.peerReviewDamage
         if (tech.isFlyDamage && !m.onGround && m.cycle- m.lastOnGroundCycle > 60) dmg *= 2.11
-        if (tech.isDemineralization) dmg *= 1 + 0.08 * tech.mineralization
+        if (tech.isDemineralization || tech.isFlankMineralization) dmg *= 1 + 0.08 * tech.mineralization
         if (tech.isDoubleAmmoUse) dmg *= 2
         if (tech.isJunkDNA) dmg *= 1 + tech.aproxJunkRatio
         if (tech.removeTechDamage > 1) dmg *= tech.removeTechDamage
@@ -290,7 +290,7 @@ const tech = {
         return dmg * tech.slowFire * tech.aimDamage
     },
     duplicationChance() {
-        return Math.min(Math.max(0 + (tech.isPowerUpsVanish ? 0.25 : 0) + (tech.isStimulatedEmission ? 0.3 : 0) + tech.cancelCount * 0.012 + tech.duplicateChance + m.duplicateChance + tech.fieldDuplicate + tech.cloakDuplication + (tech.isAnthropicTech && tech.isDeathAvoidedThisLevel ? 0.5 : 0)),1.11)
+        return Math.min(Math.max(0 + (tech.isPowerUpsVanish ? 0.25 : 0) + (tech.isStimulatedEmission ? 0.3 : 0) + tech.cancelCount * 0.012 + tech.duplicateChance + m.duplicateChance + tech.fieldDuplicate + tech.cloakDuplication + (tech.isAnthropicTech && tech.isDeathAvoidedThisLevel ? 0.5 : 0) + (tech.isFlankDuplication ? tech.flankDuplication/1000 : 0)),1.11)
     },
     isScaleMobsWithDuplication: false,
     maxDuplicationEvent() {
@@ -3033,7 +3033,7 @@ const tech = {
         },
         {
             name: "supercapacitor",
-            description: "increase your <strong>maximum</strong> <strong class='color-f'>energy</strong> by <strong>220</strong><br>take <strong>20%</strong> more <strong class='color-harm'>harm</strong> above 90% of your maximum <strong class='color-f'>energy</strong>",
+            description: "increase your <strong>maximum</strong> <strong class='color-f'>energy</strong> by <strong>150</strong><br>take <strong>20%</strong> more <strong class='color-harm'>harm</strong> above 90% of your maximum <strong class='color-f'>energy</strong>",
             maxCount: 1,
             count: 0,
             frequency: 1,
@@ -8380,7 +8380,7 @@ const tech = {
             frequency: 2,
             frequencyDefault: 2,
             allowed() {
-                return tech.haveGunCheck("flank")
+                return tech.haveGunCheck("flank") && !tech.isFlankSplit && !tech.isFlankMineralization
             },
             requires: "flank, not stellation, energy flux",
             effect() {
@@ -8391,6 +8391,64 @@ const tech = {
             }
         },
         {
+            name: "stellation",
+            description: "initial <strong>flank</strong> plasma <strong>splits</strong><br>into <strong>3</strong> weaker <strong>plasmas</strong>",
+            isGunTech: true,
+            maxCount: 1,
+            count: 0,
+            frequency: 2,
+            frequencyDefault: 2,
+            allowed() {
+                return tech.haveGunCheck("flank") && !tech.isFlankBig && !tech.isFlankMineralization
+            },
+            requires: "flank, not jitterbug, energy flux",
+            effect() {
+                tech.isFlankSplit = true;
+            },
+            remove() {
+                tech.isFlankSplit = false;
+            }
+        },
+        {
+            name: "energy flux",
+            description: "<span style = 'font-size:90%;'><strong>flank</strong> deals <strong>40%</strong> less <strong class='color-d'>damage</strong>, but increases<br><strong class='color-d'>damage</strong> by <strong>8%</strong> on hit, of which <strong>15%</strong> is lost per second</span>",
+            isGunTech: true,
+            maxCount: 1,
+            count: 0,
+            frequency: 2,
+            frequencyDefault: 2,
+            allowed() {
+                return tech.haveGunCheck("flank") && !tech.isFlankBig && !tech.isFlankSplit
+            },
+            requires: "flank, not jitterbug, stellation",
+            effect() {
+                tech.isFlankMineralization = true;
+            },
+            remove() {
+                tech.isFlankMineralization = false;
+            }
+        },
+        {
+            name: "cloning vector",
+            description: "<span style = 'font-size:85%;'><strong>flank</strong> deals <strong>40%</strong> less <strong class='color-d'>damage</strong> and doesn't increase <strong class='color-d'>damage</strong><br>instead increases <strong class='color-dup'>duplication</strong> chance by <strong>0.1%</strong> on hit</span>",
+            isGunTech: true,
+            maxCount: 1,
+            count: 0,
+            frequency: 2,
+            frequencyDefault: 2,
+            allowed() {
+                return tech.haveGunCheck("flank") && tech.isFlankMineralization
+            },
+            requires: "flank, energy flux",
+            effect() {
+                tech.isFlankDuplication = true;
+            },
+            remove() {
+                tech.isFlankDuplication = false;
+                tech.flankDuplication = 0
+            }
+        },
+        /*{
             name: "intersection",
             link: `<a target="_blank" href='https://en.wikipedia.org/wiki/Intersection_(geometry)' class="link">intersection</a>`,
             description: "<strong>flank</strong> bullets can pierce through a single <strong>mob</strong><br>but deal <strong>18%</strong> less <strong class='color-d'>damage</strong>",
@@ -8409,7 +8467,7 @@ const tech = {
             remove() {
                 tech.isFlankPierce = false;
             }
-        },
+        },*/
         //************************************************** 
         //************************************************** field
         //************************************************** tech
@@ -12209,6 +12267,10 @@ const tech = {
     bulletSize: null,
     energySiphon: null,
     healthDrain: null,
+    flankDuplication: null,
+    isFlankDuplication: null,
+    isFlankMineralization: null,
+    isFlankSplit: null,
     isFlankBig: null,
     isFlankCrouchAim: null,
     isFlankCrouchUp: null,
