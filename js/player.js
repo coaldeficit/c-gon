@@ -5547,7 +5547,7 @@ const m = {
         },
         {
             name: "metascience",
-            description: "<strong>mobs</strong> occasionally drop <strong class='color-r'>research</strong> <strong>power ups</strong><br>but you cannot <strong>deflect</strong> with your <strong class='color-f'>field</strong>",
+            description: "this is defined at the bottom<br>of powerup.js. if you see this,<br>some shit's fucky",
             // description: "use <strong class='color-f'>energy</strong> to <strong>deflect</strong> mobs,<br><strong>grab</strong> power ups, and <strong>throw</strong> <strong class='color-block'>blocks</strong><br>regen <strong>6</strong> <strong class='color-f'>energy</strong>/s, when not immune to <strong class='color-harm'>harm</strong>",
             effect: () => {
                 m.fieldMeterColor = "#f7b"
@@ -5581,6 +5581,7 @@ const m = {
                     } else {
                         m.holdingTarget = null; //clears holding target (this is so you only pick up right after the field button is released and a hold target exists)
                     }
+                    m.drawFieldMeter()
                 }
             }
         },

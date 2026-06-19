@@ -1,7 +1,7 @@
 # scope creep (2026/??/??)
 - completely reworked flank and removed its previous tech
 - added 1 new field:
-- - metascience: you have no field, but mobs sometimes drop research powerups
+- - metascience: you have no field, but up to 2 research power ups spawn at the end of each level
 - added 6 new tech:
 - - scalar product: gives flank a crouch-shot that shoots a single projectile upwards
 - - antiparallel vector: gives flank a crouch-shot that uses more energy and deals less damage, but can be aimed by moving
@@ -19,6 +19,7 @@
 - furnace tech now deals slightly less self-harm when out of research
 - metamaterial cloaking no longer gives 50% harm reduction to collisions
 - powerUpBoss and powerUpBossBaby no longer steal tech, but deal 30% more colliision damage instead
+- zero point energy, tessellation, Lorentz transformation, dynamical systems, WIMPs and virtual particles can now also be taken if your field is metascience
 # whatever (2025/12/17)
 - removed mantisBoss's invulnerability
 - temporarily made tripwireBoss unable to spawn due to being bugged and unbalanced

@@ -8482,9 +8482,9 @@ const tech = {
             frequency: 3,
             frequencyDefault: 3,
             allowed() {
-                return (m.fieldUpgrades[m.fieldMode].name === "standing wave" || m.fieldUpgrades[m.fieldMode].name === "pilot wave") && (build.isExperimentSelection || powerUps.research.count > 1)
+                return (m.fieldUpgrades[m.fieldMode].name === "standing wave" || m.fieldUpgrades[m.fieldMode].name === "pilot wave" || m.fieldUpgrades[m.fieldMode].name === "metascience") && (build.isExperimentSelection || powerUps.research.count > 1)
             },
-            requires: "standing wave or pilot wave",
+            requires: "standing wave, pilot wave or metascience",
             effect() {
                 tech.harmonicEnergy = 1
                 m.setMaxEnergy()
@@ -8668,9 +8668,9 @@ const tech = {
             frequency: 3,
             frequencyDefault: 3,
             allowed() {
-                return (m.fieldUpgrades[m.fieldMode].name === "pilot wave" || m.fieldUpgrades[m.fieldMode].name === "perfect diamagnetism" || m.fieldUpgrades[m.fieldMode].name === "negative mass") && (build.isExperimentSelection || powerUps.research.count > 3)
+                return (m.fieldUpgrades[m.fieldMode].name === "pilot wave" || m.fieldUpgrades[m.fieldMode].name === "perfect diamagnetism" || m.fieldUpgrades[m.fieldMode].name === "negative mass" || m.fieldUpgrades[m.fieldMode].name === "metascience") && (build.isExperimentSelection || powerUps.research.count > 3)
             },
-            requires: "perfect diamagnetism, negative mass, pilot wave",
+            requires: "perfect diamagnetism, negative mass, pilot wave, metascience",
             effect() {
                 tech.isFieldHarmReduction = true
                 for (let i = 0; i < 2; i++) {
@@ -9334,9 +9334,9 @@ const tech = {
             frequency: 3,
             frequencyDefault: 3,
             allowed() {
-                return (m.fieldUpgrades[m.fieldMode].name === "time dilation") && (build.isExperimentSelection || powerUps.research.count > 2)
+                return (m.fieldUpgrades[m.fieldMode].name === "time dilation" || m.fieldUpgrades[m.fieldMode].name === "metascience") && (build.isExperimentSelection || powerUps.research.count > 2)
             },
-            requires: "time dilation",
+            requires: "time dilation, metascience",
             effect() {
                 tech.isFastTime = true
                 m.setMovement();
@@ -9548,9 +9548,9 @@ const tech = {
             frequency: 3,
             frequencyDefault: 3,
             allowed() {
-                return (m.fieldUpgrades[m.fieldMode].name === "plasma torch" || m.fieldUpgrades[m.fieldMode].name === "metamaterial cloaking" || m.fieldUpgrades[m.fieldMode].name === "pilot wave") && (build.isExperimentSelection || powerUps.research.count > 1)
+                return (m.fieldUpgrades[m.fieldMode].name === "plasma torch" || m.fieldUpgrades[m.fieldMode].name === "metamaterial cloaking" || m.fieldUpgrades[m.fieldMode].name === "pilot wave" || m.fieldUpgrades[m.fieldMode].name === "metascience") && (build.isExperimentSelection || powerUps.research.count > 1)
             },
-            requires: "cloaking, pilot wave, or plasma torch",
+            requires: "cloaking, pilot wave, plasma torch, metascience",
             effect() {
                 tech.isCloakingDamage = true
                 for (let i = 0; i < 2; i++) {
@@ -9611,9 +9611,9 @@ const tech = {
             frequency: 1,
             frequencyDefault: 1,
             allowed() {
-                return m.fieldUpgrades[m.fieldMode].name === "wormhole" || m.fieldUpgrades[m.fieldMode].name === "pilot wave"
+                return m.fieldUpgrades[m.fieldMode].name === "wormhole" || m.fieldUpgrades[m.fieldMode].name === "pilot wave" || m.fieldUpgrades[m.fieldMode].name === "metascience"
             },
-            requires: "wormhole or pilot wave",
+            requires: "wormhole, pilot wave, metascience",
             effect: () => {
                 tech.wimpCount++
                 spawn.WIMP()
@@ -9690,9 +9690,9 @@ const tech = {
             frequency: 3,
             frequencyDefault: 3,
             allowed() {
-                 return (m.fieldUpgrades[m.fieldMode].name === "negative mass" || m.fieldUpgrades[m.fieldMode].name === "time dilation" || m.fieldUpgrades[m.fieldMode].name === "wormhole") && (build.isExperimentSelection || powerUps.research.count > 3)
+                 return (m.fieldUpgrades[m.fieldMode].name === "negative mass" || m.fieldUpgrades[m.fieldMode].name === "time dilation" || m.fieldUpgrades[m.fieldMode].name === "wormhole" || m.fieldUpgrades[m.fieldMode].name === "metascience") && (build.isExperimentSelection || powerUps.research.count > 3)
             },
-            requires: "wormhole, time dilation, negative mass",
+            requires: "wormhole, time dilation, negative mass, metascience",
             effect() {
                 tech.fieldDuplicate = 0.12
                 powerUps.setDupChance(); //needed after adjusting duplication chance

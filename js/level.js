@@ -150,6 +150,7 @@ const level = {
             for (let j = 0, len = 4; j < len; j++) powerUps.spawn(level.exit.x + 100 * (Math.random() - 0.5), level.exit.y - 100 + 100 * (Math.random() - 0.5), "research", false)
         }
         for (let i = 0; i < tech.wimpExperiment; i++) spawn.WIMP()
+        if (m.fieldUpgrades[m.fieldMode].name === "metascience") for (let i=0;i<2;i++) powerUps.spawn(level.exit.x + 100 * (Math.random() - 0.5), level.exit.y - 100 + 100 * (Math.random() - 0.5), "research", false)
         // if (tech.isFlipFlopLevelReset && !tech.isFlipFlopOn) {
         if ((tech.isRelay || tech.isFlipFlop) && !tech.isFlipFlopOn) {
             tech.isFlipFlopOn = true

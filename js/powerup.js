@@ -1452,3 +1452,4 @@ const powerUps = {
         }
     },
 };
+m.fieldUpgrades[10].description = `at the end of each <strong>level</strong> spawn ${powerUps.orb.research(2)}<br>but you cannot <strong>deflect</strong> with your <strong class='color-f'>field</strong>`
