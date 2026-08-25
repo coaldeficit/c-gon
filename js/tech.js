@@ -5095,10 +5095,10 @@ const tech = {
             description: `mobs drop way more ${powerUps.orb.boost(1)}`,
             maxCount: 1,
             count: 0,
-            frequency: 2,
-            frequencyDefault: 2,
-            allowed() { return tech.isLooting },
-            requires: "looting",
+            frequency: 1,
+            frequencyDefault: 1,
+            allowed() { return true },
+            requires: "",
             effect() {
                 tech.isBoostPowerUps = true
             },
@@ -5111,8 +5111,8 @@ const tech = {
             description: `${powerUps.orb.boost(1)} grant an additional <strong>${(75)}%</strong> <strong class='color-d'>damage</strong><br>but their <strong>duration</strong> is reduced by <strong>1</strong> second`,
             maxCount: 9,
             count: 0,
-            frequency: 3,
-            frequencyDefault: 3,
+            frequency: 2,
+            frequencyDefault: 2,
             allowed() { return tech.isBoostPowerUps || tech.isQuantumJump || tech.isRebarStunBoost },
             requires: "boost drop rate increase tech",
             effect() {
@@ -5129,8 +5129,8 @@ const tech = {
             description: `${powerUps.orb.boost(1)} grant <strong>60%</strong> harm reduction<br>for their duration`,
             maxCount: 1,
             count: 0,
-            frequency: 3,
-            frequencyDefault: 3,
+            frequency: 2,
+            frequencyDefault: 2,
             allowed() { return tech.isBoostPowerUps || tech.isQuantumJump || tech.isRebarStunBoost},
             requires: "boost drop rate increase tech",
             effect() {
@@ -5145,10 +5145,10 @@ const tech = {
             description: "after mobs <strong>die</strong> existing <strong>power ups</strong><br><strong>collide</strong> to form new <strong>power ups</strong>",
             maxCount: 1,
             count: 0,
-            frequency: 2,
-            frequencyDefault: 2,
-            allowed() { return tech.isLooting && !tech.isTreasure && !tech.isExoticParts },
-            requires: "looting, not treasure, exotic particles",
+            frequency: 1,
+            frequencyDefault: 1,
+            allowed() { return !tech.isTreasure && !tech.isExoticParts },
+            requires: "not treasure, exotic particles",
             effect() {
                 tech.collidePowerUps = true
             },

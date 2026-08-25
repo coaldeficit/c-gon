@@ -301,7 +301,7 @@ const mobs = {
             alertNearByMobs() {
                 //this.alertRange2 is set at the very bottom of this mobs, after mob is made
                 for (let i = 0; i < mob.length; i++) {
-                    if (!mob[i].seePlayer.recall && Vector.magnitudeSquared(Vector.sub(this.position, mob[i].position)) < this.alertRange2) {
+                    if (!mob[i].seePlayer.recall && Vector.magnitudeSquared(Vector.sub(this.position, mob[i].position)) < this.alertRange2 && !mob[i].painless) {
                         mob[i].locatePlayer();
                     }
                 }

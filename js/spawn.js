@@ -5,7 +5,7 @@ const spawn = {
     randomBossList: ["shieldingBoss", "orbitalBoss", "historyBoss", "shooterBoss", "cellBossCulture", "bomberBoss", "spiderBoss", "launcherBoss", "laserTargetingBoss",
         "powerUpBoss", "powerUpBossBaby", "dragonFlyBoss", "streamBoss", "pulsarBoss", "spawnerBossCulture", "grenadierBoss", "growBossCulture", "blinkBoss",
         "snakeSpitBoss", "laserBombingBoss", "blockBoss", "revolutionBoss", "slashBoss", "healBoss", "constraintBoss", "beetleBoss", "timeSkipBoss", "sneakBoss",
-        "laserLayerBoss", "mantisBoss", "snakeBoss", //"tripwireBoss", "springBoss"
+        "laserLayerBoss", "mantisBoss", "snakeBoss", "tripwireBoss", "uziBoss" //"springBoss"
     ],
     bossTypeSpawnOrder: [], //preset list of boss names calculated at the start of a run by the randomSeed
     bossTypeSpawnIndex: 0, //increases as the boss type cycles
@@ -33,11 +33,12 @@ const spawn = {
         "laserLayer", "laserLayer",
         "drifter", "drifter",
         "pitcher", "pitcher2",
-        "launcher", "launcherOne", "exploder", "sneaker", "sucker", "sniper", "spinner", "grower", "beamer", "focuser", "spawner", "ghoster", "rainer", "boidCulture"
+        "fluid", "fluid",
+        "launcher", "launcherOne", "exploder", "sneaker", "sucker", "sniper", "spinner", "grower", "beamer", "focuser", "spawner", "ghoster", "rainer", "boidCulture", "uzi",
     ],
     mobTypeSpawnOrder: [], //preset list of mob names calculated at the start of a run by the randomSeed
     mobTypeSpawnIndex: 0, //increases as the mob type cycles
-    allowedGroupList: ["spinner", "striker", "springer", "laser", "focuser", "beamer", "exploder", "spawner", "shooter", "launcher", "launcherOne", "stabber", "sniper", "pulsar", "grenadier", "slasher", "slasher2", "slasher3", "flutter", "stinger", "laserLayer", "drifter"],
+    allowedGroupList: ["spinner", "striker", "springer", "laser", "focuser", "beamer", "exploder", "spawner", "shooter", "launcher", "launcherOne", "stabber", "sniper", "pulsar", "grenadier", "slasher", "slasher2", "slasher3", "flutter", "stinger", "laserLayer", "drifter", "fluid", "uzi"],
     setSpawnList() { //this is run at the start of each new level to determine the possible mobs for the level
         spawn.pickList.splice(0, 1);
         const push = spawn.mobTypeSpawnOrder[spawn.mobTypeSpawnIndex++ % spawn.mobTypeSpawnOrder.length]
@@ -7422,7 +7423,7 @@ const spawn = {
             this.harmZone();
             if (!this.isStunned) {
 	    for (let jej of mob) {
-	      if (!jej.isStunned) jej.health += 0.01 * (jej.isBoss ? 0.333 : 1)
+	      if (!jej.isStunned && !jej.isHealBossSpecifically) jej.health += 0.01 * (jej.isBoss ? 0.333 : 1)
 	      if (jej.health > tech.mobSpawnWithHealth) jej.health = tech.mobSpawnWithHealth
 	    }
             }
@@ -7496,18 +7497,18 @@ const spawn = {
         let me = mob[mob.length - 1];
 
         me.count = 0;
-        me.frictionAir = 0.001;
-        me.accelMag = 0.001 + (0.00005*simulation.difficulty)
+        me.frictionAir = 0.1;
+        me.accelMag = 0.005 + (0.00012*simulation.difficulty)
         // me.torque -= me.inertia * 0.002
-        Matter.Body.setDensity(me, 0.03); //extra dense //normal is 0.001 //makes effective life much larger
-        me.intendedDamageReduction = 0.25 / (tech.isScaleMobsWithDuplication ? 1 + tech.duplicationChance() : 1)
+        Matter.Body.setDensity(me, 0.0017 + 0.0002 * Math.sqrt(simulation.difficulty)); //extra dense //normal is 0.001 //makes effective life much larger
+        me.intendedDamageReduction = 0.2 / (tech.isScaleMobsWithDuplication ? 1 + tech.duplicationChance() : 1)
         me.damageReduction = 0
         me.isBoss = true;
         // spawn.shield(me, x, y, 1);  //not working, not sure why
         me.onDeath = function() {
             powerUps.spawnBossPowerUp(this.position.x, this.position.y)
         };
-        me.rotateVelocity = (0.0145 + (0.0005*simulation.difficulty)) * (Math.random() > 0.5 ? 1 : -1)
+        me.rotateVelocity = (0.01 + (0.0003*simulation.difficulty)) * (Math.random() > 0.5 ? 1 : -1)
         me.memory = Infinity
         me.painless = true
         me.showHealthBar = false
@@ -8516,7 +8517,7 @@ const spawn = {
         mobs.spawn(x, y, 3, radius, "#ffffff");
         let me = mob[mob.length - 1];
         // console.log(`mass=${me.mass}, radius = ${radius}`)
-        me.accelMag = (0.00002/Math.SQRT2) * simulation.accelScale
+        me.accelMag = (0.00001/Math.SQRT2) * simulation.accelScale
         me.vertices = Matter.Vertices.rotate(me.vertices, Math.PI, me.position); //make the pointy side of triangle the front
         //Matter.Body.rotate(me, Math.random() * Math.PI * 2);
         me.radius *= 1.333
@@ -8623,7 +8624,7 @@ const spawn = {
             return mod(a + Math.PI, 2*Math.PI) - Math.PI;
         }
     },
-    boidCulture(x,y,radius=25,rings=Math.min(2,Math.floor(simulation.difficulty/20)+1)) {
+    boidCulture(x,y,radius=20,rings=2) {
         const curCycle = m.cycle
         const colCycle = Math.floor(Math.random()*512)-256
         const angle = 2*Math.PI*Math.random()
@@ -8776,7 +8777,7 @@ const spawn = {
             });
         }
         function spawnFire() {
-            let pick = ['laser','boidCulture','drifter','focuser','laserLayer','striker','rainer','stabber','grower','springer'] // mob selection where each has a distinct shape
+            let pick = ['laser','boidCulture','drifter','focuser','laserLayer','striker','rainer','stabber','grower','springer','fluid'] // mob selection where each has a distinct shape
             spawn[pick[Math.floor(Math.random() * pick.length)]](this.vertices[3].x, this.vertices[3].y)
             mob[mob.length-1].foundPlayer()
             //give the bullet a rotational velocity as if they were attached to a vertex
@@ -9487,6 +9488,385 @@ const spawn = {
                 ctx.fill()
                 ctx.restore();
             }
+        };
+    },
+    fluid(x, y, radius = 40 + Math.ceil(Math.random() * 20)) {
+        let sides = 8+Math.floor(Math.random()*4)
+        mobs.spawn(x, y, sides, radius, "#e0f0ff");
+        let me = mob[mob.length - 1];
+        me.accelMag = 0.00064 * simulation.accelScale;
+        me.frictionStatic = 0;
+        me.friction = 0;
+        me.frictionAir = 0.002;
+        spawn.shield(me, x, y);
+        me.onDamage = function() {};
+        me.fluctuationAngle = Math.floor(1000000*Math.random())
+        me.rotateVelocity = (0.01 + (0.03 * Math.random())) * (Math.random() > 0.5 ? 1 : -1)
+        me.radius = radius
+        me.sides = sides
+        me.spikes = 3
+        me.collisionFilter.mask = cat.player | cat.map | cat.body | cat.bullet
+        me.do = function() {
+            this.seePlayerByLookingAt();
+            this.checkStatus();
+            this.attraction();
+            this.fluctuationAngle += Math.sign(this.rotateVelocity)
+            for (let i=0;i<this.vertices.length;i++) {
+                this.vertices[i].x = this.position.x+Math.cos(this.angle+i*2*Math.PI/this.sides)*(this.radius*(1+Math.sin(this.fluctuationAngle/60+i*(9/this.sides)*2*Math.PI/this.spikes)/2.5))
+                this.vertices[i].y = this.position.y+Math.sin(this.angle+i*2*Math.PI/this.sides)*(this.radius*(1+Math.sin(this.fluctuationAngle/60+i*(9/this.sides)*2*Math.PI/this.spikes)/2.5))
+            }
+        };
+    },
+    uzi(x, y, radius = 28) {
+        mobs.spawn(x, y, 4, radius, "#fcc603");
+        let me = mob[mob.length - 1];
+        me.vertices = Matter.Vertices.rotate(me.vertices, Math.PI/4, me.position);
+        Matter.Body.rotate(me, Math.random() * Math.PI * 2);
+        me.radius *= 2
+        me.frictionAir = 0.02
+
+        me.vertices[1].x = me.position.x + Math.cos(me.angle) * me.radius; 
+        me.vertices[1].y = me.position.y + Math.sin(me.angle) * me.radius;
+        me.vertices[3].x = me.position.x - Math.cos(me.angle) * me.radius; 
+        me.vertices[3].y = me.position.y - Math.sin(me.angle) * me.radius;
+        Matter.Body.setDensity(me, 0.002); //extra dense //normal is 0.001 //makes effective life much larger
+        me.seePlayerFreq = 12
+        me.aimProgress = 0
+        me.aimSpeed = 0.7 + (0.015 * simulation.difficulty)
+        me.fireDir = {
+            x: 0,
+            y: 0
+        };
+        me.accelMag = 0.001 + (0.0002 * simulation.accelScale);
+        me.onHit = function() {};
+        me.do = function() {
+            this.seePlayerByLookingAt();
+            if (this.seePlayer.recall) {
+                this.healthBar()
+                if (this.aimProgress < 90) {
+                    //set direction to turn to fire
+                    if (!(simulation.cycle % this.seePlayerFreq)) {
+                        this.fireDir = Vector.normalise(Vector.sub(this.seePlayer.position, this.position));
+                        // this.fireDir.y -= Math.abs(this.seePlayer.position.x - this.position.x) / 1600; //gives the bullet an arc
+                    }
+                    //rotate towards fireAngle
+                    const angle = this.angle + Math.PI / 2;
+                    // c = Math.cos(angle) * this.fireDir.x + Math.sin(angle) * this.fireDir.y;
+                    //rotate towards fireAngle
+                    const dot = Vector.dot({
+                        x: Math.cos(angle),
+                        y: Math.sin(angle)
+                    }, this.fireDir)
+                    const threshold = 0.03;
+                    if (dot > threshold) {
+                        this.torque += 0.000004 * this.inertia;
+                    } else if (dot < -threshold) {
+                        this.torque -= 0.000004 * this.inertia;
+                    }
+                    if (dot < threshold*10 && dot > -threshold*10 && !Matter.Query.ray(map, this.position, player.position).length) {
+                        this.force = Vector.add(this.force, Vector.mult({x:Math.cos(this.angle),y:Math.sin(this.angle)}, this.accelMag))
+                        this.aimProgress += this.aimSpeed
+                        if (this.aimProgress > 90) this.aimProgress = 90
+                    } else if (this.aimProgress > 0) {
+                        this.aimProgress -= this.aimSpeed/4
+                    }
+                    if (this.aimProgress > 0) {
+                        let offset = (90-this.aimProgress)*(Math.PI/180)+0.1
+                        let points = [{x:this.position.x+Math.cos(this.angle+offset)*800,y:this.position.y+Math.sin(this.angle+offset)*800},{x:this.position.x+Math.cos(this.angle-offset)*800,y:this.position.y+Math.sin(this.angle-offset)*800}]
+                        ctx.beginPath()
+                        ctx.moveTo(this.position.x+Math.cos(this.angle)*this.radius,this.position.y+Math.sin(this.angle)*this.radius)
+                        ctx.lineTo(points[0].x+Math.cos(this.angle)*this.radius,points[0].y+Math.sin(this.angle)*this.radius)
+                        ctx.lineTo(points[1].x+Math.cos(this.angle)*this.radius,points[1].y+Math.sin(this.angle)*this.radius)
+                        ctx.fillStyle = `rgba(252,198,3,${this.aimProgress/720})`
+                        ctx.fill();
+                    }
+                } else {
+                    //rotate towards fireAngle
+                    const angle = this.angle + Math.PI / 2;
+                    // c = Math.cos(angle) * this.fireDir.x + Math.sin(angle) * this.fireDir.y;
+                    //rotate towards fireAngle
+                    const dot = Vector.dot({
+                        x: Math.cos(angle),
+                        y: Math.sin(angle)
+                    }, this.fireDir)
+                    const threshold = 0.03;
+                    if (dot > threshold) {
+                        this.torque += 0.000001 * this.inertia;
+                    } else if (dot < -threshold) {
+                        this.torque -= 0.000001 * this.inertia;
+                    }
+                    if (!(simulation.cycle % 9)) {
+                        let bulletAngle = 0.2*(Math.random()-0.5)
+                        spawn.uziBullet(this.vertices[1].x, this.vertices[1].y, 5, this.angle+bulletAngle);
+                        const v = 30 + 6 * simulation.accelScale;
+                        Matter.Body.setVelocity(mob[mob.length - 1], {
+                            x: Math.cos(this.angle+bulletAngle) * v,
+                            y: Math.sin(this.angle+bulletAngle) * v
+                        });
+                    }
+                    let points = [{x:this.position.x+Math.cos(this.angle+0.1)*800,y:this.position.y+Math.sin(this.angle+0.1)*800},{x:this.position.x+Math.cos(this.angle-0.1)*800,y:this.position.y+Math.sin(this.angle-0.1)*800}]
+                    ctx.beginPath()
+                    ctx.moveTo(this.position.x+Math.cos(this.angle)*this.radius,this.position.y+Math.sin(this.angle)*this.radius)
+                    ctx.lineTo(points[0].x+Math.cos(this.angle)*this.radius,points[0].y+Math.sin(this.angle)*this.radius)
+                    ctx.lineTo(points[1].x+Math.cos(this.angle)*this.radius,points[1].y+Math.sin(this.angle)*this.radius)
+                    ctx.fillStyle = `rgba(252,198,3,0.1)`
+                    ctx.fill();
+                    if (Matter.Query.ray(map, this.position, player.position).length > 0) this.aimProgress = 0
+                }
+            } else {
+                this.aimProgress = 0
+            }
+            this.checkStatus();
+        };
+    },
+    uziBullet(x, y, radius = 5, rotateAngle = 0) { //bullets
+        mobs.spawn(x, y, 4, radius, "#fc9003");
+        let me = mob[mob.length - 1];
+        me.vertices = Matter.Vertices.rotate(me.vertices, Math.PI/4, me.position);
+        Matter.Body.rotate(me, rotateAngle);
+        me.radius *= 2
+        me.frictionAir = 0
+
+        me.vertices[1].x = me.position.x + Math.cos(me.angle) * me.radius; 
+        me.vertices[1].y = me.position.y + Math.sin(me.angle) * me.radius;
+        me.vertices[3].x = me.position.x - Math.cos(me.angle) * me.radius; 
+        me.vertices[3].y = me.position.y - Math.sin(me.angle) * me.radius;
+        me.stroke = "transparent";
+        me.onHit = function() {};
+        Matter.Body.setDensity(me, 0.0005); //normal is 0.001
+        me.timeLeft = 180;
+        // me.g = 0.0005; //required if using this.gravity
+        me.frictionAir = 0;
+        me.restitution = 0;
+        me.leaveBody = false;
+        me.isDropPowerUp = false;
+        me.isBadTarget = true;
+        me.isMobBullet = true;
+        me.showHealthBar = false;
+        me.collisionFilter.category = cat.mobBullet;
+        me.collisionFilter.mask = cat.player | cat.map | cat.body | cat.bullet;
+        me.do = function() {
+            // this.gravity();
+            ctx.beginPath()
+            ctx.moveTo(
+                this.position.x + Math.cos(this.angle+Math.PI*0.5) * this.radius * 1.5,
+                this.position.y + Math.sin(this.angle+Math.PI*0.5) * this.radius * 1.5,
+            )
+            ctx.lineTo(
+                this.position.x + Math.cos(this.angle) * this.radius * 3,
+                this.position.y + Math.sin(this.angle) * this.radius * 3,
+            )
+            ctx.lineTo(
+                this.position.x - Math.cos(this.angle+Math.PI*0.5) * this.radius * 1.5,
+                this.position.y - Math.sin(this.angle+Math.PI*0.5) * this.radius * 1.5,
+            )
+            ctx.lineTo(
+                this.position.x - Math.cos(this.angle) * this.radius * 3,
+                this.position.y - Math.sin(this.angle) * this.radius * 3,
+            )
+            ctx.closePath()
+            ctx.fillStyle = `rgba(252,198,3,0.35)`
+            ctx.fill();
+            ctx.beginPath()
+            ctx.moveTo(
+                this.position.x + Math.cos(this.angle+Math.PI*0.5) * this.radius,
+                this.position.y + Math.sin(this.angle+Math.PI*0.5) * this.radius,
+            )
+            ctx.lineTo(
+                this.position.x + Math.cos(this.angle) * this.radius * 2,
+                this.position.y + Math.sin(this.angle) * this.radius * 2,
+            )
+            ctx.lineTo(
+                this.position.x - Math.cos(this.angle+Math.PI*0.5) * this.radius,
+                this.position.y - Math.sin(this.angle+Math.PI*0.5) * this.radius,
+            )
+            ctx.lineTo(
+                this.position.x - Math.cos(this.angle) * this.radius * 2,
+                this.position.y - Math.sin(this.angle) * this.radius * 2,
+            )
+            ctx.closePath()
+            ctx.fill();
+            this.timeLimit();
+            if (Matter.Query.collides(this, map).length > 0 || Matter.Query.collides(this, body).length > 0 && this.speed < 10) {
+                this.isDropPowerUp = false;
+                this.death(); //death with no power up
+            }
+        };
+    },
+    uziBoss(x, y, radius = 56) {
+        mobs.spawn(x, y, 4, radius, "#fcc603");
+        let me = mob[mob.length - 1];
+        me.vertices = Matter.Vertices.rotate(me.vertices, Math.PI/4, me.position);
+        Matter.Body.rotate(me, Math.random() * Math.PI * 2);
+        me.radius *= 2
+        me.frictionAir = 0.02
+
+        me.vertices[1].x = me.position.x + Math.cos(me.angle) * me.radius; 
+        me.vertices[1].y = me.position.y + Math.sin(me.angle) * me.radius;
+        me.vertices[3].x = me.position.x - Math.cos(me.angle) * me.radius; 
+        me.vertices[3].y = me.position.y - Math.sin(me.angle) * me.radius;
+        Matter.Body.setDensity(me, 0.002); //extra dense //normal is 0.001 //makes effective life much larger
+        me.seePlayerFreq = 12
+        me.aimProgress = 0
+        me.aimSpeed = 0.5 + (0.01 * simulation.difficulty)
+        me.fireDir = {
+            x: 0,
+            y: 0
+        };
+        me.accelMag = 0.001 + (0.00017 * simulation.accelScale);
+        me.startingDamageReduction = me.damageReduction = 0.3 / (tech.isScaleMobsWithDuplication ? 1 + tech.duplicationChance() : 1)
+        me.damageReduction = 0
+        me.ringCooldown = me.ringReload = Math.max(5,120-simulation.difficulty/2)
+        me.ringShotsLeft = 0
+        me.ringSpin = Math.max(20,90-simulation.difficulty/2) * (Math.random() > 0.5 ? 1 : -1)
+        me.isBoss = true
+        me.onDeath = function() {
+            powerUps.spawnBossPowerUp(this.position.x, this.position.y)
+        };
+        me.onHit = function() {};
+        me.do = function() {
+            this.seePlayerByLookingAt();
+            if (this.seePlayer.recall) {
+                this.healthBar()
+                if (this.aimProgress < 90) {
+                    //set direction to turn to fire
+                    if (!(simulation.cycle % this.seePlayerFreq)) {
+                        this.fireDir = Vector.normalise(Vector.sub(this.seePlayer.position, this.position));
+                        // this.fireDir.y -= Math.abs(this.seePlayer.position.x - this.position.x) / 1600; //gives the bullet an arc
+                    }
+                    //rotate towards fireAngle
+                    const angle = this.angle + Math.PI / 2;
+                    // c = Math.cos(angle) * this.fireDir.x + Math.sin(angle) * this.fireDir.y;
+                    //rotate towards fireAngle
+                    const dot = Vector.dot({
+                        x: Math.cos(angle),
+                        y: Math.sin(angle)
+                    }, this.fireDir)
+                    const threshold = 0.03;
+                    if (dot > threshold) {
+                        this.torque += 0.000004 * this.inertia;
+                    } else if (dot < -threshold) {
+                        this.torque -= 0.000004 * this.inertia;
+                    }
+                    if (dot < threshold*10 && dot > -threshold*10 && !Matter.Query.ray(map, this.position, player.position).length) {
+                        this.force = Vector.add(this.force, Vector.mult({x:Math.cos(this.angle),y:Math.sin(this.angle)}, this.accelMag))
+                        this.aimProgress += this.aimSpeed
+                        if (this.aimProgress > 90) this.aimProgress = 90
+                    } else if (this.aimProgress > 0) {
+                        this.aimProgress -= this.aimSpeed/40
+                    }
+                    if (this.aimProgress > 0) {
+                        let offset = (90-this.aimProgress)*(Math.PI/180)+0.1
+                        let points = [{x:this.position.x+Math.cos(this.angle+offset)*2400,y:this.position.y+Math.sin(this.angle+offset)*2400},{x:this.position.x+Math.cos(this.angle-offset)*2400,y:this.position.y+Math.sin(this.angle-offset)*2400}]
+                        ctx.beginPath()
+                        ctx.moveTo(this.position.x+Math.cos(this.angle)*this.radius,this.position.y+Math.sin(this.angle)*this.radius)
+                        ctx.lineTo(points[0].x+Math.cos(this.angle)*this.radius,points[0].y+Math.sin(this.angle)*this.radius)
+                        ctx.lineTo(points[1].x+Math.cos(this.angle)*this.radius,points[1].y+Math.sin(this.angle)*this.radius)
+                        ctx.fillStyle = `rgba(252,198,3,${this.aimProgress/360})`
+                        ctx.fill();
+                    }
+                } else {
+                    //rotate towards fireAngle
+                    const angle = this.angle + Math.PI / 2;
+                    // c = Math.cos(angle) * this.fireDir.x + Math.sin(angle) * this.fireDir.y;
+                    //rotate towards fireAngle
+                    const dot = Vector.dot({
+                        x: Math.cos(angle),
+                        y: Math.sin(angle)
+                    }, this.fireDir)
+                    const threshold = 0.03;
+                    if (dot > threshold) {
+                        this.torque += 0.000001 * this.inertia;
+                    } else if (dot < -threshold) {
+                        this.torque -= 0.000001 * this.inertia;
+                    }
+                    if (!(simulation.cycle % 7) && this.aimProgress >= 100) {
+                        const v = 30 + 6 * simulation.accelScale;
+                        let bulletAngle = Math.sin(simulation.cycle/20)*0.1
+                        spawn.uziBullet(this.vertices[1].x, this.vertices[1].y, 5, this.angle+bulletAngle);
+                        Matter.Body.setVelocity(mob[mob.length - 1], {
+                            x: Math.cos(this.angle+bulletAngle) * v,
+                            y: Math.sin(this.angle+bulletAngle) * v
+                        });
+                        spawn.uziBullet(this.vertices[1].x, this.vertices[1].y, 5, this.angle+bulletAngle);
+                        Matter.Body.setVelocity(mob[mob.length - 1], {
+                            x: Math.cos(this.angle-bulletAngle) * v,
+                            y: Math.sin(this.angle-bulletAngle) * v
+                        });
+                    }
+                    let points = [{x:this.position.x+Math.cos(this.angle+0.1)*2400,y:this.position.y+Math.sin(this.angle+0.1)*2400},{x:this.position.x+Math.cos(this.angle-0.1)*2400,y:this.position.y+Math.sin(this.angle-0.1)*2400}]
+                    ctx.beginPath()
+                    ctx.moveTo(this.position.x+Math.cos(this.angle)*this.radius,this.position.y+Math.sin(this.angle)*this.radius)
+                    ctx.lineTo(points[0].x+Math.cos(this.angle)*this.radius,points[0].y+Math.sin(this.angle)*this.radius)
+                    ctx.lineTo(points[1].x+Math.cos(this.angle)*this.radius,points[1].y+Math.sin(this.angle)*this.radius)
+                    ctx.fillStyle = `rgba(252,198,3,0.2)`
+                    ctx.fill();
+                    this.aimProgress++
+                    if (this.aimProgress >= 360) this.aimProgress = 0
+                }
+            } else {
+                this.aimProgress = 0
+            }
+            if (this.aimProgress < 90) {
+                this.damageReduction = 0
+                ctx.beginPath();
+                let vertices = this.vertices;
+                ctx.moveTo(vertices[0].x, vertices[0].y);
+                for (let j = 1; j < vertices.length; j++) ctx.lineTo(vertices[j].x, vertices[j].y);
+                ctx.lineTo(vertices[0].x, vertices[0].y);
+                ctx.lineWidth = 13 + 5 * Math.random();
+                ctx.strokeStyle = `rgba(255,255,255,${0.5+0.2*Math.random()})`;
+                ctx.stroke();
+            } else {
+                this.damageReduction = this.startingDamageReduction
+            }
+            if (this.ringCooldown <= 0) {
+                if (this.ringShotsLeft == 0) {
+                    this.ringShotsLeft = Math.max(1,Math.floor(simulation.difficultyMode+1))
+                    this.ringCooldown = 5
+                } else if (this.ringShotsLeft == 1) {
+                    this.ringCooldown = this.ringReload
+                } else {
+                    this.ringCooldown = 5
+                }
+                this.ringShotsLeft--
+                for (let i=0;i<3;i++) {
+                    const v = 20 + 4 * simulation.accelScale;
+                    let bulletAngle = (simulation.cycle/this.ringSpin)+i*(2*Math.PI)/3
+                    spawn.uziBullet(this.position.x+Math.cos(bulletAngle)*192, this.position.y+Math.sin(bulletAngle)*192, 5, bulletAngle);
+                    Matter.Body.setVelocity(mob[mob.length - 1], {
+                        x: Math.cos(bulletAngle) * v,
+                        y: Math.sin(bulletAngle) * v
+                    });
+                }
+            }
+            this.ringCooldown--
+            ctx.lineWidth = 2
+            ctx.fillStyle = this.fill
+            ctx.strokeStyle = this.stroke
+            for (let i=0;i<3;i++) {
+                ctx.beginPath()
+                ctx.moveTo(
+                    this.position.x + Math.cos((simulation.cycle/this.ringSpin)+i*(2*Math.PI)/3)*112,
+                    this.position.y + Math.sin((simulation.cycle/this.ringSpin)+i*(2*Math.PI)/3)*112,
+                )
+                ctx.lineTo(
+                    this.position.x + Math.cos((simulation.cycle/this.ringSpin)+i*(2*Math.PI)/3)*152 + Math.cos(Math.PI*0.5+(simulation.cycle/this.ringSpin)+i*(2*Math.PI)/3)*20,
+                    this.position.y + Math.sin((simulation.cycle/this.ringSpin)+i*(2*Math.PI)/3)*152 + Math.sin(Math.PI*0.5+(simulation.cycle/this.ringSpin)+i*(2*Math.PI)/3)*20,
+                )
+                ctx.lineTo(
+                    this.position.x + Math.cos((simulation.cycle/this.ringSpin)+i*(2*Math.PI)/3)*192,
+                    this.position.y + Math.sin((simulation.cycle/this.ringSpin)+i*(2*Math.PI)/3)*192,
+                )
+                ctx.lineTo(
+                    this.position.x + Math.cos((simulation.cycle/this.ringSpin)+i*(2*Math.PI)/3)*152 - Math.cos(Math.PI*0.5+(simulation.cycle/this.ringSpin)+i*(2*Math.PI)/3)*20,
+                    this.position.y + Math.sin((simulation.cycle/this.ringSpin)+i*(2*Math.PI)/3)*152 - Math.sin(Math.PI*0.5+(simulation.cycle/this.ringSpin)+i*(2*Math.PI)/3)*20,
+                )
+                ctx.closePath()
+                ctx.fill()
+                ctx.stroke()
+            }
+            this.checkStatus();
         };
     },
     //complex constrained mob templates**********************************************************************

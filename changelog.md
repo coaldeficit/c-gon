@@ -9,6 +9,12 @@
 - - stellation: initial flank projectiles split into 3 weaker ones instead of piercing
 - - energy flux: flank does much less damage, but increases damage to everything for each enemy it hits
 - - cloning vector: flank does much less damage, energy flux instead permanently increases duplication chance
+- added 2 new mobs:
+- - fluid: able to pass through other mobs
+- - uzi: aims at you for a moment, then stop turning and fires a spray of projectiles in that direction until you're out of sight
+- added 1 new boss:
+- - uziBoss: big uzi thats invincible unless shooting, stops shooting after a few seconds, and has mini-uzis orbiting it shooting occasional projectiles
+- completely redid tripwireBoss' physics properties and readded it to the boss pool
 - rebar pierce damage multiplier increased from 50% to 80%
 - fixed rebar being unable to hit mobs that spawned after the projectile was shot
 - BLEVE now deals half as much self-harm, damage increase buffed from 250% to 275%
@@ -20,6 +26,10 @@
 - metamaterial cloaking no longer gives 50% harm reduction to collisions
 - powerUpBoss and powerUpBossBaby no longer steal tech, but deal 30% more colliision damage instead
 - zero point energy, tessellation, Lorentz transformation, dynamical systems, WIMPs and virtual particles can now also be taken if your field is metascience
+- healBoss can no longer heal itself
+- exciton and collider no longer require looting
+- boidCulture no longer generates with more than 2 layers of rings
+- boundaryBoss can now spawn fluid mobs
 # whatever (2025/12/17)
 - removed mantisBoss's invulnerability
 - temporarily made tripwireBoss unable to spawn due to being bugged and unbalanced
