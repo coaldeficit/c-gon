@@ -9525,10 +9525,10 @@ const spawn = {
         me.radius *= 2
         me.frictionAir = 0.02
 
-        me.vertices[1].x = me.position.x + Math.cos(me.angle) * me.radius; 
-        me.vertices[1].y = me.position.y + Math.sin(me.angle) * me.radius;
-        me.vertices[3].x = me.position.x - Math.cos(me.angle) * me.radius; 
-        me.vertices[3].y = me.position.y - Math.sin(me.angle) * me.radius;
+        me.vertices[1].x = me.position.x - Math.cos(me.angle) * me.radius; 
+        me.vertices[1].y = me.position.y - Math.sin(me.angle) * me.radius;
+        me.vertices[3].x = me.position.x + Math.cos(me.angle) * me.radius; 
+        me.vertices[3].y = me.position.y + Math.sin(me.angle) * me.radius;
         Matter.Body.setDensity(me, 0.002); //extra dense //normal is 0.001 //makes effective life much larger
         me.seePlayerFreq = 12
         me.aimProgress = 0
@@ -9627,10 +9627,10 @@ const spawn = {
         me.radius *= 2
         me.frictionAir = 0
 
-        me.vertices[1].x = me.position.x + Math.cos(me.angle) * me.radius; 
-        me.vertices[1].y = me.position.y + Math.sin(me.angle) * me.radius;
-        me.vertices[3].x = me.position.x - Math.cos(me.angle) * me.radius; 
-        me.vertices[3].y = me.position.y - Math.sin(me.angle) * me.radius;
+        me.vertices[1].x = me.position.x - Math.cos(me.angle) * me.radius; 
+        me.vertices[1].y = me.position.y - Math.sin(me.angle) * me.radius;
+        me.vertices[3].x = me.position.x + Math.cos(me.angle) * me.radius; 
+        me.vertices[3].y = me.position.y + Math.sin(me.angle) * me.radius;
         me.stroke = "transparent";
         me.onHit = function() {};
         Matter.Body.setDensity(me, 0.0005); //normal is 0.001
@@ -9701,10 +9701,10 @@ const spawn = {
         me.radius *= 2
         me.frictionAir = 0.02
 
-        me.vertices[1].x = me.position.x + Math.cos(me.angle) * me.radius; 
-        me.vertices[1].y = me.position.y + Math.sin(me.angle) * me.radius;
-        me.vertices[3].x = me.position.x - Math.cos(me.angle) * me.radius; 
-        me.vertices[3].y = me.position.y - Math.sin(me.angle) * me.radius;
+        me.vertices[1].x = me.position.x - Math.cos(me.angle) * me.radius; 
+        me.vertices[1].y = me.position.y - Math.sin(me.angle) * me.radius;
+        me.vertices[3].x = me.position.x + Math.cos(me.angle) * me.radius; 
+        me.vertices[3].y = me.position.y + Math.sin(me.angle) * me.radius;
         Matter.Body.setDensity(me, 0.002); //extra dense //normal is 0.001 //makes effective life much larger
         me.seePlayerFreq = 12
         me.aimProgress = 0
@@ -9865,6 +9865,15 @@ const spawn = {
                 ctx.closePath()
                 ctx.fill()
                 ctx.stroke()
+            }
+            if (this.ringCooldown <= 30 && this.ringShotsLeft == 0) {
+                ctx.fillStyle = `rgba(252,198,3,${0.5-this.ringCooldown/60})`
+                for (let i=0;i<3;i++) {
+                    let bulletAngle = (simulation.cycle/this.ringSpin)+i*(2*Math.PI)/3
+                    ctx.beginPath()
+                    ctx.arc(this.position.x+Math.cos(bulletAngle)*192, this.position.y+Math.sin(bulletAngle)*192, this.ringCooldown*3, 0, 2 * Math.PI);
+                    ctx.fill()
+                }
             }
             this.checkStatus();
         };
