@@ -1,5 +1,5 @@
 # holy shit c-gon update!!111!1!1 (2026/09/28)
-- quantum Zeno effect and mass-energy equivalence are now mutually exclusive
+- fixed quantum Zeno effect and mass-energy equivalence not being properly mutually exclusive
 - nerfed futures exchange from 1.2% duplication chance per cancel to 1.15%
 # whatever (2025/12/17)
 - removed mantisBoss's invulnerability
