@@ -400,7 +400,7 @@ const powerUps = {
             if (tech.isCancelDuplication) {
                 tech.cancelCount++
                 tech.maxDuplicationEvent()
-                simulation.makeTextLog(`tech.duplicationChance() <span class='color-symbol'>+=</span> ${0.012}`)
+                simulation.makeTextLog(`tech.duplicationChance() <span class='color-symbol'>+=</span> ${0.0115}`)
                 simulation.circleFlare(0.02);
             }
             if (tech.isCancelRerolls) {
